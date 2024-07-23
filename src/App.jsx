@@ -1,0 +1,62 @@
+import { useState } from 'react';
+import reactLogo from './assets/react.svg';
+import viteLogo from '/vite.svg';
+import './App.css';
+
+function App() {
+  const [input, setInput] = useState('');
+  const [roll, setRoll] = useState();
+  const [amendedInput, setAmendedInput] = useState();
+
+  function rollToPercentage(roll) {
+    if (roll === 1) return 0; // Ensure 1 results in 0% chance
+    if (roll === 20) return 100;
+    return (roll - 1) * 5; // Map 2-20 to 10%-100%
+  }
+
+  function mapStringWithDiceRoll(inputString, roll) {
+    const percentage = rollToPercentage(roll);
+    let result = '';
+
+    for (let char of inputString) {
+      const randomValue = Math.random() * 100; // Generate a random number between 0 and 100
+      if (char == ' ') {
+        result += ' ';
+      } else if (randomValue < percentage) {
+        result += char;
+      } else {
+        result += '#';
+      }
+    }
+
+    return result;
+  }
+  return (
+    <>
+      <h2>Secret Messages</h2>
+      <div style={{display: "flex",marginBottom: "20px"}}>
+        <input
+          placeholder="secret message"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          style={{ color: 'transparent', flexGrow: "1" }}
+        />
+        <input placeholder="roll" value={roll} style={{flexShrink: 1}} onChange={(e) => setRoll(+e.target.value)} />
+        <button
+          style={{border: "grey 1px solid"}}
+          onClick={() => setAmendedInput(mapStringWithDiceRoll(input, roll))}
+        >
+          Go
+        </button>
+        </div>
+        {amendedInput && (
+          <>
+            <hr />
+            <p>Message: {amendedInput}</p>
+          </>
+        )}
+    </>
+  );
+}
+
+export default App;
