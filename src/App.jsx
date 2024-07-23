@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
 import './App.css';
+
+import reactLogo from './assets/react.svg';
+import { useState } from 'react';
+import viteLogo from '/vite.svg';
 
 function App() {
   const [input, setInput] = useState('');
@@ -42,6 +43,16 @@ function App() {
           style={{ color: 'transparent', flexGrow: "1" }}
         />
         <input placeholder="roll" value={roll} style={{flexShrink: 1}} onChange={(e) => setRoll(+e.target.value)} />
+        <button
+          style={{border: "grey 1px solid"}}
+          onClick={() => {
+            setAmendedInput(null)
+            setInput("")
+            setRoll(null)
+          }}
+        >
+          Clear
+        </button>
         <button
           style={{border: "grey 1px solid"}}
           onClick={() => setAmendedInput(mapStringWithDiceRoll(input, roll))}
