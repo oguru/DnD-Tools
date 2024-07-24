@@ -10,9 +10,7 @@ function App() {
   const [amendedInput, setAmendedInput] = useState();
 
   function rollToPercentage(roll) {
-    if (roll === 1) return 0; // Ensure 1 results in 0% chance
-    if (roll === 20) return 100;
-    return (roll - 1) * 5; // Map 2-20 to 10%-100%
+    return (roll) * 5;
   }
 
   function mapStringWithDiceRoll(inputString, roll) {
