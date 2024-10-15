@@ -106,7 +106,7 @@ export default function SecretMessages() {
       <div style={{ flex: 1 }}>
         <h2>Secret Messages</h2>
         {!user && (
-          <button onClick={handleSignIn}>Sign In with Google</button>
+          <button onClick={handleSignIn}>GM Sign In</button>
         )}
         <div style={{display: "flex", marginBottom: "20px"}}>
           {isAuthorized && (
@@ -148,6 +148,7 @@ export default function SecretMessages() {
         {amendedInput && (
           <>
             <hr />
+            <p>Secret Message: </p>
             <div style={{height: '100px', overflow: 'hidden'}}>
               <Typewriter
                 key={key}
