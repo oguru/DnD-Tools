@@ -145,10 +145,13 @@ export default function SecretMessages() {
             </>
           )}
         </div>
+        <hr />
+        <p>Secret Message: </p>
+        {!amendedInput && (
+          <p>No secret message...</p>
+        )}
         {amendedInput && (
           <>
-            <hr />
-            <p>Secret Message: </p>
             <div style={{height: '100px', overflow: 'hidden'}}>
               <Typewriter
                 key={key}
