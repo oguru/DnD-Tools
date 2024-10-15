@@ -11,6 +11,7 @@ export default function SecretMessages() {
   const [amendedInput, setAmendedInput] = useState(null);
   const [user, setUser] = useState(null);
   const typewriterRef = useRef(null);
+  const [key, setKey] = useState(0);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -92,7 +93,10 @@ export default function SecretMessages() {
 
   const handleClear = () => {
     // Clear the database
+    setInput("");
+    setRoll(10);
     set(ref(database, 'secretMessage'), null);
+    setKey(prevKey => prevKey + 1);
   };
 
   const isAuthorized = user && user.email === 'gmdndbeyond@gmail.com';
@@ -144,14 +148,20 @@ export default function SecretMessages() {
         {amendedInput && (
           <>
             <hr />
-            <Typewriter
-              onInit={(typewriter) => {
-                typewriterRef.current = typewriter;
-              }}
-              options={{
-                delay: 50,
-              }}
-            />
+            <div style={{height: '100px', overflow: 'hidden'}}>
+              <Typewriter
+                key={key}
+                onInit={(typewriter) => {
+                  typewriterRef.current = typewriter;
+                  if (amendedInput) {
+                    typewriter.typeString(amendedInput).start();
+                  }
+                }}
+                options={{
+                  delay: 50,
+                }}
+              />
+            </div>
           </>
         )}
         {!isAuthorized && user && (
