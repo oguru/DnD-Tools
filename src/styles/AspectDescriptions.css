@@ -1,0 +1,165 @@
+.aspect-descriptions {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.aspect-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.aspect-selectors {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 640px) {
+  .aspect-selectors {
+    flex-direction: row;
+  }
+}
+
+.aspect-select-container {
+  flex: 1;
+}
+
+.aspect-select {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+  background-color: white;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23999'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1em;
+}
+
+.aspect-select:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3);
+}
+
+.description-card, .active-effects {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.description-title {
+    margin-top: 0;
+}
+
+.description-title, .active-effects-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4a5568;
+  margin-bottom: 1rem;
+}
+
+.description-text {
+  color: #4a5568;
+  margin-bottom: 1rem;
+}
+
+.mechanics-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #4a5568;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.mechanics-list {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.mechanics-item {
+  margin-bottom: 0.5rem;
+  color: #4a5568;
+}
+
+.mechanics-item-title {
+  font-weight: bold;
+}
+
+.button-container {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.activate-button, .pass-round-button {
+  background-color: #4299e1;
+  color: white;
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  display: inline-block;
+}
+
+.activate-button:hover {
+  background-color: #3182ce;
+}
+
+.pass-round-button {
+  background-color: #48bb78;
+  margin-top: 1rem;
+}
+
+.pass-round-button:hover {
+  background-color: #38a169;
+}
+
+.active-effects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.active-effect-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f7fafc;
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.active-effect-name {
+  font-weight: bold;
+  color: #4a5568;
+  cursor: pointer;
+}
+
+.active-effect-name:hover {
+  color: #2d3748;
+}
+
+.remove-effect-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #e53e3e;
+  padding: 0.25rem;
+  margin-right: 0.5rem;
+}
+
+.remove-effect-button:hover {
+  color: #c53030;
+}
