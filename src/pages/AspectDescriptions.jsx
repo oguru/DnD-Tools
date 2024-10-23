@@ -7,9 +7,9 @@ import { onValue, ref, remove, set } from 'firebase/database';
 import database from '../firebaseConfig';
 
 const XIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg width="30" height="30" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M15 5L5 15" stroke="red" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M5 5L15 15" stroke="red" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -130,27 +130,38 @@ const AspectDescriptions = () => {
         <p className="description-text">No active effects</p>
       ) : (
         <ul className="active-effects-list">
-          {activeEffects.map((effect, index) => (
-            <li key={`${effect.name}-${index}`} className="active-effect-item">
-              <div>
-                <button 
-                  className="remove-effect-button"
-                  onClick={() => setActiveEffects(prevEffects => 
-                    prevEffects.filter((_, currIndex) => currIndex !== index)
+          {activeEffects.map((effect, index) => {
+            const effectDetails = Object.values(aspectDescriptions).find(desc => desc.effect === effect.name);
+            return (
+              <li key={`${effect.name}-${index}`} className="active-effect-item">
+                  <button 
+                    className="remove-effect-button"
+                    onClick={() => removeEffect(effect.name)}
+                  >
+                    <XIcon />
+                  </button>
+                <div className="effect-left-column">
+                  <span className="active-effect-name">{effect.name}</span>
+                  <span className="effect-duration">Remaining: <strong>{effect.duration}</strong> rounds</span>
+                </div>
+                <div className="effect-right-column">
+                  {effectDetails && (
+                    <div className="effect-description">
+                      {effectDetails.mechanics && (
+                        <ul className="effect-mechanics-list">
+                          {effectDetails.mechanics.map((mechanic, mechIndex) => (
+                            <li key={mechIndex} className="effect-mechanics-item">
+                              <span className="effect-mechanics-title">{mechanic.title}:</span> {mechanic.content}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   )}
-                >
-                  <XIcon />
-                </button>
-                <span 
-                  className="active-effect-name"
-                  onClick={() => populateDropdowns(effect.name)}
-                >
-                  {effect.name}
-                </span>
-              </div>
-              <span>Rounds remaining: {effect.duration}</span>
-            </li>
-          ))}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
       <button
