@@ -3,6 +3,7 @@ import '../styles/AspectDescriptions.css';
 import React, { useEffect, useState } from 'react';
 import { aspectDescriptions, aspects } from '../assets/aspects';
 import { onValue, ref, remove, set } from 'firebase/database';
+import { rollWildSurge, wildSurges } from '../assets/wildSurges';
 
 import database from '../firebaseConfig';
 
@@ -17,6 +18,8 @@ const AspectDescriptions = () => {
   const [aspect1, setAspect1] = useState('');
   const [aspect2, setAspect2] = useState('');
   const [activeEffects, setActiveEffects] = useState([]);
+  const [selectedWildSurge, setSelectedWildSurge] = useState(null);
+  const [manualRoll, setManualRoll] = useState('');
 
   useEffect(() => {
     const activeEffectsRef = ref(database, 'activeEffects');
@@ -173,6 +176,67 @@ const AspectDescriptions = () => {
     </div>
   );
 
+  const handleWildSurgeSelect = (event) => {
+    const surgeNumber = parseInt(event.target.value);
+    if (surgeNumber) {
+      const { surge } = rollWildSurge(surgeNumber);
+      setSelectedWildSurge(surge);
+      setManualRoll(surgeNumber.toString());
+    } else {
+      setSelectedWildSurge(null);
+      setManualRoll('');
+    }
+  };
+
+  const handleWildSurgeRoll = () => {
+    const rollNumber = manualRoll ? parseInt(manualRoll) : null;
+    const { roll, surge } = rollWildSurge(rollNumber);
+    setSelectedWildSurge(surge);
+    setManualRoll("");
+  };
+
+  const handleManualRollChange = (event) => {
+    setManualRoll(event.target.value);
+  };
+
+  const renderWildSurgeSection = () => (
+    <div className="wild-surge-section">
+      <h3 className="wild-surge-title">Wild Surge Effects</h3>
+      <div className="wild-surge-controls">
+        <select 
+          value={selectedWildSurge ? manualRoll : ''} 
+          onChange={handleWildSurgeSelect} 
+          className="wild-surge-select"
+        >
+          <option value="">Select a Wild Surge</option>
+          {Object.entries(wildSurges).map(([number, surge]) => (
+            <option key={number} value={number}>
+              {number}: {surge.effect}
+            </option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min="1"
+          max="100"
+          value={manualRoll}
+          onChange={handleManualRollChange}
+          className="wild-surge-input"
+          placeholder="Enter roll (1-100)"
+        />
+        <button onClick={handleWildSurgeRoll} className="wild-surge-roll-button">
+          Roll Wild Surge
+        </button>
+      </div>
+      {selectedWildSurge && (
+        <div className="wild-surge-description">
+          <h4>{selectedWildSurge.effect}</h4>
+          <p>{selectedWildSurge.description}</p>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="aspect-descriptions">
       <h2 className="aspect-title">Aspect Description Selector</h2>
@@ -209,6 +273,7 @@ const AspectDescriptions = () => {
       <div className="mt-4 p-4 bg-gray-100 rounded-md">
         {renderDescription(getDescription())}
       </div>
+      {renderWildSurgeSection()}
       {renderActiveEffects()}
     </div>
   );
