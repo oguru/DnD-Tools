@@ -61,7 +61,7 @@
     margin-top: 0;
 }
 
-.description-title, .active-effects-title {
+.description-title, .active-effects-title, .wild-surge-effects-title {
   font-size: 1.5rem;
   font-weight: bold;
   color: #4a5568;
@@ -74,22 +74,20 @@
 }
 
 .mechanics-title {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: bold;
   color: #4a5568;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .mechanics-list {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-  margin-bottom: 1rem;
+  list-style-type: none;
+  padding-left: 0;
 }
 
 .mechanics-item {
   margin-bottom: 0.5rem;
-  color: #4a5568;
 }
 
 .mechanics-item-title {
@@ -101,7 +99,8 @@
   margin-top: 1rem;
 }
 
-.activate-button, .pass-round-button {
+.activate-button {
+  margin-top: 1rem;
   background-color: #4299e1;
   color: white;
   font-weight: bold;
@@ -109,7 +108,6 @@
   border-radius: 0.25rem;
   cursor: pointer;
   transition: background-color 0.3s;
-  display: inline-block;
 }
 
 .activate-button:hover {
@@ -279,15 +277,18 @@
 
 .wild-surge-effects-title {
   margin-top: 1rem;
-  font-size: 1.1rem;
-  color: #4a5568;
 }
 
 .wild-surge-effects-list {
-  border-top: 2px solid #4299e1;
   padding-top: 0.5rem;
+  padding-inline-start: 0;
 }
 
 .wild-surge-effect {
   background-color: #ebf8ff;
+}
+
+.effects-separator {
+  border-top: 1px solid #e2e8f0;
+  margin: 1rem 0;
 }

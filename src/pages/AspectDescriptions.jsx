@@ -137,11 +137,9 @@ const AspectDescriptions = () => {
 
   const renderActiveEffects = () => (
     <div className="active-effects">
-      <h3 className="active-effects-title">Active Effects:</h3>
-      {activeEffects.length === 0 && activeWildSurges.length === 0 ? (
-        <p className="description-text">No active effects</p>
-      ) : (
+      {activeEffects.length > 0 && (
         <>
+          <h3 className="active-effects-title">Active Effects:</h3>
           <ul className="active-effects-list">
             {activeEffects.map((effect, index) => (
               <li key={`${effect.name}-${index}`} className="active-effect-item">
@@ -180,7 +178,14 @@ const AspectDescriptions = () => {
               </li>
             ))}
           </ul>
-          <h4 className="wild-surge-effects-title">Active Wild Surge Effects:</h4>
+        </>
+      )}
+      {activeEffects.length > 0 && activeWildSurges.length > 0 && (
+        <div className="effects-separator"></div>
+      )}
+      {activeWildSurges.length > 0 && (
+        <>
+          <h3 className="wild-surge-effects-title">Active Wild Surge Effects:</h3>
           <ul className="wild-surge-effects-list">
             {activeWildSurges.map((effect, index) => (
               <li key={`${effect.name}-${index}`} className="active-effect-item wild-surge-effect">
@@ -204,12 +209,14 @@ const AspectDescriptions = () => {
           </ul>
         </>
       )}
-      <button
-        onClick={passRound}
-        className="pass-round-button"
-      >
-        Pass 1 Round
-      </button>
+      {(activeEffects.length > 0 || activeWildSurges.length > 0) && (
+        <button
+          onClick={passRound}
+          className="pass-round-button"
+        >
+          Pass 1 Round
+        </button>
+      )}
     </div>
   );
 
