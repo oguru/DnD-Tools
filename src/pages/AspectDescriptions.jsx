@@ -20,15 +20,19 @@ const AspectDescriptions = () => {
   const [activeEffects, setActiveEffects] = useState([]);
   const [selectedWildSurge, setSelectedWildSurge] = useState(null);
   const [manualRoll, setManualRoll] = useState('');
+  const [activeWildSurges, setActiveWildSurges] = useState([]);
 
   useEffect(() => {
     const activeEffectsRef = ref(database, 'activeEffects');
     onValue(activeEffectsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        setActiveEffects(Object.values(data));
+        const effects = Object.values(data);
+        setActiveEffects(effects.filter(effect => !effect.isWildSurge));
+        setActiveWildSurges(effects.filter(effect => effect.isWildSurge));
       } else {
         setActiveEffects([]);
+        setActiveWildSurges([]);
       }
     });
   }, []);
@@ -90,7 +94,10 @@ const AspectDescriptions = () => {
   const activateEffect = (desc) => {
     const newEffect = {
       name: desc.effect,
+      description: desc.description,
       duration: desc.duration,
+      mechanics: desc.mechanics,
+      isWildSurge: false
     };
     
     const effectRef = ref(database, `activeEffects/${newEffect.name}`);
@@ -103,13 +110,15 @@ const AspectDescriptions = () => {
   };
 
   const passRound = () => {
-    activeEffects.forEach(effect => {
-      const newDuration = effect.duration - 1;
-      if (newDuration > 0) {
-        const effectRef = ref(database, `activeEffects/${effect.name}`);
-        set(effectRef, { ...effect, duration: newDuration });
-      } else {
-        removeEffect(effect.name);
+    [...activeEffects, ...activeWildSurges].forEach(effect => {
+      if (effect.duration && effect.duration > 0) {
+        const newDuration = effect.duration - 1;
+        if (newDuration > 0) {
+          const effectRef = ref(database, `activeEffects/${effect.name}`);
+          set(effectRef, { ...effect, duration: newDuration });
+        } else {
+          removeEffect(effect.name);
+        }
       }
     });
   };
@@ -129,43 +138,71 @@ const AspectDescriptions = () => {
   const renderActiveEffects = () => (
     <div className="active-effects">
       <h3 className="active-effects-title">Active Effects:</h3>
-      {activeEffects.length === 0 ? (
+      {activeEffects.length === 0 && activeWildSurges.length === 0 ? (
         <p className="description-text">No active effects</p>
       ) : (
-        <ul className="active-effects-list">
-          {activeEffects.map((effect, index) => {
-            const effectDetails = Object.values(aspectDescriptions).find(desc => desc.effect === effect.name);
-            return (
+        <>
+          <ul className="active-effects-list">
+            {activeEffects.map((effect, index) => (
               <li key={`${effect.name}-${index}`} className="active-effect-item">
-                  <button 
-                    className="remove-effect-button"
+                <div className="effect-left-column">
+                  <span className="active-effect-name">{effect.name}</span>
+                  <span className="effect-duration">
+                    {effect.duration ? `${effect.duration} rounds` : 'Permanent'}
+                  </span>
+                  <button
                     onClick={() => removeEffect(effect.name)}
+                    className="remove-effect-button"
                   >
                     <XIcon />
                   </button>
-                <div className="effect-left-column">
-                  <span className="active-effect-name">{effect.name}</span>
-                  <span className="effect-duration">Remaining: <strong>{effect.duration}</strong> rounds</span>
                 </div>
                 <div className="effect-right-column">
-                  {effectDetails && (
-                    <div className="effect-description">
-                      {effectDetails.mechanics && (
-                        <ul className="effect-mechanics-list">
-                          {effectDetails.mechanics.map((mechanic, mechIndex) => (
-                            <li key={mechIndex} className="effect-mechanics-item">
-                              <span className="effect-mechanics-title">{mechanic.title}:</span> {mechanic.content}
-                            </li>
-                          ))}
-                        </ul>
+                  <p className="effect-description">{effect.description}</p>
+                  {effect.mechanics && (
+                    <ul className="effect-mechanics-list">
+                      {Array.isArray(effect.mechanics) ? (
+                        effect.mechanics.map((mechanic, mechIndex) => (
+                          <li key={mechIndex} className="effect-mechanics-item">
+                            <span className="effect-mechanics-title">{mechanic.title}:</span> {mechanic.content}
+                          </li>
+                        ))
+                      ) : (
+                        Object.entries(effect.mechanics).map(([title, content], mechIndex) => (
+                          <li key={mechIndex} className="effect-mechanics-item">
+                            <span className="effect-mechanics-title">{title}:</span> {content}
+                          </li>
+                        ))
                       )}
-                    </div>
+                    </ul>
                   )}
                 </div>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+          <h4 className="wild-surge-effects-title">Active Wild Surge Effects:</h4>
+          <ul className="wild-surge-effects-list">
+            {activeWildSurges.map((effect, index) => (
+              <li key={`${effect.name}-${index}`} className="active-effect-item wild-surge-effect">
+                <div className="effect-left-column">
+                  <span className="active-effect-name">{effect.name}</span>
+                  <span className="effect-duration">
+                    {effect.duration ? `${effect.duration} rounds` : 'Permanent'}
+                  </span>
+                  <button
+                    onClick={() => removeEffect(effect.name)}
+                    className="remove-effect-button"
+                  >
+                    <XIcon />
+                  </button>
+                </div>
+                <div className="effect-right-column">
+                  <p className="effect-description">{effect.description}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
       <button
         onClick={passRound}
@@ -193,6 +230,7 @@ const AspectDescriptions = () => {
     const { roll, surge } = rollWildSurge(rollNumber);
     setSelectedWildSurge(surge);
     setManualRoll("");
+    activateWildSurge(surge);
   };
 
   const handleManualRollChange = (event) => {
@@ -237,6 +275,29 @@ const AspectDescriptions = () => {
     </div>
   );
 
+  const activateWildSurge = (surge) => {
+    const duration = surge.duration ? rollDuration(surge.duration) : null;
+    const newEffect = {
+      name: surge.effect,
+      description: surge.description,
+      duration: duration,
+      isWildSurge: true
+    };
+    
+    const effectRef = ref(database, `activeEffects/${newEffect.name}`);
+    set(effectRef, newEffect);
+  };
+
+  const rollDuration = (durationString) => {
+    const [count, sides] = durationString.split('d').map(Number);
+    if (sides === 1) return count;
+    let total = 0;
+    for (let i = 0; i < count; i++) {
+      total += Math.floor(Math.random() * sides) + 1;
+    }
+    return total;
+  };
+
   return (
     <div className="aspect-descriptions">
       <h2 className="aspect-title">Aspect Description Selector</h2>
@@ -273,8 +334,8 @@ const AspectDescriptions = () => {
       <div className="mt-4 p-4 bg-gray-100 rounded-md">
         {renderDescription(getDescription())}
       </div>
-      {renderWildSurgeSection()}
       {renderActiveEffects()}
+      {renderWildSurgeSection()}
     </div>
   );
 };
