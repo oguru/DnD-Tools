@@ -21,7 +21,7 @@ export const wildSurges = {
   },
   5: {
     effect: "Healing Reversal",
-    description: "All damage dealt and received is reversed (healing becomes damage and vice versa) for 1d4 rounds.",
+    description: "All damage/healing dealt and received is reversed (healing becomes damage and vice versa) for 1d4 rounds.",
     duration: "1d4"
   },
   6: {
@@ -120,8 +120,8 @@ export const wildSurges = {
     duration: "1d6"
   },
   25: {
-    effect: "Aspect Fusion",
-    description: "Two random active aspects combine their effects into a more powerful, hybrid aspect for 1d4 rounds.",
+    effect: "Empowered Aspect",
+    description: "A random active aspect becomes more powerful for 1d4 rounds.",
     duration: "1d4"
   },
   26: {
@@ -146,8 +146,8 @@ export const wildSurges = {
   },
   30: {
     effect: "Aspect Overload",
-    description: "All known aspects activate simultaneously for 1 round, after which the merged being is stunned for 1 round.",
-    duration: "1d4"
+    description: "All known aspects activate simultaneously for 1 round, after which the merged being is stunned for 2 rounds.",
+    duration: "2d1"
   },
   31: {
     effect: "Temporal Rewind",
@@ -156,7 +156,7 @@ export const wildSurges = {
   },
   32: {
     effect: "Planar Rift",
-    description: "A 20-foot radius rift to a random plane opens centered on the merged being for 1d4 rounds.",
+    description: "A 20-foot radius rift to a random plane opens next to the merged being for 1d4 rounds.",
     duration: "1d4"
   },
   33: {
@@ -196,8 +196,8 @@ export const wildSurges = {
   },
   40: {
     effect: "Temporal Acceleration",
-    description: "The merged being's speed doubles and it gains an additional action on each of its turns for 1d4 rounds, after which it gains one level of exhaustion.",
-    duration: "1d4"
+    description: "The merged being's speed doubles and it gains an additional action on each of its turns for 1d3 rounds, after which it gains one level of exhaustion.",
+    duration: "1d3"
   },
   41: {
     effect: "Planar Anchor",
@@ -231,7 +231,7 @@ export const wildSurges = {
   },
   47: {
     effect: "Limbo Attunement",
-    description: "For 1d6 rounds, the merged being can manipulate the raw chaos of Limbo, gaining the ability to cast Chaos Bolt at will.",
+    description: "For 1d6 rounds, the merged being can manipulate the raw chaos of Limbo, gaining the ability to cast Chaos Bolt as an action without consuming spell slots (cast at max spell level available).",
     duration: "1d6"
   },
   48: {
@@ -261,7 +261,7 @@ export const wildSurges = {
   },
   53: {
     effect: "Aspect Overcharge",
-    description: "The next aspect activated by the merged being is treated as if it were two levels higher but has a 50% chance to immediately end afterward.",
+    description: "The next aspect activated by the merged being is more powerful but has a 50% chance to immediately end afterward.",
     duration: "1d4"
   },
   54: {
@@ -277,17 +277,17 @@ export const wildSurges = {
   56: {
     effect: "Limbo Surge",
     description: "The merged being can cast any spell of 6th level or lower without using a spell slot, but must roll on this table again immediately after casting.",
-    duration: "1d6"
+    duration: "1d4"
   },
   57: {
     effect: "Aspect Vampirism",
-    description: "For 1d6 rounds, whenever the merged being activates an aspect, it regains hit points equal to twice the aspect's level.",
-    duration: "1d6"
+    description: "For 1d4 rounds, whenever the merged being activates an aspect, it regains 2d6 hit points.",
+    duration: "1d4"
   },
   58: {
     effect: "Temporal Loop",
-    description: "The merged being repeats its last turn's actions for 1d4 rounds, unable to take any other actions.",
-    duration: "1d4"
+    description: "The merged being repeats its last turn's actions for 1d2 rounds, unable to take any other actions.",
+    duration: "1d2"
   },
   59: {
     effect: "Planar Beacon",
@@ -296,8 +296,8 @@ export const wildSurges = {
   },
   60: {
     effect: "Chaos Shield",
-    description: "A shield of chaotic energy surrounds the merged being, granting it immunity to one random damage type for 1d6 rounds.",
-    duration: "1d6"
+    description: "A shield of chaotic energy surrounds the merged being, granting it immunity to one random damage type for 1d4 rounds.",
+    duration: "1d4"
   },
   61: {
     effect: "Reality Fracture",
@@ -326,8 +326,8 @@ export const wildSurges = {
   },
   66: {
     effect: "Aspect Feedback",
-    description: "For the next 1d6 rounds, whenever an enemy within 60 feet activates an aspect, they take psychic damage equal to twice the aspect's level.",
-    duration: "1d6"
+    description: "For the next 1d4 rounds, whenever an enemy within 60 feet casts a spell, they take psychic damage equal to twice the spell's level.",
+    duration: "1d4"
   },
   67: {
     effect: "Temporal Stutter",
@@ -350,8 +350,8 @@ export const wildSurges = {
     duration: "1d6"
   },
   71: {
-    effect: "Aspect Leech",
-    description: "For the next 1d4 rounds, whenever an enemy within 30 feet activates an aspect, the merged being can use a reaction to copy that aspect for 1 round.",
+    effect: "Spell Leech",
+    description: "For the next 1d4 rounds, whenever an enemy within 30 feet casts a spell, the merged being can use a reaction to temporarily learn that spell for 1 round.",
     duration: "1d4"
   },
   72: {
@@ -361,8 +361,8 @@ export const wildSurges = {
   },
   73: {
     effect: "Chaotic Polymorph",
-    description: "The merged being polymorphs into a random beast of CR equal to half its level (rounded down) for 1d6 rounds.",
-    duration: "1d6"
+    description: "The merged being polymorphs into a random creature of CR equal to 1.5x its level (rounded down) for 1d4 rounds.",
+    duration: "1d4"
   },
   74: {
     effect: "Limbo Surge",
@@ -371,8 +371,8 @@ export const wildSurges = {
   },
   75: {
     effect: "Aspect Overload",
-    description: "All of the merged being's known aspects activate simultaneously for 1 round, after which it is stunned for 1d4 rounds.",
-    duration: "1d4"
+    description: "All of the merged being's active aspects activate their primary effects simultaneously, after which it is stunned for 1d2 rounds.",
+    duration: "1d2"
   },
   76: {
     effect: "Temporal Rewind",

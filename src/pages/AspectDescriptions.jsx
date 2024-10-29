@@ -338,6 +338,7 @@ const AspectDescriptions = () => {
           </select>
         </div>
       </div>
+      <p className="mt-4 p-4 bg-gray-100 rounded-md">When selecting an aspect, roll for a wild surge. A wild surge happens when the roll is 1-5.</p>
       <div className="mt-4 p-4 bg-gray-100 rounded-md">
         {renderDescription(getDescription())}
       </div>

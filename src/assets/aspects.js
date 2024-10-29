@@ -116,7 +116,7 @@ export const aspectDescriptions = {
     duration: 3,
     mechanics: [
       { title: "Bonus", content: "Gain advantage on Dexterity (Stealth) checks." },
-      { title: "Damage", content: "First successful melee attack deals an extra 6d6 fire damage." },
+      { title: "Damage", content: "First successful melee attack deals an extra 8d10 fire damage." },
       { title: "Additional Effect", content: "Enemies have disadvantage on perception checks to detect the merged being." }
     ]
   },
@@ -126,7 +126,7 @@ export const aspectDescriptions = {
     duration: 3,
     mechanics: [
       { title: "Damage", content: "All creatures within a 60-foot radius take 12d8 fire and force damage; Constitution saving throw for half." },
-      { title: "Drawback", content: "High chance (roll a d20; on 1-5, a catastrophic wild surge occurs)." }
+      { title: "Drawback", content: "For wild surges, the effect will be negative (closest roll to: 1, 3, 7, 10, 13, 15, 17, 18, 22, 28, 37, 48, 49, 52, 73, )." }
     ]
   },
   'Radiance + Rage': {
