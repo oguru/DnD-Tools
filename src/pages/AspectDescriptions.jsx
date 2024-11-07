@@ -127,11 +127,14 @@ const AspectDescriptions = () => {
     const aspectPair = Object.entries(aspectDescriptions).find(([key, value]) => value.effect === effectName);
     if (aspectPair) {
       const [key, _] = aspectPair;
-      const [first, second] = key.split(' + ');
-      console.log('second:', second)
-      console.log('first:', first)
-      setAspect1(first);
-      setAspect2(second || '');
+      if (key.includes(' + ')) {
+        const [first, second] = key.split(' + ');
+        setAspect1(first);
+        setAspect2(second);
+      } else {
+        setAspect1(key);
+        setAspect2('');
+      }
     }
   };
 
@@ -142,7 +145,11 @@ const AspectDescriptions = () => {
           <h3 className="active-effects-title">Active Effects:</h3>
           <ul className="active-effects-list">
             {activeEffects.map((effect, index) => (
-              <li key={`${effect.name}-${index}`} className="active-effect-item">
+              <li 
+                key={`${effect.name}-${index}`} 
+                className="active-effect-item"
+                onClick={() => populateDropdowns(effect.name)}
+              >
                 <div className="effect-left-column">
                   <span className="active-effect-name">{effect.name}</span>
                   <span className="effect-duration">
