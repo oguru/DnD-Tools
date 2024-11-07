@@ -17,9 +17,9 @@ export const aspectDescriptions = {
     description: "A surge of radiant energy heals allies and purges negative conditions.",
     duration: 2,
     mechanics: [
-      { title: "Healing", content: "All allies within 60 feet regain 8d6 hit points." },
-      { title: "Condition Removal", content: "Removes one negative condition (blinded, charmed, frightened, poisoned, or stunned) from affected allies." },
-      { title: "Additional Effect", content: "Allies gain advantage on saving throws against spells and magical effects for 2 rounds." }
+      { title: "Healing", content: "At the start of each ally's turn, they regain 2d6 hit points for 2 rounds." },
+      { title: "Condition Removal", content: "Removes one negative condition from each affected ally." },
+      { title: "Additional Effect", content: "Allies gain advantage on their next saving throw against spells and magical effects." }
     ]
   },
   'Rage': {
@@ -37,9 +37,9 @@ export const aspectDescriptions = {
     description: "The merged being attains heightened focus, stabilizing the environment and enhancing mental abilities.",
     duration: 4,
     mechanics: [
-      { title: "Environmental Control", content: "Negate one environmental hazard or wild surge effect per round for the next 4 rounds." },
-      { title: "Bonus", content: "Advantage on all Intelligence, Wisdom, and Charisma checks and saving throws." },
-      { title: "Additional Effect", content: "Enemies have disadvantage on saving throws against the merged being's spells and abilities." }
+      { title: "Environmental Control", content: "As 1 entity, you can choose to negate one environmental hazard or wild surge effect per round for 4 rounds." },
+      { title: "Bonus", content: "Advantage on all Intelligence, Wisdom, and Constitution checks and saving throws." },
+      { title: "Spellcasting", content: "Spell damage dice can be rerolled once, taking the higher result." }
     ]
   },
   'Direction': {
@@ -47,7 +47,7 @@ export const aspectDescriptions = {
     description: "The merged being moves with unparalleled speed and precision.",
     duration: 4,
     mechanics: [
-      { title: "Movement", content: "Gain an additional action that can be used to Dash, Disengage, or Dodge each turn for 4 rounds." },
+      { title: "Movement", content: "Gain an additional action that can be used to Dash, Disengage, or Dodge once each round for 4 rounds." },
       { title: "Bonus", content: "Movement speed is tripled; ignores difficult terrain." },
       { title: "Additional Effect", content: "Opportunity attacks against the merged being are made with disadvantage." }
     ]
@@ -86,8 +86,8 @@ export const aspectDescriptions = {
     description: "Enhances physical attacks with fiery energy.",
     duration: 3,
     mechanics: [
-      { title: "Bonus", content: "Add 4d6 fire damage to all melee attacks for 3 rounds." },
-      { title: "Additional Effect", content: "Melee attacks cause enemies to catch fire, dealing 2d6 fire damage at the start of their turn for 3 rounds." }
+      { title: "Bonus", content: "Each ally's first spell or melee attack per turn (whether it hits or not) deals an additional 4d6 fire damage for 3 rounds." },
+      { title: "Additional Effect", content: "On a critical hit, the target catches fire, taking 2d6 fire damage at the start of their turn for 3 rounds." }
     ]
   },
   'Flame + Concentration': {
@@ -126,7 +126,7 @@ export const aspectDescriptions = {
     duration: 3,
     mechanics: [
       { title: "Damage", content: "All creatures within a 60-foot radius take 12d8 fire and force damage; Constitution saving throw for half." },
-      { title: "Drawback", content: "For wild surges, the effect will be negative (closest roll to: 1, 3, 7, 10, 13, 15, 17, 18, 22, 28, 37, 48, 49, 52, 73, )." }
+      { title: "Drawback", content: "For wild surges, the effect will be negative (closest roll to: 1, 3, 7, 10, 13, 15, 17, 18, 22, 28, 37, 48, 49, 52, 73, 79, 92, 96)." }
     ]
   },
   'Radiance + Rage': {
@@ -225,7 +225,7 @@ export const aspectDescriptions = {
     mechanics: [
       { title: "Bonus", content: "Allies gain advantage on initiative rolls and attacks of opportunity." },
       { title: "Movement", content: "Allies can move without provoking opportunity attacks for 4 rounds." },
-      { title: "Additional Effect", content: "You can reposition allies within 30 feet to new positions as a bonus action." }
+      { title: "Additional Effect", content: "You are immune to any conditions that prevent movement, and you can reposition allies within 30 feet to new positions as a bonus action." }
     ]
   },
   'Concentration + Shadow': {

@@ -375,14 +375,14 @@ export const wildSurges = {
     duration: "1d2"
   },
   76: {
-    effect: "Temporal Rewind",
-    description: "Time rewinds to the start of the merged being's previous turn. All actions and effects that occurred since then are undone.",
-    duration: "1d4"
+    effect: "Prismatic Burst",
+    description: "The merged being erupts with prismatic energy. Each creature within 30 feet must make a Dexterity saving throw, taking 6d6 damage of a random type (roll 1d8) on a failed save, or half as much on a successful one.",
+    duration: null
   },
   77: {
     effect: "Planar Flux",
-    description: "For 1d6 rounds, the merged being exists in two planes simultaneously. It can interact with and be affected by creatures on both planes.",
-    duration: "1d6"
+    description: "For 1 round, the merged being exists in two planes simultaneously. It can interact with and be affected by creatures on both planes.",
+    duration: "1"
   },
   78: {
     effect: "Chaos Infusion",
@@ -391,13 +391,13 @@ export const wildSurges = {
   },
   79: {
     effect: "Reality Distortion",
-    description: "For 1d6 rounds, all attack rolls, ability checks, and saving throws within 60 feet of the merged being have their results inverted (20 becomes 1, 19 becomes 2, etc.).",
-    duration: "1d6"
+    description: "For 1d2 rounds, all attack rolls, ability checks, and saving throws within 60 feet of the merged being have their results inverted (20 becomes 1, 19 becomes 2, etc.).",
+    duration: "1d2"
   },
   80: {
     effect: "Aspect Fusion",
-    description: "Two of the merged being's active aspects combine into a single, more powerful aspect for 1d4 rounds. The DM determines the new aspect's effects.",
-    duration: "1d4"
+    description: "Two of the merged being's active aspects combine into a single, more powerful aspect for 1-2 rounds. The DM determines the new aspect's effects.",
+    duration: "1d2"
   },
   81: {
     effect: "Planar Beacon",
@@ -415,8 +415,8 @@ export const wildSurges = {
     duration: "1d6"
   },
   84: {
-    effect: "Aspect Reflection",
-    description: "For 1d4 rounds, any aspect activated against the merged being is reflected back on the user.",
+    effect: "Void Strike",
+    description: "The merged being's next three weapon attacks in the next 1d4 rounds create tears in space that deal an additional 3d6 force damage and pull the target 10 feet closer on a hit.",
     duration: "1d4"
   },
   85: {
@@ -425,14 +425,14 @@ export const wildSurges = {
     duration: "1d4"
   },
   86: {
-    effect: "Planar Convergence",
-    description: "The area within 60 feet of the merged being becomes a chaotic mix of different planes. Roll a d8 at the start of each turn to determine the dominant plane and its effects.",
-    duration: "1d6"
+    effect: "Chaos Burst",
+    description: "The merged being explodes with chaotic energy and splits apart. All creatures within 30 feet must make a Dexterity saving throw or take 8d6 force damage and be knocked prone. The group must roll to re-merge.",
+    duration: null
   },
   87: {
     effect: "Chaos Burst",
-    description: "The merged being explodes with chaotic energy. All creatures within 30 feet must make a Dexterity saving throw or take 8d6 force damage and be knocked prone.",
-    duration: "1d6"
+    description: "The merged being explodes with chaotic energy and splits apart. All creatures within 30 feet must make a Dexterity saving throw or take 8d6 force damage and be knocked prone. The group must roll to re-merge.",
+    duration: null
   },
   88: {
     effect: "Reality Warp",
@@ -441,13 +441,13 @@ export const wildSurges = {
   },
   89: {
     effect: "Aspect Amplification",
-    description: "For 1d6 rounds, all aspects activated by the merged being are treated as if they were two levels higher.",
-    duration: "1d6"
+    description: "The next aspect activated by the merged being has its effects doubled for the duration.",
+    duration: "1d1"
   },
   90: {
     effect: "Planar Phasing",
-    description: "For 1d6 rounds, the merged being can use a bonus action to become incorporeal until the start of its next turn, passing through solid objects and gaining resistance to non-magical damage.",
-    duration: "1d6"
+    description: "For 1d2 rounds, the merged being can use a bonus action to become incorporeal until the start of its next turn, passing through solid objects and gaining resistance to non-magical damage.",
+    duration: "1d2"
   },
   91: {
     effect: "Astral Projection",
@@ -461,7 +461,7 @@ export const wildSurges = {
   },
   93: {
     effect: "Temporal Shift",
-    description: "The merged being gains the benefits of the Foresight spell for 1d4 rounds but is deafened and blinded to everything beyond 30 feet.",
+    description: "The merged being gains the benefits of the Foresight spell for 1d4 rounds but is deafened and blinded to everything beyond 15 feet.",
     duration: "1d4"
   },
   94: {

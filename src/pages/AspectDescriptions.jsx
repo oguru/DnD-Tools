@@ -53,7 +53,7 @@ const AspectDescriptions = () => {
   };
 
   const renderDescription = (desc) => {
-    if (!desc) return <p className="description-text">Select an aspect to see its description.</p>;
+    if (!desc) return "";
 
     return (
       <div className="description-card">
@@ -338,6 +338,8 @@ const AspectDescriptions = () => {
           </select>
         </div>
       </div>
+      <hr></hr>
+      <p className="aspect-list">{aspects.join(' - ')}</p>
       <p className="mt-4 p-4 bg-gray-100 rounded-md">When selecting an aspect, roll for a wild surge. A wild surge happens when the roll is 1-5.</p>
       <div className="mt-4 p-4 bg-gray-100 rounded-md">
         {renderDescription(getDescription())}
