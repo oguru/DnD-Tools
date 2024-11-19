@@ -1,6 +1,7 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
+  margin-top: 38px;
   padding: 2rem;
   text-align: center;
 }
@@ -29,13 +30,17 @@ nav li {
   list-style: none;
 }
 
-nav a {
+nav a, .nav-dropdown select {
   color: #4a5568;
   text-decoration: none;
   font-weight: 500;
   padding: 0.5rem 1rem;
   border-radius: 0.25rem;
   transition: all 0.2s ease;
+  margin: 0;
+  height: 100%;
+  display: inline-block;
+  line-height: normal;
 }
 
 nav a:hover {
@@ -85,4 +90,48 @@ nav a:hover {
 
 .read-the-docs {
   color: #888;
+}
+
+.nav-dropdown {
+  position: relative;
+  display: inline-block;
+  height: 100%;
+}
+
+.nav-dropdown select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  width: auto;
+}
+
+.nav-dropdown::after {
+  content: "▾";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #4a5568;
+}
+
+.nav-dropdown select:focus {
+  outline: none;
+}
+
+/* Remove the default dropdown arrow in IE */
+.nav-dropdown select::-ms-expand {
+  display: none;
+}
+
+/* Style for the options */
+.nav-dropdown select option {
+  background: white;
+  color: #4a5568;
+  padding: 8px;
 }

@@ -1,0 +1,53 @@
+.limbo-info {
+  max-width: 600px;
+  margin: 10px;
+  padding: 0;
+  text-align: left;
+}
+
+.limbo-info h1 {
+  text-align: left;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+  font-size: 1.4rem;
+  padding-bottom: 1rem;
+}
+
+.ability-quote, .ability-success {
+    margin: 0.5rem 0;
+}
+
+.abilities-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ability-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 0.5rem;
+  text-align: left;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.ability-card h2 {
+  color: #2d3748;
+  font-size: 1.1rem;
+  margin-bottom: 0.2rem;
+  margin-top: 0;
+}
+
+.ability-quote {
+  font-style: italic;
+  color: #718096;
+  margin-bottom: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.ability-success {
+  font-size: 0.9rem;
+  line-height: 1.2;
+  color: #4a5568;
+} 
