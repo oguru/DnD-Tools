@@ -3,10 +3,11 @@ import '../styles/AspectDescriptions.css';
 import React, { useEffect, useState } from 'react';
 import { aspectDescriptions, aspects } from '../assets/aspects';
 import { onValue, ref, remove, set } from 'firebase/database';
-import { rollWildSurge, wildSurges } from '../assets/wildSurges';
 
 import ActiveEffectCard from '../components/ActiveEffectCard';
 import AspectEffectCard from '../components/AspectEffectCard';
+import WildSurgeRoller from '../components/WildSurgeRoller';
+import { aspectWildSurges } from '../assets/aspectWildSurges';
 import database from '../firebaseConfig';
 
 const XIcon = () => (
@@ -130,6 +131,7 @@ const AspectDescriptions = () => {
                 key={`${effect.name}-${index}`}
                 effect={effect}
                 onRemove={removeEffect}
+                onClick={() => populateDropdowns(effect.name)}
               />
             ))}
           </ul>
@@ -175,88 +177,52 @@ const AspectDescriptions = () => {
     </div>
   );
 
-  const handleWildSurgeSelect = (event) => {
-    const surgeNumber = parseInt(event.target.value);
-    if (surgeNumber) {
-      const { surge } = rollWildSurge(surgeNumber);
-      setSelectedWildSurge(surge);
-      setManualRoll(surgeNumber.toString());
-    } else {
-      setSelectedWildSurge(null);
-      setManualRoll('');
-    }
-  };
+  // const handleWildSurgeSelect = (event) => {
+  //   const surgeNumber = parseInt(event.target.value);
+  //   if (surgeNumber) {
+  //     const { surge } = rollWildSurge(surgeNumber);
+  //     setSelectedWildSurge(surge);
+  //     setManualRoll(surgeNumber.toString());
+  //   } else {
+  //     setSelectedWildSurge(null);
+  //     setManualRoll('');
+  //   }
+  // };
 
-  const handleWildSurgeRollChange = (newRoll) => {
-    // Handle empty or invalid input
-    if (!newRoll) {
-      setWildSurgeRoll('');
-      setSelectedWildSurge(null);
-      return;
-    }
+  // const handleWildSurgeRollChange = (newRoll) => {
+  //   // Handle empty or invalid input
+  //   if (!newRoll) {
+  //     setWildSurgeRoll('');
+  //     setSelectedWildSurge(null);
+  //     return;
+  //   }
 
-    // Ensure roll is between 1 and 100
-    newRoll = Math.max(1, Math.min(100, newRoll));
-    setWildSurgeRoll(newRoll);
+  //   // Ensure roll is between 1 and 100
+  //   newRoll = Math.max(1, Math.min(100, newRoll));
+  //   setWildSurgeRoll(newRoll);
     
-    // Automatically select the corresponding surge
-    if (wildSurges[newRoll]) {
-      setSelectedWildSurge(wildSurges[newRoll]);
-    } else {
-      setSelectedWildSurge(null);
-    }
-  };
+  //   // Automatically select the corresponding surge
+  //   if (wildSurges[newRoll]) {
+  //     setSelectedWildSurge(wildSurges[newRoll]);
+  //   } else {
+  //     setSelectedWildSurge(null);
+  //   }
+  // };
 
-  const handleManualRollChange = (event) => {
-    setManualRoll(event.target.value);
-  };
+  // const handleManualRollChange = (event) => {
+  //   setManualRoll(event.target.value);
+  // };
 
   const renderWildSurgeSection = () => (
-    <div className="wild-surge-section">
-      <h3 className="wild-surge-title">Wild Surge Effects</h3>
-      <div className="wild-surge-controls">
-        <select
-          value={selectedWildSurge ? JSON.stringify(selectedWildSurge) : ''}
-          onChange={(e) => setSelectedWildSurge(e.target.value ? JSON.parse(e.target.value) : null)}
-          className="wild-surge-select"
-        >
-          <option value="">Select a Wild Surge</option>
-          {Object.entries(wildSurges).map(([roll, surge]) => (
-            <option key={roll} value={JSON.stringify(surge)}>
-              {roll}: {surge.effect}
-            </option>
-          ))}
-        </select>
-        <input
-          type="number"
-          value={wildSurgeRoll}
-          onChange={(e) => handleWildSurgeRollChange(parseInt(e.target.value))}
-          min="1"
-          max="100"
-          className="wild-surge-input"
-        />
-        <button
-          onClick={() => {
-            if (selectedWildSurge) {
-              activateWildSurge(selectedWildSurge);
-            }
-          }}
-          className="wild-surge-roll-button"
-          disabled={!selectedWildSurge}
-        >
-          Activate Wild Surge
-        </button>
-      </div>
-      {selectedWildSurge && (
-        <div className="wild-surge-description">
-          <h4>{selectedWildSurge.effect}</h4>
-          <p>{selectedWildSurge.description}</p>
-        </div>
-      )}
-    </div>
+    <WildSurgeRoller 
+      surgeTable={aspectWildSurges} 
+      onActivate={activateWildSurge}
+      showActivateButton={true}
+    />
   );
 
   const activateWildSurge = (surge) => {
+    if (!surge) return;
     const duration = surge.duration ? rollDuration(surge.duration) : null;
     const newEffect = {
       name: surge.effect,

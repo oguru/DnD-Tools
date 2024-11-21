@@ -1,0 +1,24 @@
+.wild-surge-info {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .surge-type-select {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .surge-description {
+    background: white;
+    padding: 1rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .surge-description p {
+    margin-bottom: 1rem;
+  }

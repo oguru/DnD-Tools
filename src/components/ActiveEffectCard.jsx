@@ -9,9 +9,12 @@ const XIcon = () => (
   </svg>
 );
 
-const ActiveEffectCard = ({ effect, onRemove }) => {
+const ActiveEffectCard = ({ effect, onRemove, onClick }) => {
   return (
-    <li className="active-effect-item">
+    <li 
+        onClick={onClick}
+        className="active-effect-item"
+    >
       <div className="effect-left-column">
         <span className="active-effect-name">{effect.name}</span>
         <span className="effect-duration">

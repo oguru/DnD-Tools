@@ -1,4 +1,4 @@
-export const wildSurges = {
+export const aspectWildSurges = {
   1: {
     effect: "Aspect Swap",
     description: "All aspects currently active swap their effects for 1d4 rounds.",
@@ -499,9 +499,4 @@ export const wildSurges = {
     description: "Roll twice on this table and combine the effects. If you roll this result again, roll three times, and so on.",
     duration: null
   }
-};
-
-export const rollWildSurge = (inputRoll) => {
-  const roll = inputRoll || Math.floor(Math.random() * 100) + 1;
-  return { roll, surge: wildSurges[roll] };
 };
