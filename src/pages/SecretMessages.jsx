@@ -3,6 +3,7 @@ import database, { auth } from '../firebaseConfig';
 import { onValue, ref, set } from 'firebase/database';
 import { useEffect, useRef, useState } from 'react';
 
+import PageLayout from '../components/PageLayout';
 import Typewriter from 'typewriter-effect';
 
 export default function SecretMessages() {
@@ -102,9 +103,8 @@ export default function SecretMessages() {
   const isAuthorized = user && user.email === 'gmdndbeyond@gmail.com';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <div style={{ flex: 1 }}>
-        <h2>Secret Messages</h2>
+    <PageLayout title="Secret Messages">
+      <div className="center-aligned">
         {!user && (
           <button onClick={handleSignIn}>GM Sign In</button>
         )}
@@ -177,6 +177,6 @@ export default function SecretMessages() {
           <button onClick={handleSignOut}>Sign Out</button>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 }

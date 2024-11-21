@@ -14,10 +14,10 @@ export const aspectDescriptions = {
   },
   'Radiance': {
     effect: "Healing Light",
-    description: "A surge of radiant energy heals allies and purges negative conditions.",
+    description: "A surge of radiant energy heals allies for 2 rounds and purges negative conditions.",
     duration: 2,
     mechanics: [
-      { title: "Healing", content: "At the start of each ally's turn, they regain 2d6 hit points for 2 rounds." },
+      { title: "Healing", content: "At the start of each ally's turn, they regain 2d6 hit points." },
       { title: "Condition Removal", content: "Removes one negative condition from each affected ally." },
       { title: "Additional Effect", content: "Allies gain advantage on their next saving throw against spells and magical effects." }
     ]
@@ -27,9 +27,9 @@ export const aspectDescriptions = {
     description: "The merged being channels pure rage, dramatically increasing physical prowess.",
     duration: 2,
     mechanics: [
-      { title: "Bonus", content: "+5 to attack and damage rolls; resistance to bludgeoning, piercing, and slashing damage." },
+      { title: "Bonus", content: "+3 to attack and damage rolls; resistance to first instance of bludgeoning, piercing, and slashing damage per round." },
       { title: "Duration", content: "2 rounds." },
-      { title: "Drawback", content: "Cannot cast spells or use abilities requiring concentration during this time." }
+      { title: "Drawback", content: "You must roll to keep concentration on spells or abilities each round while the effect is active." }
     ]
   },
   'Concentration': {
@@ -37,9 +37,9 @@ export const aspectDescriptions = {
     description: "The merged being attains heightened focus, stabilizing the environment and enhancing mental abilities.",
     duration: 4,
     mechanics: [
-      { title: "Environmental Control", content: "As 1 entity, you can choose to negate one environmental hazard or wild surge effect per round for 4 rounds." },
-      { title: "Bonus", content: "Advantage on all Intelligence, Wisdom, and Constitution checks and saving throws." },
-      { title: "Spellcasting", content: "Spell damage dice can be rerolled once, taking the higher result." }
+      { title: "Environmental Control", content: "As 1 entity, you can choose to negate one environmental hazard, status effect or wild surge effect per round for 4 rounds." },
+      { title: "Bonus", content: "Advantage on first instance of Intelligence, Wisdom, and Constitution checks and saving throws per round." },
+      { title: "Spellcasting", content: "Spell or attack damage dice can be rerolled once per round, taking the higher result." }
     ]
   },
   'Direction': {
@@ -59,7 +59,7 @@ export const aspectDescriptions = {
     mechanics: [
       { title: "Area Effect", content: "Creates a 60-foot-radius sphere of magical darkness for 4 rounds." },
       { title: "Bonus", content: "The merged being and allies can see through this darkness." },
-      { title: "Additional Effect", content: "Gain advantage on attack rolls against enemies within the darkness; enemies have disadvantage on attack rolls." }
+      { title: "Additional Effect", content: "Gain advantage on attack rolls against enemies within the darkness; enemies have disadvantage on first instance of attack rolls per round." }
     ]
   },
   'Void': {
@@ -93,7 +93,7 @@ export const aspectDescriptions = {
   'Flame + Concentration': {
     effect: "Controlled Burn",
     description: "Precisely manipulates fire to target enemies without harming allies.",
-    duration: 3,
+    duration: 0,
     mechanics: [
       { title: "Damage", content: "Targeted enemy takes 10d6 fire damage; Dexterity saving throw for half damage." },
       { title: "Bonus", content: "Ignore resistance to fire damage; treat immunity as resistance." },
@@ -107,7 +107,7 @@ export const aspectDescriptions = {
     mechanics: [
       { title: "Movement", content: "Instantly move up to 120 feet in a straight line." },
       { title: "Damage", content: "Enemies along the path take 6d6 fire damage; Dexterity saving throw for half." },
-      { title: "Additional Effect", content: "The path remains ablaze, becoming difficult terrain." }
+      { title: "Additional Effect", content: "The path remains ablaze, becoming difficult terrain and causing 2d6 fire damage to creatures entering or ending their turn in the area." }
     ]
   },
   'Flame + Shadow': {
@@ -131,11 +131,11 @@ export const aspectDescriptions = {
   },
   'Radiance + Rage': {
     effect: "Holy Wrath",
-    description: "Physical attacks are imbued with radiant energy.",
-    duration: 4,
+    description: "Physical and spell attacks are imbued with radiant energy.",
+    duration: 3,
     mechanics: [
-      { title: "Bonus", content: "Add 4d6 radiant damage to melee attacks for 4 rounds." },
-      { title: "Additional Effect", content: "Enemies hit must make a Wisdom saving throw or be frightened until the end of their next turn." }
+      { title: "Bonus", content: "Each ally's first spell or melee attack per turn (whether it hits or not) deals an extra 4d6 radiant damage for 3 rounds." },
+      { title: "Additional Effect", content: "Enemies hit by the first bonus attack each roundmust make a Wisdom saving throw or be frightened until the end of their next turn." }
     ]
   },
   'Radiance + Concentration': {
@@ -143,17 +143,17 @@ export const aspectDescriptions = {
     description: "Enhances healing and protective abilities.",
     duration: 3,
     mechanics: [
-      { title: "Healing", content: "Allies within 60 feet regain 10d6 hit points." },
+      { title: "Healing", content: "Allies within 60 feet regain 10d6 hit points (single instance split between up to 2 allies for the merged being)." },
       { title: "Condition Removal", content: "Removes all negative conditions." },
-      { title: "Bonus", content: "Allies gain resistance to all damage for 3 rounds." }
+      { title: "Bonus", content: "Allies gain resistance to first instance of damage per round for 3 rounds." }
     ]
   },
   'Radiance + Direction': {
     effect: "Guiding Light",
     description: "Illuminates the path, enhancing movement and accuracy.",
-    duration: 4,
+    duration: 3,
     mechanics: [
-      { title: "Bonus", content: "Allies gain +2 to attack rolls and advantage on saving throws against traps and hazards for 4 rounds." },
+      { title: "Bonus", content: "Allies gain +2 to attack rolls and advantage on saving throws against traps and hazards for 3 rounds." },
       { title: "Movement", content: "Increase allies' movement speed by 20 feet." },
       { title: "Additional Effect", content: "Reveals invisible or hidden creatures within 120 feet." }
     ]
@@ -161,9 +161,9 @@ export const aspectDescriptions = {
   'Radiance + Shadow': {
     effect: "Twilight Veil",
     description: "Merges light and darkness to confuse enemies.",
-    duration: 4,
+    duration: 2,
     mechanics: [
-      { title: "Area Effect", content: "Creates a 60-foot-radius area of dim, shifting light for 4 rounds." },
+      { title: "Area Effect", content: "Creates a 60-foot-radius area of dim, shifting light for 2 rounds." },
       { title: "Effect on Enemies", content: "Disadvantage on attack rolls and perception checks." },
       { title: "Bonus", content: "The merged being and allies can see normally and have advantage on attack rolls." }
     ]
@@ -175,17 +175,17 @@ export const aspectDescriptions = {
     mechanics: [
       { title: "Damage", content: "Single target takes 15d8 radiant and force damage; Dexterity saving throw for half." },
       { title: "Additional Effect", content: "Target is stunned until the end of their next turn." },
-      { title: "Drawback", content: "Roll a d20; on a 1-5, a wild surge occurs." }
+      { title: "Wild Surge", content: "Automatic wild surge occurs after use." }
     ]
   },
   'Rage + Concentration': {
     effect: "Focused Fury",
     description: "Combines physical strength with mental clarity.",
-    duration: 4,
+    duration: 2,
     mechanics: [
       { title: "Bonus", content: "Gain advantage on all attack rolls and saving throws." },
-      { title: "Duration", content: "4 rounds." },
-      { title: "Additional Effect", content: "Critical hits on a roll of 19 or 20." }
+      { title: "Duration", content: "2 rounds." },
+      { title: "Additional Effect", content: "-1 modifier to determine a critical hit roll." }
     ]
   },
   'Rage + Direction': {
@@ -204,8 +204,8 @@ export const aspectDescriptions = {
     duration: 3,
     mechanics: [
       { title: "Bonus", content: "Enemies within 30 feet must make a Wisdom saving throw or be frightened for 3 rounds." },
-      { title: "Damage", content: "While frightened, enemies take 4d6 psychic damage at the start of their turn." },
-      { title: "Additional Effect", content: "Gain advantage on attack rolls against frightened enemies." }
+      { title: "Damage", content: "While frightened, enemies take 3d6 psychic damage at the start of their turn." },
+      { title: "Additional Info", content: "Affected creatures can roll at the end of each of their turns to end the effect." }
     ]
   },
   'Rage + Void': {
@@ -213,9 +213,9 @@ export const aspectDescriptions = {
     description: "Unleash a devastating attack fueled by rage and void energy.",
     duration: 3,
     mechanics: [
-      { title: "Damage", content: "Melee attack deals an extra 10d8 force damage." },
+      { title: "Damage", content: "The next melee attack that hits deals an extra 10d8 force damage." },
       { title: "Additional Effect", content: "Target must make a Constitution saving throw or be disintegrated if reduced to 0 hit points." },
-      { title: "Drawback", content: "Automatic wild surge occurs after use." }
+      { title: "Wild Surge", content: "Automatic wild surge occurs after use." }
     ]
   },
   'Concentration + Direction': {
@@ -233,18 +233,18 @@ export const aspectDescriptions = {
     description: "Shield minds and bodies from detection.",
     duration: 3,
     mechanics: [
-      { title: "Bonus", content: "The merged being and allies become invisible and undetectable by magical means for 3 rounds." },
+      { title: "Bonus", content: "The merged being becomes invisible and undetectable by magical means for 3 rounds. Attacking breaks the effect." },
       { title: "Additional Effect", content: "Gain immunity to divination spells and effects during this time." }
     ]
   },
   'Concentration + Void': {
     effect: "Null Field",
     description: "Create an area where magic and abilities are suppressed.",
-    duration: 4,
+    duration: 3,
     mechanics: [
       { title: "Area Effect", content: "30-foot-radius sphere centered on the merged being." },
-      { title: "Effect", content: "Spells and magical abilities cannot be cast or activated within the area." },
-      { title: "Duration", content: "4 rounds." },
+      { title: "Effect", content: "Spells and magical abilities cannot be cast or activated within the area. Magic items become mundane." },
+      { title: "Duration", content: "3 rounds." },
       { title: "Drawback", content: "Allies' abilities are also suppressed." }
     ]
   },
@@ -254,8 +254,8 @@ export const aspectDescriptions = {
     duration: 3,
     mechanics: [
       { title: "Movement", content: "Teleport up to 60 feet to an unoccupied space you can see." },
-      { title: "Bonus", content: "Gain advantage on the next attack roll." },
-      { title: "Additional Effect", content: "Leave behind an illusionary duplicate that distracts enemies." }
+      { title: "Bonus", content: "Each player gains advantage on the next attack roll." },
+      { title: "Additional Effect", content: "Leave behind an illusionary duplicate that distracts enemies. Attacked illusions are destroyed on hit." }
     ]
   },
   'Direction + Void': {
@@ -275,7 +275,7 @@ export const aspectDescriptions = {
     mechanics: [
       { title: "Area Effect", content: "120-foot-radius sphere of magical darkness and silence." },
       { title: "Effect on Enemies", content: "Blind and deafen enemies; they must make a Wisdom saving throw or be paralyzed for 3 rounds (repeat save at end of each turn)." },
-      { title: "Drawback", content: "The merged being and allies are also affected unless they have abilities to see through magical darkness." }
+      { title: "Drawback", content: "The merged being and allies are affected unless they have abilities to see through magical darkness." }
     ]
   }
 };

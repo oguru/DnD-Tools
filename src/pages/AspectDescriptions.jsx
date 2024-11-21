@@ -5,6 +5,8 @@ import { aspectDescriptions, aspects } from '../assets/aspects';
 import { onValue, ref, remove, set } from 'firebase/database';
 import { rollWildSurge, wildSurges } from '../assets/wildSurges';
 
+import ActiveEffectCard from '../components/ActiveEffectCard';
+import AspectEffectCard from '../components/AspectEffectCard';
 import database from '../firebaseConfig';
 
 const XIcon = () => (
@@ -53,42 +55,15 @@ const AspectDescriptions = () => {
     return null;
   };
 
-  const renderDescription = (desc) => {
-    if (!desc) return "";
-
+  const renderAspectDetails = (desc) => {
+    if (!desc) return null;
+    
     return (
-      <div className="description-card">
-        <h3 className="description-title">{desc.effect}</h3>
-        <p className="description-text">{desc.description}</p>
-        {desc.mechanics && (
-          <>
-            <h4 className="mechanics-title">Mechanics:</h4>
-            <ul className="mechanics-list">
-              {Array.isArray(desc.mechanics) ? (
-                desc.mechanics.map((mechanic, index) => (
-                  <li key={index} className="mechanics-item">
-                    <span className="mechanics-item-title">{mechanic.title}:</span> {mechanic.content}
-                  </li>
-                ))
-              ) : (
-                Object.entries(desc.mechanics).map(([title, content], index) => (
-                  <li key={index} className="mechanics-item">
-                    <span className="mechanics-item-title">{title}:</span> {content}
-                  </li>
-                ))
-              )}
-            </ul>
-          </>
-        )}
-        {desc.effect !== "No combination available" && (
-          <button
-            onClick={() => activateEffect(desc)}
-            className="activate-button"
-          >
-            Activate Effect
-          </button>
-        )}
-      </div>
+      <AspectEffectCard
+        effect={desc}
+        showActivateButton={desc.effect !== "No combination available"}
+        onActivate={activateEffect}
+      />
     );
   };
 
@@ -100,9 +75,14 @@ const AspectDescriptions = () => {
       mechanics: desc.mechanics,
       isWildSurge: false
     };
+
+    if (desc.duration) {
+      const effectRef = ref(database, `activeEffects/${newEffect.name}`);
+      set(effectRef, newEffect);
+    }
     
-    const effectRef = ref(database, `activeEffects/${newEffect.name}`);
-    set(effectRef, newEffect);
+    const activatedEffectRef = ref(database, `activatedEffects/${newEffect.name}`);
+    set(activatedEffectRef, newEffect);
   };
 
   const removeEffect = (effectName) => {
@@ -146,44 +126,11 @@ const AspectDescriptions = () => {
           <h3 className="active-effects-title">Active Effects:</h3>
           <ul className="active-effects-list">
             {activeEffects.map((effect, index) => (
-              <li 
-                key={`${effect.name}-${index}`} 
-                className="active-effect-item"
-                onClick={() => populateDropdowns(effect.name)}
-              >
-                <div className="effect-left-column">
-                  <span className="active-effect-name">{effect.name}</span>
-                  <span className="effect-duration">
-                    {effect.duration ? `${effect.duration} rounds` : 'Permanent'}
-                  </span>
-                  <button
-                    onClick={() => removeEffect(effect.name)}
-                    className="remove-effect-button"
-                  >
-                    <XIcon />
-                  </button>
-                </div>
-                <div className="effect-right-column">
-                  <p className="effect-description">{effect.description}</p>
-                  {effect.mechanics && (
-                    <ul className="effect-mechanics-list">
-                      {Array.isArray(effect.mechanics) ? (
-                        effect.mechanics.map((mechanic, mechIndex) => (
-                          <li key={mechIndex} className="effect-mechanics-item">
-                            <span className="effect-mechanics-title">{mechanic.title}:</span> {mechanic.content}
-                          </li>
-                        ))
-                      ) : (
-                        Object.entries(effect.mechanics).map(([title, content], mechIndex) => (
-                          <li key={mechIndex} className="effect-mechanics-item">
-                            <span className="effect-mechanics-title">{title}:</span> {content}
-                          </li>
-                        ))
-                      )}
-                    </ul>
-                  )}
-                </div>
-              </li>
+              <ActiveEffectCard
+                key={`${effect.name}-${index}`}
+                effect={effect}
+                onRemove={removeEffect}
+              />
             ))}
           </ul>
         </>
@@ -369,7 +316,7 @@ const AspectDescriptions = () => {
       <p className="aspect-list">{aspects.join(' - ')}</p>
       <p className="mt-4 p-4 bg-gray-100 rounded-md">When selecting an aspect, roll for a wild surge. A wild surge happens when the roll is 1-5.</p>
       <div className="mt-4 p-4 bg-gray-100 rounded-md">
-        {renderDescription(getDescription())}
+        {renderAspectDetails(getDescription())}
       </div>
       {renderActiveEffects()}
       {renderWildSurgeSection()}

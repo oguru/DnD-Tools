@@ -164,11 +164,13 @@
   padding-right: 0.75rem;
   border-right: 1px solid #e2e8f0;
   position: relative;
+  text-align: left;
 }
 
 .effect-right-column {
   flex: 1;
   padding-left: 1rem;
+  text-align: left;
 }
 
 .active-effect-name {

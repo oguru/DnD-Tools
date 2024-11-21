@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 
 import AspectDescriptions from './pages/AspectDescriptions';
+import DiscoveredAspects from './pages/DiscoveredAspects';
 import LimboInfo from './pages/LimboInfo';
 import SecretMessages from './pages/SecretMessages';
 
@@ -37,6 +38,7 @@ function App() {
                 >
                   <option value="">Player Info</option>
                   <option value="/limbo-info">Limbo</option>
+                  <option value="/discovered-aspects">Discovered Aspects</option>
                 </select>
               </div>
             </li>
@@ -48,6 +50,7 @@ function App() {
           <Route path="/secret-messages" element={<SecretMessages />} />
           <Route path="/limbo" element={<AspectDescriptions />} />
           <Route path="/limbo-info" element={<LimboInfo />} />
+          <Route path="/discovered-aspects" element={<DiscoveredAspects />} />
         </Routes>
       </div>
     </Router>
