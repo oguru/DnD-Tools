@@ -180,8 +180,8 @@ export const aspectWildSurges = {
     duration: "1d6"
   },
   37: {
-    effect: "Chaotic Vitality",
-    description: "The merged being's maximum hit points increase by 8d10 for 1 minute, but it takes 2d10 psychic damage at the start of each of its turns for a minute.",
+    effect: "Extra Chaotic Vitality",
+    description: "The merged being's maximum hit points increase by 8d10 for 3 rounds, but it takes 4d10 psychic damage at the start of each of the turn order for 3 rounds.",
     duration: "10d1"
   },
   38: {
@@ -406,7 +406,7 @@ export const aspectWildSurges = {
   },
   82: {
     effect: "Chaotic Vitality",
-    description: "The merged being gains temporary hit points equal to twice its level, but must make a DC 15 Constitution saving throw at the end of each of its turns or lose 1d10 hit points.",
+    description: "For 1d6 rounds, the merged being gains temporary hit points equal to twice its level, but must make a DC 15 Constitution saving throw at the start of each individual turn or lose 1d8 hit points.",
     duration: "1d6"
   },
   83: {

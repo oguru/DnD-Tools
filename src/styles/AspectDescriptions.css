@@ -4,6 +4,11 @@
   padding: 2rem 1rem;
 }
 
+.effect-header {
+  display: flex;
+  justify-content: space-between;
+}
+
 .aspect-title {
   font-size: 1.5rem;
   font-weight: bold;
@@ -176,7 +181,15 @@
 .active-effect-name {
   font-weight: bold;
   font-size: 1.1rem;
+  margin-bottom: 0rem;
+}
+
+.active-effect-combo {
+  font-weight: normal;
+  font-size: 0.8rem;
   margin-bottom: 0.5rem;
+}
+.active-effect-combo:nth-child(3) {
 }
 
 .effect-duration {

@@ -17,6 +17,7 @@ const ActiveEffectCard = ({ effect, onRemove, onClick }) => {
     >
       <div className="effect-left-column">
         <span className="active-effect-name">{effect.name}</span>
+        <span className="active-effect-combo">{effect.aspectCombination}</span>
         <span className="effect-duration">
           {effect.duration ? `${effect.duration} rounds` : 'Permanent'}
         </span>

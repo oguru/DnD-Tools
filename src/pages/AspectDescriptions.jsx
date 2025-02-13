@@ -25,6 +25,7 @@ const AspectDescriptions = () => {
   const [manualRoll, setManualRoll] = useState('');
   const [activeWildSurges, setActiveWildSurges] = useState([]);
   const [wildSurgeRoll, setWildSurgeRoll] = useState(1);
+  const [discoveredEffects, setDiscoveredEffects] = useState([]);
 
   useEffect(() => {
     const activeEffectsRef = ref(database, 'activeEffects');
@@ -39,6 +40,34 @@ const AspectDescriptions = () => {
         setActiveWildSurges([]);
       }
     });
+
+    // Add listener for discovered effects
+    const activatedEffectsRef = ref(database, 'activatedEffects');
+    onValue(activatedEffectsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setDiscoveredEffects(Object.values(data));
+      } else {
+        setDiscoveredEffects([]);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    // Check for stored aspects
+    const storedAspects = localStorage.getItem('selectedAspects');
+    if (storedAspects) {
+      if (storedAspects.includes(' + ')) {
+        const [first, second] = storedAspects.split(' + ');
+        setAspect1(first);
+        setAspect2(second);
+      } else {
+        setAspect1(storedAspects);
+        setAspect2('');
+      }
+      // Clear the stored aspects
+      localStorage.removeItem('selectedAspects');
+    }
   }, []);
 
   const getDescription = () => {
@@ -59,29 +88,59 @@ const AspectDescriptions = () => {
   const renderAspectDetails = (desc) => {
     if (!desc) return null;
     
+    const isEffectDiscovered = discoveredEffects.some(effect => effect.name === desc.effect);
+
     return (
       <AspectEffectCard
-        effect={desc}
+        effect={{
+          name: desc.effect,
+          description: desc.description,
+          mechanics: desc.mechanics || [],
+          duration: desc.duration || 0
+        }}
         showActivateButton={desc.effect !== "No combination available"}
         onActivate={activateEffect}
+        isDiscovered={isEffectDiscovered}
       />
     );
   };
 
   const activateEffect = (desc) => {
+    // Safety check and logging
+    console.log('Activating effect:', desc);
+    
+    if (!desc || !desc.name) {
+      console.error('Invalid effect data:', desc);
+      return;
+    }
+
+    // Find the aspect combination that produced this effect
+    const aspectKey = aspect1 && aspect2 ? 
+      [aspect1, aspect2].sort().join(' + ') : 
+      aspect1 || aspect2;
+
     const newEffect = {
-      name: desc.effect,
-      description: desc.description,
-      duration: desc.duration,
-      mechanics: desc.mechanics,
-      isWildSurge: false
+      name: desc.name,
+      description: desc.description || '',
+      duration: desc.duration || 0,
+      mechanics: desc.mechanics || [],
+      isWildSurge: false,
+      aspectCombination: aspectKey
     };
 
-    if (desc.duration) {
+    // Safety check for required fields
+    if (!newEffect.name) {
+      console.error('Effect must have a name:', newEffect);
+      return;
+    }
+
+    // Save to activeEffects only if there's a duration
+    if (newEffect.duration) {
       const effectRef = ref(database, `activeEffects/${newEffect.name}`);
       set(effectRef, newEffect);
     }
     
+    // Always save to activatedEffects
     const activatedEffectRef = ref(database, `activatedEffects/${newEffect.name}`);
     set(activatedEffectRef, newEffect);
   };

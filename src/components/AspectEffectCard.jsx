@@ -1,5 +1,6 @@
-import React from 'react';
 import '../styles/AspectDescriptions.css';
+
+import React from 'react';
 
 const XIcon = () => (
   <svg width="30" height="30" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -8,13 +9,20 @@ const XIcon = () => (
   </svg>
 );
 
-const AspectEffectCard = ({ effect, onRemove, showActivateButton = false, onActivate }) => {
+const AspectEffectCard = ({ effect, onRemove, showActivateButton = false, onActivate, isDiscoveredPage, isDiscovered = isDiscoveredPage }) => {
+  const handleRemove = (effectName, e) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to remove this from your known aspects?')) {
+      onRemove(effectName);
+    }
+  };
+
   return (
     <div className="description-card">
       <div className="effect-header">
-        <h3 className="description-title">{effect.name}</h3>
+        <h3 className="description-title">{effect.name}{isDiscoveredPage ? `: ${effect.aspectCombination}` : ""}</h3>
         {onRemove && (
-          <button onClick={() => onRemove(effect.name)} className="remove-effect-button">
+          <button onClick={(e) => handleRemove(effect.name, e)} className="remove-effect-button">
             <XIcon />
           </button>
         )}
@@ -40,13 +48,18 @@ const AspectEffectCard = ({ effect, onRemove, showActivateButton = false, onActi
           </ul>
         </>
       )}
-      {showActivateButton && effect.duration !== 0 && (
-        <div className="button-container">
+      <div className="button-container">
+        {showActivateButton && effect.duration !== 0 && (
           <button className="activate-button" onClick={() => onActivate(effect)}>
             Activate Effect
           </button>
-        </div>
-      )}
+        )}
+        {showActivateButton && !isDiscovered && effect.duration === 0 && (
+          <button className="activate-button" onClick={() => onActivate(effect)}>
+            Add to Discovered
+          </button>
+        )}
+      </div>
     </div>
   );
 };
