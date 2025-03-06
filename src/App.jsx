@@ -8,6 +8,7 @@ import {
   Routes
 } from "react-router-dom";
 
+import AllAspects from './pages/AllAspects';
 import AspectDescriptions from './pages/AspectDescriptions';
 import DiscoveredAspects from './pages/DiscoveredAspects';
 import LimboInfo from './pages/LimboInfo';
@@ -39,6 +40,7 @@ function App() {
                 >
                   <option value="">Player Info</option>
                   <option value="/limbo-info">Limbo</option>
+                  <option value="/all-aspects">All Aspects</option>
                   <option value="/discovered-aspects">Discovered Aspects</option>
                   <option value="/player-info/wild-surges">Wild Surges</option>
                 </select>
@@ -53,6 +55,7 @@ function App() {
           <Route path="/limbo" element={<AspectDescriptions />} />
           <Route path="/limbo-info" element={<LimboInfo />} />
           <Route path="/discovered-aspects" element={<DiscoveredAspects />} />
+          <Route path="/all-aspects" element={<AllAspects />} />
           <Route path="/player-info/wild-surges" element={<WildSurgeInfo />} />
         </Routes>
       </div>

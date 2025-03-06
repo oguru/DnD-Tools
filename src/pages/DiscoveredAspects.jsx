@@ -1,7 +1,7 @@
 import '../styles/AspectDescriptions.css';
 
-import React, { useEffect, useState } from 'react';
 import { onValue, ref, remove, set } from 'firebase/database';
+import { useEffect, useState } from 'react';
 
 import AspectEffectCard from '../components/AspectEffectCard';
 import PageLayout from '../components/PageLayout';
@@ -39,7 +39,7 @@ const DiscoveredAspects = () => {
   const saveCurrentEffectsWithAspects = () => {
     discoveredEffects.forEach(effect => {
       // Find the matching aspect key by comparing effect names
-      const aspectKey = Object.entries(aspectDescriptions).find(([_, value]) => 
+      const aspectKey = Object.entries(aspectDescriptions).find(([, value]) => 
         value.effect === effect.name
       )?.[0];
       
