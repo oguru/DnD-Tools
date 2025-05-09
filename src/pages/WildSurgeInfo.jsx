@@ -1,10 +1,10 @@
 import '../styles/WildSurgeInfo.css';
 
-import React, { useState } from 'react';
-
 import PageLayout from '../components/PageLayout';
 import WildSurgeRoller from '../components/WildSurgeRoller';
 import { aspectWildSurges } from '../assets/aspectWildSurges';
+import { standardWildSurges } from '../assets/standardWildSurges';
+import { useState } from 'react';
 import { weaponWildSurges } from '../assets/weaponWildSurges.js';
 
 const SURGE_TYPES = {
@@ -39,8 +39,8 @@ const WildSurgeInfo = () => {
           )}
           {selectedType === SURGE_TYPES.STANDARD && (
             <>
-              <p>Standard wild magic surge table.</p>
-              <WildSurgeRoller surgeTable={aspectWildSurges} />
+              <p>Standard wild magic surge table for spellcasting.</p>
+              <WildSurgeRoller surgeTable={standardWildSurges} />
             </>
           )}
           {selectedType === SURGE_TYPES.WEAPON && (
