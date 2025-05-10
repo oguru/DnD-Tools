@@ -37,12 +37,12 @@ export const weaponWildSurges = {
   },
   7: {
     effect: "Charisma Shield",
-    description: "Your AC becomes exactly 10 + your Charisma modifier",
+    description: "Your AC becomes exactly 10 + your Charisma modifier until the start of your nex turn",
     duration: "1"
   },
   8: {
     effect: "Mass Healing",
-    description: "Both you and target regain half of all HP lost in last minute",
+    description: "Both you and target regain half of all HP lost since the start of the battle",
     duration: "0"
   },
   9: {
@@ -539,7 +539,7 @@ export const weaponWildSurges = {
   },
   95: {
     effect: "Doom Strike",
-    description: "If target drops to 0 HP in next minute, they die instantly",
+    description: "If target drops to less than 30HP with this attack they die instantly",
     duration: "1"
   },
 
