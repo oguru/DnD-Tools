@@ -1,5 +1,5 @@
 .wild-surge-section {
-    margin-top: 2rem;
+    margin-top: 1rem;
     padding: 1rem;
     background-color: #f0f4f8;
     border-radius: 0.5rem;
@@ -14,24 +14,41 @@
   
   .wild-surge-controls {
     display: flex;
+    justify-content: space-between;
+    flex-wrap: nowrap;
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
+    align-items: center;
   }
   
-  .wild-surge-select,
-  .wild-surge-input {
-    flex-grow: 1;
+  .wild-surge-select {
+    flex: 1;
+    flex-grow: 2;
+    min-width: 150px;
     padding: 0.5rem;
     border-radius: 0.25rem;
     border: 1px solid #cbd5e0;
     font-size: 1rem;
+    height: 38px;
+    box-sizing: border-box;
   }
   
   .wild-surge-input {
-    width: 150px;
+    width: 80px;
+    flex: 0 0 80px;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid #cbd5e0;
+    font-size: 1rem;
+    box-sizing: border-box;
+    height: 38px;
+    margin: 0;
+    line-height: normal;
+    vertical-align: middle;
   }
   
-  .wild-surge-roll-button {
+  .wild-surge-roll-button,
+  .wild-surge-activate-button {
     background-color: #4299e1;
     color: white;
     font-weight: bold;
@@ -39,9 +56,17 @@
     border-radius: 0.25rem;
     cursor: pointer;
     transition: background-color 0.3s;
+    border: none;
+    height: 38px;
+    white-space: nowrap;
+    flex-basis: auto;
+    box-sizing: border-box;
+    line-height: normal;
+    vertical-align: middle;
   }
   
-  .wild-surge-roll-button:hover {
+  .wild-surge-roll-button:hover,
+  .wild-surge-activate-button:hover {
     background-color: #3182ce;
   }
   
@@ -57,11 +82,13 @@
     font-size: 1.1rem;
     font-weight: bold;
     color: #4a5568;
+    margin-top: 0;
     margin-bottom: 0.5rem;
   }
   
   .wild-surge-description p {
     color: #4a5568;
+    margin-bottom: 0;
   }
   
   .wild-surge-effects-title {
@@ -75,18 +102,4 @@
   
   .wild-surge-effect {
     background-color: #ebf8ff;
-  }
-  
-  .wild-surge-activate-button {
-    background-color: #48bb78;  /* green */
-    color: white;
-    font-weight: bold;
-    padding: 0.5rem 1rem;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  .wild-surge-activate-button:hover {
-    background-color: #38a169;
   }

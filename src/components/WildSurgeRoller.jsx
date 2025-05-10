@@ -1,6 +1,7 @@
 import '../styles/WildSurgeRoller.css';
 
-import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import { useState } from 'react';
 
 const WildSurgeRoller = ({ surgeTable, onActivate, showActivateButton = false }) => {
   const [selectedSurge, setSelectedSurge] = useState(null);
@@ -78,6 +79,12 @@ const WildSurgeRoller = ({ surgeTable, onActivate, showActivateButton = false })
       )}
     </div>
   );
+};
+
+WildSurgeRoller.propTypes = {
+  surgeTable: PropTypes.object.isRequired,
+  onActivate: PropTypes.func,
+  showActivateButton: PropTypes.bool
 };
 
 export default WildSurgeRoller;
