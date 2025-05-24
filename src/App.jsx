@@ -1,3 +1,4 @@
+import './styles/global.css';
 import './App.css';
 
 import {
@@ -13,6 +14,7 @@ import AspectDescriptions from './pages/AspectDescriptions';
 import DiscoveredAspects from './pages/DiscoveredAspects';
 import LimboInfo from './pages/LimboInfo';
 import SecretMessages from './pages/SecretMessages';
+import SwarmAttackPage from './pages/SwarmAttackPage';
 import WildSurgeInfo from './pages/WildSurgeInfo';
 
 function App() {
@@ -38,11 +40,27 @@ function App() {
                   }}
                   value=""
                 >
-                  <option value="">Player Info</option>
+                  <option style={{fontWeight: "bold"}} disabled value="">Player Info</option>
                   <option value="/limbo-info">Limbo</option>
                   <option value="/all-aspects">All Aspects</option>
                   <option value="/discovered-aspects">Discovered Aspects</option>
+                </select>
+              </div>
+            </li>
+            <li>
+              <div className="nav-dropdown">
+                <select 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      window.location.href = e.target.value;
+                      e.target.value = ''; // Reset to default option
+                    }
+                  }}
+                  value=""
+                >
+                  <option style={{fontWeight: "bold"}} disabled value="">Tools</option>
                   <option value="/player-info/wild-surges">Wild Surges</option>
+                  <option value="/swarm-attack">Swarm Attack</option>
                 </select>
               </div>
             </li>
@@ -57,6 +75,7 @@ function App() {
           <Route path="/discovered-aspects" element={<DiscoveredAspects />} />
           <Route path="/all-aspects" element={<AllAspects />} />
           <Route path="/player-info/wild-surges" element={<WildSurgeInfo />} />
+          <Route path="/swarm-attack" element={<SwarmAttackPage />} />
         </Routes>
       </div>
     </Router>

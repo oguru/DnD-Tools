@@ -1,0 +1,84 @@
+/* Global light theme styling */
+
+/* Page container */
+.page-container {
+  background-color: #f8f9fa !important;
+  color: #333333 !important;
+  min-height: 100vh;
+}
+
+/* General background colors */
+body, 
+html, 
+#root, 
+.app {
+  background-color: #f8f9fa !important;
+  color: #333333 !important;
+}
+
+/* Fix for all dropdowns across the app */
+select {
+  background-color: white !important;
+  color: #333333 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+select option {
+  background-color: white !important;
+  color: #333333 !important;
+}
+
+/* Fix for inputs */
+input {
+  background-color: white !important;
+  color: #333333 !important;
+  border: 1px solid #e2e8f0;
+}
+
+/* Ensure all content areas have light backgrounds */
+.content-area,
+.main-content,
+.panel,
+.card {
+  background-color: white !important;
+  color: #333333 !important;
+}
+
+/* Ensure headings are visible */
+h1, h2, h3, h4, h5, h6 {
+  color: #2d3748 !important;
+}
+
+/* Fix for buttons to ensure they're visible */
+button {
+  border: 1px solid #e2e8f0;
+}
+
+/* Make sure links are visible */
+a {
+  color: #3182ce !important;
+}
+
+a:hover {
+  color: #2c5282 !important;
+}
+
+/* Fix for dropdown menus */
+.dropdown-menu,
+.dropdown-content {
+  background-color: white !important;
+  color: #333333 !important;
+  border: 1px solid #e2e8f0;
+}
+
+.dropdown-item,
+.dropdown-option {
+  background-color: white !important;
+  color: #333333 !important;
+}
+
+.dropdown-item:hover,
+.dropdown-option:hover {
+  background-color: #edf2f7 !important;
+  color: #2d3748 !important;
+} 
