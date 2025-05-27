@@ -1,0 +1,133 @@
+.attack-results-section {
+  background-color: #edf2f7;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 15px;
+  margin-top: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.section-header h3 {
+  margin: 0;
+  color: #2d3748;
+}
+
+.toggle-section-button {
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.toggle-section-button:hover {
+  background-color: #2d3748;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.results-header h4 {
+  margin: 0;
+  color: #4a5568;
+}
+
+.clear-results-button {
+  background-color: #e53e3e;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background-color 0.2s;
+}
+
+.clear-results-button:hover {
+  background-color: #c53030;
+}
+
+.clear-results-button:disabled {
+  background-color: #fed7d7;
+  cursor: not-allowed;
+}
+
+.character-damage-results,
+.boss-attack-results {
+  background-color: #fff;
+  border-radius: 5px;
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  margin-bottom: 15px;
+}
+
+.results-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.result-card {
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.result-timestamp {
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.dismiss-result-button {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.dismiss-result-button:hover {
+  color: #f56565;
+}
+
+.result-content p {
+  margin: 0;
+  color: #4a5568;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.no-results-message {
+  color: #a0aec0;
+  font-style: italic;
+  padding: 15px;
+  text-align: center;
+  border: 1px dashed #e2e8f0;
+  border-radius: 4px;
+} 

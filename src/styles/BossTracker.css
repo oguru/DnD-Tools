@@ -1,0 +1,1289 @@
+/* Boss Tracker Section */
+.boss-tracker-section {
+  background-color: #fff5f5;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.boss-tracker-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.boss-header-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.reset-boss-button,
+.clear-bosses-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.reset-boss-button {
+  background-color: #4299e1;
+  color: white;
+}
+
+.reset-boss-button:hover {
+  background-color: #3182ce;
+}
+
+.clear-bosses-button {
+  background-color: #718096;
+  color: white;
+}
+
+.clear-bosses-button:hover {
+  background-color: #4a5568;
+}
+
+/* Boss Template */
+.boss-template {
+  background-color: #fff;
+  border-radius: 5px;
+  border: 1px solid #eee;
+  padding: 15px;
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.boss-template-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.boss-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.boss-field label {
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.boss-field input,
+.boss-field textarea {
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  width: 100%;
+  background-color: #ffffff;
+  color: #333333;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.boss-field textarea {
+  width: 100%;
+  min-height: 60px;
+  resize: vertical;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  color: #333333; /* Dark text color for visibility */
+  background-color: #f8f9fa;
+}
+
+.boss-notes {
+  grid-column: 1 / -1;
+}
+
+.boss-notes-container {
+  margin: 10px 0;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 8px;
+  width: 100%;
+}
+
+.boss-notes-toggle {
+  cursor: pointer;
+  color: #4a5568;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.boss-notes-toggle:hover {
+  color: #c53030;
+}
+
+.boss-notes-content {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 8px;
+  margin-top: 5px;
+  white-space: pre-wrap;
+  color: #333333; /* Dark text color for visibility */
+}
+
+.add-boss-button {
+  background-color: #c53030;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  align-self: flex-start;
+  transition: background-color 0.2s;
+}
+
+.add-boss-button:hover {
+  background-color: #9b2c2c;
+}
+
+.add-boss-button:disabled {
+  background-color: #fed7d7;
+  cursor: not-allowed;
+}
+
+/* Boss Attack Template */
+.boss-attack-template {
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  border: 1px solid #e2e8f0;
+  padding: 15px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.boss-attack-template h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #c53030;
+}
+
+.attack-template-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.attack-template-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.attack-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.attack-field label {
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+.attack-field input[type="text"],
+.attack-field input[type="number"],
+.attack-field select {
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.attack-field input[type="checkbox"] {
+  width: auto;
+  margin-top: 5px;
+}
+
+.attack-preview {
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.attack-preview-label {
+  font-weight: 600;
+  color: #c53030;
+}
+
+.attack-preview-value {
+  color: #4a5568;
+}
+
+.add-attack-button {
+  background-color: #c53030;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  align-self: flex-start;
+  transition: background-color 0.2s;
+}
+
+.add-attack-button:hover {
+  background-color: #9b2c2c;
+}
+
+.add-attack-button:disabled {
+  background-color: #feb2b2;
+  cursor: not-allowed;
+}
+
+/* Template Attacks List */
+.boss-template-attacks {
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  border: 1px solid #e2e8f0;
+  padding: 15px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.boss-template-attacks h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #c53030;
+}
+
+.template-attacks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.template-attack-item {
+  background-color: #fff;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.template-attack-info {
+  flex-grow: 1;
+}
+
+.template-attack-stats {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.attack-type-badge {
+  background-color: #4a5568;
+  color: white;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  margin-left: 8px;
+}
+
+.aoe-badge {
+  background-color: #805ad5;
+  color: white;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  margin-left: 4px;
+}
+
+.remove-template-attack-button {
+  background-color: #f56565;
+  color: white;
+  border: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  margin-left: 8px;
+}
+
+.remove-template-attack-button:hover {
+  background-color: #e53e3e;
+}
+
+/* Bosses Container */
+.bosses-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.boss-card {
+  background-color: #fff;
+  border-radius: 5px;
+  border: 1px solid #eee;
+  padding: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.boss-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.boss-header h4 {
+  margin: 0;
+  color: #c53030;
+  font-size: 1.1rem;
+}
+
+.remove-boss-button {
+  background-color: #f56565;
+  color: white;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+}
+
+.boss-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.boss-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.boss-stat label {
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.boss-stat input {
+  width: 60px;
+  padding: 5px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.boss-health-bar-container {
+  height: 10px;
+  background-color: #e2e8f0;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.boss-health-bar {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* Boss Attacks */
+.boss-attacks-container {
+  margin: 10px 0;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 8px;
+  width: 100%;
+}
+
+.boss-attacks-toggle {
+  cursor: pointer;
+  color: #4a5568;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.boss-attacks-toggle:hover {
+  color: #c53030;
+}
+
+.boss-attacks-content {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.no-attacks-message {
+  color: #718096;
+  font-style: italic;
+  font-size: 0.9rem;
+  padding: 5px 0;
+}
+
+.boss-attacks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.boss-attack-item {
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attack-info {
+  flex-grow: 1;
+}
+
+.attack-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.attack-stats {
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+.attack-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.attack-advantage-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.attack-advantage-toggle label {
+  font-size: 0.85rem;
+  color: #4a5568;
+  cursor: pointer;
+}
+
+.attack-targets {
+  flex-grow: 1;
+}
+
+.target-select {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.aoe-targets-control {
+  display: flex;
+  align-items: center;
+}
+
+.select-aoe-targets-button {
+  background-color: #805ad5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.select-aoe-targets-button:hover {
+  background-color: #6b46c1;
+}
+
+.remove-attack-button {
+  background-color: #f56565;
+  color: white;
+  border: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.remove-attack-button:hover {
+  background-color: #e53e3e;
+}
+
+.add-attack-to-boss {
+  margin-top: 8px;
+}
+
+.template-attack-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+/* Boss Actions */
+.boss-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.aoe-target-button {
+  background-color: #805ad5;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+  flex: 1;
+}
+
+.aoe-target-button:hover {
+  background-color: #6b46c1;
+}
+
+.aoe-target-button.active {
+  background-color: #d53f8c;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .boss-template-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .bosses-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .attack-template-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .attack-field {
+    min-width: 100%;
+  }
+  
+  .attack-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 576px) {
+  .boss-template-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.boss-tracker {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.toggle-section-button {
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.toggle-section-button:hover {
+  background-color: #2d3748;
+}
+
+.boss-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.reset-boss-health,
+.clear-all-bosses {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.reset-boss-health {
+  background-color: #4299e1;
+  color: white;
+}
+
+.reset-boss-health:hover {
+  background-color: #3182ce;
+}
+
+.clear-all-bosses {
+  background-color: #e53e3e;
+  color: white;
+}
+
+.clear-all-bosses:hover {
+  background-color: #c53030;
+}
+
+.add-boss-section {
+  background-color: #e6f7ff;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.add-boss-section h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: #2c5282;
+}
+
+.boss-template-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.boss-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.boss-field.wide {
+  grid-column: span 3;
+}
+
+.boss-field label {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  color: #4a5568;
+}
+
+.boss-field input,
+.boss-field select,
+.boss-field textarea {
+  padding: 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.boss-field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.boss-field input:focus,
+.boss-field select:focus,
+.boss-field textarea:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+}
+
+/* Saving throws styles */
+.saving-throws-container {
+  margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.saving-throws-header {
+  background-color: #f7fafc;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.saving-throws-header h5 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.saving-throws-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+}
+
+.saving-throw-field {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.saving-throw-field label {
+  width: 2.5rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.saving-throw-field input {
+  width: calc(100% - 2.5rem);
+  padding: 0.35rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.saving-throw-field input:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+}
+
+.add-attack-section {
+  background-color: #f0f9ff;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.add-attack-section h5 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: #2c5282;
+}
+
+.attack-template-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.attack-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.attack-field label {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  color: #4a5568;
+}
+
+.attack-field input,
+.attack-field select {
+  padding: 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.attack-field input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+.dice-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.dice-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.dice-inputs span {
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.num-dice,
+.dice-type,
+.modifier {
+  width: 50px;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.add-attack-button {
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.add-attack-button:hover {
+  background-color: #3182ce;
+}
+
+.add-attack-button:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.template-attacks-list {
+  margin-bottom: 1rem;
+}
+
+.template-attacks-list h5 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: #4a5568;
+}
+
+.template-attacks-list ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+}
+
+.template-attack-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.template-attack-item:last-child {
+  border-bottom: none;
+}
+
+.attack-name {
+  font-weight: 600;
+  color: #2d3748;
+  margin-right: 1rem;
+}
+
+.attack-details {
+  color: #718096;
+  flex-grow: 1;
+  font-size: 0.85rem;
+}
+
+.remove-attack-button {
+  background-color: transparent;
+  color: #e53e3e;
+  border: none;
+  border-radius: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background-color 0.2s;
+}
+
+.remove-attack-button:hover {
+  background-color: #fff5f5;
+}
+
+.add-boss-button {
+  background-color: #2b6cb0;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+  width: 100%;
+  font-weight: 600;
+}
+
+.add-boss-button:hover {
+  background-color: #2c5282;
+}
+
+.add-boss-button:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.bosses-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.boss-card {
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+
+.boss-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.boss-card.targeted {
+  border: 2px solid #4299e1;
+  background-color: #ebf8ff;
+}
+
+.boss-card.in-aoe {
+  border: 2px solid #f6ad55;
+  background-color: #fffaf0;
+}
+
+.boss-card.targeted.in-aoe {
+  border: 2px solid #9f7aea;
+  background-color: #f8f4ff;
+}
+
+.boss-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.boss-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2d3748;
+}
+
+.boss-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.remove-boss-button {
+  background-color: transparent;
+  color: #e53e3e;
+  border: none;
+  border-radius: 50%;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background-color 0.2s;
+}
+
+.remove-boss-button:hover {
+  background-color: #fff5f5;
+}
+
+.boss-stats {
+  margin-bottom: 0.75rem;
+}
+
+.boss-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.boss-stat span:first-child {
+  width: 3rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.boss-stat input {
+  width: 4rem;
+  padding: 0.4rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.boss-hp-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.hp-button {
+  background-color: #e2e8f0;
+  border: none;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background-color 0.2s;
+}
+
+.hp-button:hover {
+  background-color: #cbd5e0;
+}
+
+.boss-health-bar-container {
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.boss-health-bar {
+  height: 100%;
+  transition: width 0.3s, background-color 0.3s;
+}
+
+.boss-targeting {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.target-button,
+.aoe-button {
+  flex: 1;
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.target-button:hover {
+  background-color: #3182ce;
+}
+
+.target-button.active {
+  background-color: #2c5282;
+}
+
+.aoe-button {
+  background-color: #ed8936;
+}
+
+.aoe-button:hover {
+  background-color: #dd6b20;
+}
+
+.aoe-button.active {
+  background-color: #c05621;
+}
+
+.notes-header,
+.attacks-header {
+  background-color: #f7fafc;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+}
+
+.notes-header h5,
+.attacks-header h5 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.boss-notes {
+  background-color: #f8f9fa;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.boss-notes pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.boss-attacks {
+  margin-bottom: 1rem;
+}
+
+.boss-attacks ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+}
+
+.boss-attack-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.boss-attack-item:last-child {
+  border-bottom: none;
+}
+
+.attack-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.attack-name {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.attack-details {
+  color: #718096;
+  font-size: 0.85rem;
+}
+
+.roll-attack-button {
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.roll-attack-button:hover {
+  background-color: #3182ce;
+}
+
+.no-bosses-message {
+  text-align: center;
+  padding: 2rem 0;
+  color: #718096;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .boss-template-fields,
+  .attack-template-fields {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .bosses-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .saving-throws-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .boss-template-fields,
+  .attack-template-fields {
+    grid-template-columns: 1fr;
+  }
+  
+  .boss-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .boss-hp-controls {
+    flex-wrap: wrap;
+  }
+  
+  .saving-throws-grid {
+    grid-template-columns: 1fr;
+  }
+} 

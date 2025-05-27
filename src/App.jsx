@@ -12,6 +12,7 @@ import {
 import AllAspects from './pages/AllAspects';
 import AspectDescriptions from './pages/AspectDescriptions';
 import DiscoveredAspects from './pages/DiscoveredAspects';
+import GroupAttackCalculator from './components/GroupAttackCalculator';
 import LimboInfo from './pages/LimboInfo';
 import SecretMessages from './pages/SecretMessages';
 import SwarmAttackPage from './pages/SwarmAttackPage';
@@ -61,6 +62,7 @@ function App() {
                   <option style={{fontWeight: "bold"}} disabled value="">Tools</option>
                   <option value="/player-info/wild-surges">Wild Surges</option>
                   <option value="/swarm-attack">Swarm Attack</option>
+                  <option value="/group-attack">Group Attack</option>
                 </select>
               </div>
             </li>
@@ -76,6 +78,7 @@ function App() {
           <Route path="/all-aspects" element={<AllAspects />} />
           <Route path="/player-info/wild-surges" element={<WildSurgeInfo />} />
           <Route path="/swarm-attack" element={<SwarmAttackPage />} />
+          <Route path="/group-attack" element={<GroupAttackCalculator />} />
         </Routes>
       </div>
     </Router>

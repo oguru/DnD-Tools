@@ -129,6 +129,25 @@
   gap: 10px;
 }
 
+.swarm-attack-calculator .character-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.swarm-attack-calculator .attack-field {
+  position: relative;
+}
+
+.swarm-attack-calculator .attack-counter {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+}
+
 .swarm-attack-calculator .character-field input {
   width: 100%;
   padding: 5px;

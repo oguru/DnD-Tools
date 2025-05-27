@@ -215,9 +215,9 @@ const SwarmAttackCalculator = () => {
     setCharacters(updatedCharacters);
     saveToLocalStorage(updatedCharacters);
     
-    // If attackRolls exist, recalculate results with new character data
-    if (attackRolls.length > 0) {
-      calculateResults(attackRolls, updatedCharacters);
+    // If we have previous attack results and attackRolls stats, recalculate with new character data
+    if (results.length > 0 && attackRolls.length > 0) {
+      calculateResults(attackRolls[0], updatedCharacters);
     }
   };
 
@@ -424,84 +424,127 @@ const SwarmAttackCalculator = () => {
 
   // Generate attack rolls once and store them
   const generateAttackRolls = () => {
-    // Find the max number of attacks needed
-    const validAttacks = characters
-      .filter(c => c.name && c.attacks)
-      .map(c => parseInt(c.attacks) || 0);
+    // Get valid characters (with name, AC, and attacks)
+    const validCharacters = characters.filter(c => c.name && c.ac && c.attacks);
     
-    if (validAttacks.length === 0) {
-      setResults([]);
-      return;
-    }
-    
-    const maxAttacks = Math.max(...validAttacks);
-    
-    if (maxAttacks <= 0) {
-      setResults([]);
-      return;
-    }
-    
-    const newAttackRolls = [];
-    
-    // Generate rolls for all possible attacks
-    for (let i = 0; i < maxAttacks; i++) {
-      const roll = rollD20();
-      const hitBonus = attackStats.hitBonus === '' ? 0 : parseInt(attackStats.hitBonus);
-      const totalRoll = roll + hitBonus;
-      const damage = rollDamage();
-      
-      newAttackRolls.push({
-        roll,
-        totalRoll,
-        damage
-      });
-    }
-    
-    setAttackRolls(newAttackRolls);
-    
-    // Calculate and set results based on the new rolls
-    calculateResults(newAttackRolls, characters);
-  };
-
-  // Calculate results based on current ACs and stored rolls
-  const calculateResults = (rolls, chars) => {
-    if (!rolls || rolls.length === 0) {
+    if (validCharacters.length === 0) {
       setResults([]);
       return;
     }
     
     const newResults = [];
     
-    // For each character
-    chars.forEach((character) => {
-      // Skip if no name or AC or attacks
-      if (!character.name || !character.ac || !character.attacks) return;
-      
+    // For each valid character, generate unique attack rolls
+    validCharacters.forEach(character => {
       const ac = parseInt(character.ac);
-      const numAttacks = parseInt(character.attacks);
-      const characterRolls = rolls.slice(0, numAttacks);
+      const numAttacks = parseInt(character.attacks) || 0;
+      
+      if (numAttacks <= 0) {
+        return; // Skip if no attacks
+      }
+      
+      // Generate unique rolls for this character
+      const characterRolls = [];
       let totalDamage = 0;
       let hitsCount = 0;
       
-      // Check hits based on AC
-      const attackResults = characterRolls.map(roll => {
-        const hit = roll.totalRoll >= ac;
+      // Generate each attack roll separately
+      for (let i = 0; i < numAttacks; i++) {
+        const roll = rollD20();
+        const hitBonus = attackStats.hitBonus === '' ? 0 : parseInt(attackStats.hitBonus);
+        const totalRoll = roll + hitBonus;
+        const damage = rollDamage();
+        const hit = totalRoll >= ac;
         
         if (hit) {
-          totalDamage += roll.damage;
+          totalDamage += damage;
           hitsCount++;
         }
         
-        return {
-          ...roll,
+        characterRolls.push({
+          roll,
+          hitBonus,
+          totalRoll,
+          damage,
           hit
-        };
-      });
+        });
+      }
       
       newResults.push({
         character: character.name,
         ac,
-        attackRolls: attackResults,
+        attackRolls: characterRolls,
+        hitsCount,
+        totalDamage
+      });
+    });
+    
+    // Set the results directly - no need for separate attackRolls state
+    setResults(newResults);
+    
+    // Keep track of the attack stats used for these rolls (for tooltips)
+    setAttackRolls([{
+      numDice: attackStats.numDice,
+      diceType: attackStats.diceType,
+      modifier: attackStats.modifier,
+      hitBonus: attackStats.hitBonus
+    }]);
+  };
+
+  // Calculate results based on current ACs and stored rolls
+  // This function is no longer needed as we generate results directly
+  // but we'll keep a simplified version in case we need to recalculate
+  const calculateResults = (attackStatsUsed, chars) => {
+    // Get valid characters (with name, AC, and attacks)
+    const validCharacters = chars.filter(c => c.name && c.ac && c.attacks);
+    
+    if (validCharacters.length === 0) {
+      setResults([]);
+      return;
+    }
+    
+    const newResults = [];
+    
+    // For each valid character, generate unique attack rolls
+    validCharacters.forEach(character => {
+      const ac = parseInt(character.ac);
+      const numAttacks = parseInt(character.attacks) || 0;
+      
+      if (numAttacks <= 0) {
+        return; // Skip if no attacks
+      }
+      
+      // Generate unique rolls for this character
+      const characterRolls = [];
+      let totalDamage = 0;
+      let hitsCount = 0;
+      
+      // Generate each attack roll separately
+      for (let i = 0; i < numAttacks; i++) {
+        const roll = rollD20();
+        const hitBonus = attackStatsUsed.hitBonus === '' ? 0 : parseInt(attackStatsUsed.hitBonus);
+        const totalRoll = roll + hitBonus;
+        const damage = rollDamage();
+        const hit = totalRoll >= ac;
+        
+        if (hit) {
+          totalDamage += damage;
+          hitsCount++;
+        }
+        
+        characterRolls.push({
+          roll,
+          hitBonus,
+          totalRoll,
+          damage,
+          hit
+        });
+      }
+      
+      newResults.push({
+        character: character.name,
+        ac,
+        attackRolls: characterRolls,
         hitsCount,
         totalDamage
       });
@@ -891,7 +934,7 @@ const SwarmAttackCalculator = () => {
                 />
               </div>
               
-              <div className="character-field">
+              <div className="character-field attack-field">
                 <input
                   type="number"
                   value={character.attacks}
