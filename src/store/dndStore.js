@@ -1126,6 +1126,17 @@ const useDnDStore = create((set, get) => {
       return Math.min(100, Math.max(0, (current / max) * 100));
     },
     
+    calculateGroupTotalCurrentHP: (group) => {
+      if (!group) return 0;
+      
+      if (group.creatures && Array.isArray(group.creatures)) {
+        return group.creatures.reduce((sum, creature) => sum + creature.hp, 0);
+      }
+      
+      // Fallback to old calculation method
+      return group.count * group.currentHp;
+    },
+    
     getHealthColor: (percentage) => {
       if (percentage > 50) {
         return '#38a169'; // Green

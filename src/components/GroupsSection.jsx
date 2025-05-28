@@ -25,6 +25,7 @@ const GroupsSection = () => {
     updateGroupSavingThrow,
     getHealthColor,
     calculateHealthPercentage,
+    calculateGroupTotalCurrentHP,
     scrollToDamageSection,
     rollD20,
     applyDamageToCharacter,
@@ -834,8 +835,8 @@ const GroupsSection = () => {
                 <h4>Enemy Groups</h4>
                 <div className="entities-grid">
                   {enemyGroups.map(group => {
-                    // Calculate health percentage based on total group HP rather than individual HP
-                    const totalCurrentHP = group.count * group.currentHp;
+                    // Calculate health percentage based on total remaining HP vs total max HP
+                    const totalCurrentHP = calculateGroupTotalCurrentHP(group);
                     const totalMaxHP = group.count * group.maxHp;
                     const healthPercentage = calculateHealthPercentage(totalCurrentHP, totalMaxHP);
                     const healthColor = getHealthColor(healthPercentage);
@@ -877,16 +878,18 @@ const GroupsSection = () => {
                         </div>
                         <div className="entity-stats">
                           <div className="entity-stat">
-                            <span>HP:</span>
-                            <span>{group.currentHp} / {group.maxHp}</span>
-                          </div>
-                          <div className="entity-stat">
                             <span>AC:</span>
                             <span>{group.ac}</span>
                           </div>
                           <div className="entity-stat">
-                            <span>Total:</span>
-                            <span>{group.count * group.currentHp} / {group.count * group.maxHp}</span>
+                            <span>Count:</span>
+                            <span>{group.count}</span>
+                          </div>
+                          <div className="entity-stat">
+                            <span>Total HP:</span>
+                            <span>
+                              {calculateGroupTotalCurrentHP(group)} / {group.count * group.maxHp}
+                            </span>
                           </div>
                         </div>
                         
