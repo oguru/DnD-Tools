@@ -6,11 +6,39 @@ const useDnDStore = create((set, get) => {
   const savedBosses = localStorage.getItem('dnd-bosses');
   const savedEnemyGroups = localStorage.getItem('dnd-enemy-groups');
 
+  // Function to ensure each group has a creatures array
+  const migrateGroupData = (groups) => {
+    if (!Array.isArray(groups)) return [];
+    
+    return groups.map(group => {
+      if (!group.creatures || !Array.isArray(group.creatures)) {
+        // Create creatures array based on count and currentHp
+        const creatures = Array(group.count || 0).fill().map(() => ({
+          hp: group.currentHp || 0
+        }));
+        
+        return {
+          ...group,
+          creatures
+        };
+      }
+      return group;
+    });
+  };
+  
+  // Migrate any existing group data
+  const migratedGroups = migrateGroupData(savedEnemyGroups ? JSON.parse(savedEnemyGroups) : []);
+  
+  // Save migrated data back to localStorage
+  if (savedEnemyGroups) {
+    localStorage.setItem('dnd-enemy-groups', JSON.stringify(migratedGroups));
+  }
+
   return {
     // State
     characters: savedCharacters ? JSON.parse(savedCharacters) : [],
     bosses: savedBosses ? JSON.parse(savedBosses) : [],
-    enemyGroups: savedEnemyGroups ? JSON.parse(savedEnemyGroups) : [],
+    enemyGroups: migratedGroups,
     attackResults: [],
     
     targetEntity: null, // { type: 'group'|'boss'|'character', id: 'some-id' }
@@ -38,7 +66,8 @@ const useDnDStore = create((set, get) => {
         int: 0,
         wis: 0,
         cha: 0
-      }
+      },
+      creatures: [] // Will hold individual creature HPs
     },
     
     bossTemplate: {
@@ -297,6 +326,12 @@ const useDnDStore = create((set, get) => {
     
     addEnemyGroup: () => {
       const { groupTemplate } = get();
+      
+      // Initialize individual creature HPs
+      const creatures = Array(groupTemplate.count).fill().map(() => ({
+        hp: groupTemplate.maxHp
+      }));
+      
       const newGroup = {
         id: Date.now().toString(),
         name: groupTemplate.name,
@@ -306,7 +341,8 @@ const useDnDStore = create((set, get) => {
         count: groupTemplate.count,
         inAoe: false,
         showSavingThrows: false,
-        savingThrows: { ...groupTemplate.savingThrows }
+        savingThrows: { ...groupTemplate.savingThrows },
+        creatures: creatures
       };
       
       set(state => {
@@ -359,7 +395,10 @@ const useDnDStore = create((set, get) => {
       const newGroup = {
         ...group,
         id: Date.now().toString(),
-        name: `${group.name} (Copy)`
+        name: `${group.name} (Copy)`,
+        creatures: group.creatures ? [...group.creatures] : Array(group.count).fill().map(() => ({
+          hp: group.maxHp
+        }))
       };
       
       set(state => {
@@ -449,33 +488,35 @@ const useDnDStore = create((set, get) => {
         
         let updatedGroup = { ...group };
         let killCount = 0;
-        let remainingDamage = damage;
         
-        // Apply damage to the group
-        if (updatedGroup.count > 0) {
-          // Calculate how many full creatures this damage would kill
-          const killableFull = Math.floor(remainingDamage / updatedGroup.currentHp);
+        // Ensure creatures array exists
+        if (!updatedGroup.creatures || !Array.isArray(updatedGroup.creatures)) {
+          // Initialize with current HP if no creatures array exists
+          updatedGroup.creatures = Array(updatedGroup.count).fill().map(() => ({
+            hp: updatedGroup.currentHp
+          }));
+        }
+        
+        // Sort creatures by HP (ascending) to damage lowest HP first
+        updatedGroup.creatures.sort((a, b) => a.hp - b.hp);
+        
+        // Apply damage to the creature with lowest HP
+        if (updatedGroup.creatures.length > 0) {
+          const lowestHpCreature = updatedGroup.creatures[0];
           
-          if (killableFull > 0) {
-            // Kill as many as we can, up to the current count
-            const actualKills = Math.min(killableFull, updatedGroup.count);
-            killCount += actualKills;
-            updatedGroup.count -= actualKills;
-            
-            // Calculate remaining damage after killing full creatures
-            remainingDamage -= (actualKills * updatedGroup.currentHp);
+          // If damage would kill the creature
+          if (damage >= lowestHpCreature.hp) {
+            killCount = 1;
+            updatedGroup.creatures.shift(); // Remove the killed creature
+            updatedGroup.count = updatedGroup.creatures.length;
+          } else {
+            // Just reduce HP
+            lowestHpCreature.hp -= damage;
           }
           
-          // If we still have damage and creatures left, apply to the next creature
-          if (remainingDamage > 0 && updatedGroup.count > 0) {
-            // If remaining damage can kill another creature
-            if (remainingDamage >= updatedGroup.currentHp) {
-              killCount += 1;
-              updatedGroup.count -= 1;
-            } else {
-              // Otherwise just reduce the current HP of remaining creatures
-              updatedGroup.currentHp = Math.max(1, updatedGroup.currentHp - remainingDamage);
-            }
+          // Update currentHp to represent the lowest HP in the group
+          if (updatedGroup.creatures.length > 0) {
+            updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
           }
         }
         
@@ -518,44 +559,46 @@ const useDnDStore = create((set, get) => {
         const group = state.enemyGroups.find(g => g.id === groupId);
         if (!group) return state;
         
-        // Calculate number of affected creatures (rounded down)
-        const affectedCount = Math.floor(group.count * (percentAffected / 100));
+        // Calculate number of affected creatures (rounded up)
+        const affectedCount = Math.ceil(group.count * (percentAffected / 100));
         if (affectedCount <= 0) return state;
-        
-        // Calculate total damage to the group
-        const damagePerCreature = damage;
-        const totalDamage = damagePerCreature * affectedCount;
         
         let updatedGroup = { ...group };
         let killCount = 0;
-        let remainingDamage = totalDamage;
         
-        // Apply damage to the group
-        if (updatedGroup.count > 0) {
-          // Calculate how many full creatures this damage would kill
-          const killableFull = Math.floor(remainingDamage / updatedGroup.currentHp);
-          
-          if (killableFull > 0) {
-            // Kill as many as we can, up to the affected count
-            const actualKills = Math.min(killableFull, affectedCount, updatedGroup.count);
-            killCount += actualKills;
-            updatedGroup.count -= actualKills;
-            
-            // Calculate remaining damage after killing full creatures
-            remainingDamage -= (actualKills * updatedGroup.currentHp);
+        // Ensure creatures array exists
+        if (!updatedGroup.creatures || !Array.isArray(updatedGroup.creatures)) {
+          // Initialize with current HP if no creatures array exists
+          updatedGroup.creatures = Array(updatedGroup.count).fill().map(() => ({
+            hp: updatedGroup.currentHp
+          }));
+        }
+        
+        // Sort creatures by HP (ascending) to damage lowest HP first
+        updatedGroup.creatures.sort((a, b) => a.hp - b.hp);
+        
+        // Select the affected creatures (take the lowest HP ones first)
+        const affectedCreatures = updatedGroup.creatures.slice(0, affectedCount);
+        const unaffectedCreatures = updatedGroup.creatures.slice(affectedCount);
+        
+        // Apply damage to each affected creature
+        const survivingCreatures = affectedCreatures.filter(creature => {
+          if (damage >= creature.hp) {
+            killCount++;
+            return false; // Remove killed creature
+          } else {
+            creature.hp -= damage;
+            return true; // Keep damaged creature
           }
-          
-          // If we still have damage and creatures left, apply to the next creature
-          if (remainingDamage > 0 && updatedGroup.count > 0 && killCount < affectedCount) {
-            // If remaining damage can kill another creature
-            if (remainingDamage >= updatedGroup.currentHp) {
-              killCount += 1;
-              updatedGroup.count -= 1;
-            } else {
-              // Otherwise just reduce the current HP of remaining creatures
-              updatedGroup.currentHp = Math.max(1, updatedGroup.currentHp - (remainingDamage / (updatedGroup.count)));
-            }
-          }
+        });
+        
+        // Update the group with remaining creatures
+        updatedGroup.creatures = [...survivingCreatures, ...unaffectedCreatures];
+        updatedGroup.count = updatedGroup.creatures.length;
+        
+        // Update currentHp to represent the lowest HP in the group
+        if (updatedGroup.creatures.length > 0) {
+          updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
         }
         
         const updatedGroups = state.enemyGroups.map(g => {
@@ -574,8 +617,8 @@ const useDnDStore = create((set, get) => {
             {
               id: Date.now().toString(),
               groupId,
-              damage: totalDamage,
-              message: `${totalDamage} total damage to ${group.name} (${killCount} killed, ${percentAffected}% affected)`,
+              damage: damage * affectedCount,
+              message: `${damage} damage to ${affectedCount} creatures in ${group.name} (${killCount} killed)`,
               timestamp: Date.now()
             }
           ]
@@ -588,6 +631,8 @@ const useDnDStore = create((set, get) => {
       if (damage <= 0) return;
       
       set(state => {
+        let globalKillCount = 0; // Track total kills across all groups
+        
         const updatedGroups = state.enemyGroups.map(group => {
           // Calculate save bonus for this group
           const saveBonus = group.savingThrows?.[saveType] || 0;
@@ -604,44 +649,50 @@ const useDnDStore = create((set, get) => {
             damageToApply = 0;
           }
           
-          // Calculate number of affected creatures (rounded down)
-          const affectedCount = Math.floor(group.count * (percentAffected / 100));
+          // Calculate number of affected creatures (rounded up)
+          const affectedCount = Math.ceil(group.count * (percentAffected / 100));
           if (affectedCount <= 0 || damageToApply <= 0) return group;
           
-          // Calculate total damage to the group
-          const totalDamage = damageToApply * affectedCount;
-          
           let updatedGroup = { ...group };
-          let killCount = 0;
-          let remainingDamage = totalDamage;
+          let totalKillCount = 0;
           
-          // Apply damage to the group
-          if (updatedGroup.count > 0) {
-            // Calculate how many full creatures this damage would kill
-            const killableFull = Math.floor(remainingDamage / updatedGroup.currentHp);
-            
-            if (killableFull > 0) {
-              // Kill as many as we can, up to the affected count
-              const actualKills = Math.min(killableFull, affectedCount, updatedGroup.count);
-              killCount += actualKills;
-              updatedGroup.count -= actualKills;
-              
-              // Calculate remaining damage after killing full creatures
-              remainingDamage -= (actualKills * updatedGroup.currentHp);
-            }
-            
-            // If we still have damage and creatures left, apply to the next creature
-            if (remainingDamage > 0 && updatedGroup.count > 0 && killCount < affectedCount) {
-              // If remaining damage can kill another creature
-              if (remainingDamage >= updatedGroup.currentHp) {
-                killCount += 1;
-                updatedGroup.count -= 1;
-              } else {
-                // Otherwise just reduce the current HP of remaining creatures
-                updatedGroup.currentHp = Math.max(1, updatedGroup.currentHp - (remainingDamage / (updatedGroup.count)));
-              }
-            }
+          // Ensure creatures array exists
+          if (!updatedGroup.creatures || !Array.isArray(updatedGroup.creatures)) {
+            // Initialize with current HP if no creatures array exists
+            updatedGroup.creatures = Array(updatedGroup.count).fill().map(() => ({
+              hp: updatedGroup.currentHp
+            }));
           }
+          
+          // Sort creatures by HP (ascending) to damage lowest HP first
+          updatedGroup.creatures.sort((a, b) => a.hp - b.hp);
+          
+          // Select the affected creatures (take the lowest HP ones first)
+          const affectedCreatures = updatedGroup.creatures.slice(0, affectedCount);
+          const unaffectedCreatures = updatedGroup.creatures.slice(affectedCount);
+          
+          // Apply damage to each affected creature
+          const survivingCreatures = affectedCreatures.filter(creature => {
+            if (damageToApply >= creature.hp) {
+              totalKillCount++;
+              return false; // Remove killed creature
+            } else {
+              creature.hp -= damageToApply;
+              return true; // Keep damaged creature
+            }
+          });
+          
+          // Update the group with remaining creatures
+          updatedGroup.creatures = [...survivingCreatures, ...unaffectedCreatures];
+          updatedGroup.count = updatedGroup.creatures.length;
+          
+          // Update currentHp to represent the lowest HP in the group
+          if (updatedGroup.creatures.length > 0) {
+            updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
+          }
+          
+          // Add to global kill count
+          globalKillCount += totalKillCount;
           
           return updatedGroup;
         });
@@ -655,7 +706,7 @@ const useDnDStore = create((set, get) => {
             {
               id: Date.now().toString(),
               damage,
-              message: `AoE: ${damage} ${saveType.toUpperCase()} save DC ${saveDC} to all groups (${percentAffected}% affected)`,
+              message: `AoE: ${damage} ${saveType.toUpperCase()} save DC ${saveDC} to all groups (${percentAffected}% affected)${globalKillCount > 0 ? ` - Total kills: ${globalKillCount}` : ''}`,
               isAoE: true,
               timestamp: Date.now()
             }
@@ -703,8 +754,8 @@ const useDnDStore = create((set, get) => {
             damageToApply = 0;
           }
           
-          // Calculate number of affected creatures (rounded down)
-          const affectedCount = Math.max(1, Math.floor(group.count * (percentAffected / 100)));
+          // Calculate number of affected creatures (rounded up)
+          const affectedCount = Math.ceil(group.count * (percentAffected / 100));
           console.log(`${group.name} affected count: ${affectedCount} out of ${group.count} (${percentAffected}%)`);
           
           if (affectedCount <= 0 || damageToApply <= 0) {
@@ -718,44 +769,42 @@ const useDnDStore = create((set, get) => {
             return group;
           }
           
-          // Calculate total damage to the group
-          const totalDamage = damageToApply * affectedCount;
-          console.log(`${group.name} total damage: ${totalDamage} (${damageToApply} per creature × ${affectedCount} creatures)`);
-          
           let updatedGroup = { ...group };
           let killCount = 0;
-          let remainingDamage = totalDamage;
           
-          // Apply damage to the group
-          if (updatedGroup.count > 0) {
-            // Calculate how many full creatures this damage would kill
-            const killableFull = Math.floor(remainingDamage / updatedGroup.currentHp);
-            
-            if (killableFull > 0) {
-              // Kill as many as we can, up to the affected count
-              const actualKills = Math.min(killableFull, affectedCount, updatedGroup.count);
-              killCount += actualKills;
-              updatedGroup.count -= actualKills;
-              
-              // Calculate remaining damage after killing full creatures
-              remainingDamage -= (actualKills * updatedGroup.currentHp);
-              console.log(`${group.name} killed ${actualKills} creatures, ${remainingDamage} damage remaining`);
+          // Ensure creatures array exists
+          if (!updatedGroup.creatures || !Array.isArray(updatedGroup.creatures)) {
+            // Initialize with current HP if no creatures array exists
+            updatedGroup.creatures = Array(updatedGroup.count).fill().map(() => ({
+              hp: updatedGroup.currentHp
+            }));
+          }
+          
+          // Sort creatures by HP (ascending) to damage lowest HP first
+          updatedGroup.creatures.sort((a, b) => a.hp - b.hp);
+          
+          // Select the affected creatures (take the lowest HP ones first)
+          const affectedCreatures = updatedGroup.creatures.slice(0, affectedCount);
+          const unaffectedCreatures = updatedGroup.creatures.slice(affectedCount);
+          
+          // Apply damage to each affected creature
+          const survivingCreatures = affectedCreatures.filter(creature => {
+            if (damageToApply >= creature.hp) {
+              killCount++;
+              return false; // Remove killed creature
+            } else {
+              creature.hp -= damageToApply;
+              return true; // Keep damaged creature
             }
-            
-            // If we still have damage and creatures left, apply to the next creature
-            if (remainingDamage > 0 && updatedGroup.count > 0 && killCount < affectedCount) {
-              // If remaining damage can kill another creature
-              if (remainingDamage >= updatedGroup.currentHp) {
-                killCount += 1;
-                updatedGroup.count -= 1;
-                console.log(`${group.name} killed 1 more creature with remaining damage`);
-              } else {
-                // Otherwise just reduce the current HP of remaining creatures
-                const damagePerCreature = remainingDamage / updatedGroup.count;
-                updatedGroup.currentHp = Math.max(1, updatedGroup.currentHp - damagePerCreature);
-                console.log(`${group.name} reduced HP of remaining creatures by ${damagePerCreature.toFixed(1)} each`);
-              }
-            }
+          });
+          
+          // Update the group with remaining creatures
+          updatedGroup.creatures = [...survivingCreatures, ...unaffectedCreatures];
+          updatedGroup.count = updatedGroup.creatures.length;
+          
+          // Update currentHp to represent the lowest HP in the group
+          if (updatedGroup.creatures.length > 0) {
+            updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
           }
           
           totalKillCount += killCount;

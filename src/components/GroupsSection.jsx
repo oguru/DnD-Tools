@@ -890,6 +890,47 @@ const GroupsSection = () => {
                           </div>
                         </div>
                         
+                        {/* Individual Creature HP Display */}
+                        <div className="creature-hp-grid" onClick={(e) => e.stopPropagation()}>
+                          {group.creatures && Array.isArray(group.creatures) ? (
+                            group.creatures.map((creature, index) => {
+                              const creatureHealthPercentage = calculateHealthPercentage(creature.hp, group.maxHp);
+                              const creatureHealthColor = getHealthColor(creatureHealthPercentage);
+                              
+                              return (
+                                <div key={index} className="creature-hp" title={`Creature ${index + 1}: ${creature.hp}/${group.maxHp} HP`}>
+                                  <div className="creature-hp-bar-container">
+                                    <div 
+                                      className="creature-hp-bar"
+                                      style={{
+                                        width: `${creatureHealthPercentage}%`,
+                                        backgroundColor: creatureHealthColor
+                                      }}
+                                    ></div>
+                                  </div>
+                                  <span className="creature-hp-text">{creature.hp}</span>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            // Fallback if creatures array is not available
+                            Array(group.count).fill().map((_, index) => (
+                              <div key={index} className="creature-hp" title={`Creature ${index + 1}: ${group.currentHp}/${group.maxHp} HP`}>
+                                <div className="creature-hp-bar-container">
+                                  <div 
+                                    className="creature-hp-bar"
+                                    style={{
+                                      width: `${calculateHealthPercentage(group.currentHp, group.maxHp)}%`,
+                                      backgroundColor: getHealthColor(calculateHealthPercentage(group.currentHp, group.maxHp))
+                                    }}
+                                  ></div>
+                                </div>
+                                <span className="creature-hp-text">{group.currentHp}</span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        
                         {/* Target character selection */}
                         <div className="entity-target-selection" onClick={(e) => e.stopPropagation()}>
                           <label>Target:</label>
