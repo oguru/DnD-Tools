@@ -985,16 +985,17 @@
 
 .bosses-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .boss-card {
-  background-color: white;
+  background-color: #e6f7ff;
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #91d5ff;
   padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s;
 }
 
@@ -1003,15 +1004,12 @@
 }
 
 .boss-card.targeted {
-  border: 2px solid #4299e1;
-  box-shadow: 0 0 10px rgba(56, 161, 105, 0.3);
-  background-color: #ebf8ff;
-
+  border: 2px solid #1890ff;
+  background-color: #e6f7ff;
 }
 
 .boss-card.in-aoe {
-  border: 2px solid #e53e3e;
-  box-shadow: 0 0 10px rgba(229, 62, 62, 0.3);
+  border: 2px solid #f6ad55;
   background-color: #fffaf0;
 }
 
@@ -1030,81 +1028,104 @@
 .boss-header h4 {
   margin: 0;
   font-size: 1.1rem;
-  color: #2d3748;
+  color: #096dd9;
 }
 
 .boss-actions {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
 
 .remove-boss-button {
   background-color: transparent;
-  color: #e53e3e;
   border: none;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 50%;
-  width: 1.75rem;
-  height: 1.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 1.2rem;
+  line-height: 1;
+  padding: 0;
+  color: #f5222d;
   transition: background-color 0.2s;
 }
 
 .remove-boss-button:hover {
-  background-color: #fff5f5;
+  background-color: #fff1f0;
 }
 
 .boss-stats {
-  margin-bottom: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .boss-stat {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
 }
 
 .boss-stat span:first-child {
   width: 3rem;
   font-weight: 600;
-  color: #4a5568;
-}
-
-.boss-stat input {
-  width: 4rem;
-  padding: 0.4rem;
-  border: 1px solid #cbd5e0;
-  border-radius: 4px;
-  text-align: center;
+  color: #096dd9;
+  flex-shrink: 0;
 }
 
 .boss-hp-controls {
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 0.25rem;
+  width: 100%;
+}
+
+.boss-hp-controls input {
+  width: 50px;
+  padding: 0.35rem;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.boss-hp-controls span {
+  margin: 0 0.25rem;
+  white-space: nowrap;
 }
 
 .hp-button {
-  background-color: #e2e8f0;
-  border: none;
-  border-radius: 4px;
   padding: 0.25rem 0.5rem;
+  background-color: #f0f0f0;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  min-width: 30px;
 }
 
 .hp-button:hover {
-  background-color: #cbd5e0;
+  background-color: #e6f7ff;
+  border-color: #91d5ff;
+}
+
+.boss-stat input[type="number"] {
+  width: 50px;
+  padding: 0.35rem;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  text-align: center;
 }
 
 .boss-health-bar-container {
   height: 8px;
-  background-color: #e2e8f0;
+  background-color: #f5f5f5;
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 1rem;
@@ -1117,77 +1138,69 @@
 
 .boss-targeting {
   display: flex;
-  justify-content: center;
   gap: 0.5rem;
-  margin: 0.75rem 0;
+  margin-bottom: 1rem;
 }
 
-.target-button,
-.aoe-button {
-  background-color: #f1f5f9;
-  border: 1px solid #cbd5e0;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s;
+.boss-targeting button {
   flex: 1;
-  max-width: 150px;
-}
-
-.target-button:hover,
-.aoe-button:hover {
-  background-color: #e2e8f0;
-}
-
-.target-button.active {
-  background-color: #2c5282;
-}
-
-.aoe-button {
-  background-color: #ed8936;
-}
-
-.aoe-button:hover {
-  background-color: #dd6b20;
-
-  border-color: #38a169;
-  font-weight: 600;
-}
-
-.aoe-button.active {
-  background-color: #c05621;
-
-  border-color: #e53e3e;
-  font-weight: 600;
-}
-
-.notes-header,
-.attacks-header {
-  background-color: #f7fafc;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
   border-radius: 4px;
-  margin-bottom: 0.5rem;
   cursor: pointer;
-  border: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+  transition: all 0.2s;
 }
 
-.notes-header h5,
-.attacks-header h5 {
+.boss-targeting .target-button {
+  background-color: #40a9ff;
+  color: white;
+}
+
+.boss-targeting .target-button:hover {
+  background-color: #1890ff;
+}
+
+.boss-targeting .target-button.active {
+  background-color: #096dd9;
+}
+
+.boss-targeting .aoe-button {
+  background-color: #ffa940;
+  color: white;
+}
+
+.boss-targeting .aoe-button:hover {
+  background-color: #fa8c16;
+}
+
+.boss-targeting .aoe-button.active {
+  background-color: #d46b08;
+}
+
+.boss-notes-section, .boss-attacks-section {
+  margin-bottom: 1rem;
+}
+
+.notes-header, .attacks-header {
+  background-color: #f0f0f0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.notes-header h5, .attacks-header h5 {
   margin: 0;
   font-size: 0.9rem;
-  color: #4a5568;
+  color: #262626;
 }
 
 .boss-notes {
-  background-color: #f8f9fa;
+  background-color: #fafafa;
   padding: 0.75rem;
   border-radius: 4px;
-  margin-bottom: 1rem;
-  border: 1px solid #e2e8f0;
-  max-height: 200px;
-  overflow-y: auto;
+  border: 1px solid #f0f0f0;
 }
 
 .boss-notes pre {
@@ -1195,236 +1208,212 @@
   white-space: pre-wrap;
   font-family: inherit;
   font-size: 0.9rem;
-  color: #4a5568;
-}
-
-.boss-attacks {
-  margin-bottom: 1rem;
+  color: #595959;
 }
 
 .boss-attacks ul {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
   margin: 0;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
 }
 
 .boss-attack-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.boss-attack-item:last-child {
-  border-bottom: none;
+  background-color: #fafafa;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #f0f0f0;
+  margin-bottom: 0.5rem;
 }
 
 .attack-info {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
+  margin-bottom: 0.5rem;
 }
 
 .attack-name {
   font-weight: 600;
-  color: #2d3748;
+  color: #262626;
+  display: block;
+  margin-bottom: 0.25rem;
 }
 
 .attack-details {
-  color: #718096;
   font-size: 0.85rem;
+  color: #595959;
 }
 
-.roll-attack-button {
-  background-color: #4299e1;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.attack-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
-.roll-attack-button:hover {
-  background-color: #3182ce;
-}
-
-.no-bosses-message {
-  text-align: center;
-  padding: 2rem 0;
-  color: #718096;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .boss-template-fields,
-  .attack-template-fields {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .bosses-list {
-    grid-template-columns: 1fr;
-  }
-  
-  .saving-throws-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .boss-template-fields,
-  .attack-template-fields {
-    grid-template-columns: 1fr;
-  }
-  
-  .boss-controls {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .boss-hp-controls {
-    flex-wrap: wrap;
-  }
-  
-  .saving-throws-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Style for AoE attack buttons */
-.roll-attack-button.aoe-attack {
-  background-color: #fed7d7;
-  color: #c53030;
-  border-color: #fc8181;
-}
-
-.roll-attack-button.aoe-attack:hover {
-  background-color: #feb2b2;
-}
-
-/* Target selection for boss attacks */
 .target-attack-container {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   width: 100%;
 }
 
 .player-target-select {
   flex: 1;
-  padding: 5px 8px;
-  border: 1px solid #e2e8f0;
+  min-width: 120px;
+  padding: 0.35rem;
+  border: 1px solid #d9d9d9;
   border-radius: 4px;
   font-size: 0.85rem;
-  background-color: white;
-  color: #4a5568;
 }
 
-.player-target-select:focus {
-  outline: none;
-  border-color: #4299e1;
-  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+.roll-attack-button {
+  padding: 0.35rem 0.75rem;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.roll-attack-button:hover {
+  background-color: #096dd9;
 }
 
 .roll-attack-button:disabled {
-  background-color: #cbd5e0;
+  background-color: #bfbfbf;
   cursor: not-allowed;
 }
 
-/* Improve boss attack layout */
-.boss-attack-item {
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
+.roll-attack-button.aoe-attack {
+  background-color: #fa8c16;
 }
 
-.attack-info {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 6px;
+.roll-attack-button.aoe-attack:hover {
+  background-color: #d46b08;
 }
 
-.attack-name {
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: #4a5568;
-}
-
-.attack-details {
-  font-size: 0.85rem;
-  color: #718096;
-}
-
-/* Pending attack results and damage modifier controls */
 .pending-attack-result {
-  background-color: #f7fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 12px;
-  margin-top: 10px;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 4px;
 }
 
 .attack-result-message {
-  margin-bottom: 10px;
-  font-size: 0.9rem;
-  color: #2d3748;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
 }
 
 .damage-modifier-controls {
   display: flex;
-  gap: 6px;
   flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .damage-button {
+  padding: 0.25rem 0.5rem;
   border: none;
   border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 0.85rem;
-  font-weight: 500;
   cursor: pointer;
+  font-size: 0.8rem;
   transition: all 0.2s;
   flex: 1;
+  text-align: center;
+  min-width: 60px;
 }
 
 .damage-button.full-damage {
-  background-color: #fed7d7;
-  color: #e53e3e;
+  background-color: #ff4d4f;
+  color: white;
 }
 
 .damage-button.full-damage:hover {
-  background-color: #feb2b2;
+  background-color: #cf1322;
 }
 
 .damage-button.half-damage {
-  background-color: #feebc8;
-  color: #dd6b20;
+  background-color: #ffa940;
+  color: white;
 }
 
 .damage-button.half-damage:hover {
-  background-color: #fbd38d;
+  background-color: #d46b08;
 }
 
 .damage-button.quarter-damage {
-  background-color: #fefcbf;
-  color: #d69e2e;
+  background-color: #faad14;
+  color: white;
 }
 
 .damage-button.quarter-damage:hover {
-  background-color: #faf089;
+  background-color: #d48806;
 }
 
 .damage-button.no-damage {
-  background-color: #e2e8f0;
-  color: #4a5568;
+  background-color: #52c41a;
+  color: white;
 }
 
 .damage-button.no-damage:hover {
-  background-color: #cbd5e0;
+  background-color: #389e0d;
+}
+
+.boss-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.reset-boss-health, .clear-all-bosses {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.reset-boss-health {
+  background-color: #faad14;
+  color: white;
+}
+
+.reset-boss-health:hover {
+  background-color: #d48806;
+}
+
+.clear-all-bosses {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+.clear-all-bosses:hover {
+  background-color: #cf1322;
+}
+
+/* Add this to fix the HP layout issue */
+@media (min-width: 500px) {
+  .boss-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .boss-stat:first-child {
+    grid-column: 1 / span 2;
+  }
+}
+
+/* Make hp controls more compact */
+.boss-hp-controls {
+  gap: 0.1rem;
+}
+
+.hp-button {
+  min-width: 25px;
+  padding: 0.25rem 0.35rem;
+}
+
+.boss-hp-controls input {
+  max-width: 45px;
 } 
