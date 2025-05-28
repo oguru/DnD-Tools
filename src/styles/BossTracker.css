@@ -349,7 +349,7 @@
   background-color: #fff;
   border-radius: 5px;
   border: 1px solid #eee;
-  padding: 15px;
+  padding: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -357,7 +357,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 0.5rem;
 }
 
 .boss-header h4 {
@@ -385,14 +385,14 @@
 .boss-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .boss-stat {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 0.25rem;
 }
 
 .boss-stat label {
@@ -413,7 +413,7 @@
   background-color: #e2e8f0;
   border-radius: 5px;
   overflow: hidden;
-  margin-bottom: 10px;
+  margin-bottom: 0.5rem;
 }
 
 .boss-health-bar {
@@ -469,7 +469,7 @@
   background-color: #f9f9f9;
   border-radius: 4px;
   border: 1px solid #e2e8f0;
-  padding: 8px;
+  padding: 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -484,7 +484,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 5px;
-  margin-bottom: 4px;
+  margin-bottom: 0.1rem;
 }
 
 .attack-stats {
@@ -495,6 +495,7 @@
 .attack-controls {
   margin-top: 8px;
   width: 100%;
+  gap: 0.25rem;
 }
 
 .attack-advantage-toggle {
@@ -1022,7 +1023,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .boss-header h4 {
@@ -1060,14 +1061,14 @@
 .boss-stats {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .boss-stat {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .boss-stat span:first-child {
@@ -1128,7 +1129,7 @@
   background-color: #f5f5f5;
   border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .boss-health-bar {
@@ -1139,12 +1140,12 @@
 .boss-targeting {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .boss-targeting button {
   flex: 1;
-  padding: 0.5rem 0.75rem;
+  padding: 0.35rem 0.5rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -1179,15 +1180,15 @@
 }
 
 .boss-notes-section, .boss-attacks-section {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .notes-header, .attacks-header {
   background-color: #f0f0f0;
-  padding: 0.5rem 0.75rem;
+  padding: 0.35rem 0.5rem;
   border-radius: 4px;
   cursor: pointer;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .notes-header h5, .attacks-header h5 {
@@ -1198,7 +1199,7 @@
 
 .boss-notes {
   background-color: #fafafa;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border-radius: 4px;
   border: 1px solid #f0f0f0;
 }
@@ -1207,64 +1208,69 @@
   margin: 0;
   white-space: pre-wrap;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #595959;
+  line-height: 1.2;
 }
 
 .boss-attacks ul {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.25rem;
 }
 
 .boss-attack-item {
   background-color: #fafafa;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border-radius: 4px;
   border: 1px solid #f0f0f0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .attack-info {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .attack-name {
   font-weight: 600;
   color: #262626;
   display: block;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.1rem;
 }
 
 .attack-details {
   font-size: 0.85rem;
   color: #595959;
+  line-height: 1.2;
 }
 
 .attack-controls {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   align-items: center;
 }
 
 .target-attack-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.25rem;
   width: 100%;
 }
 
 .player-target-select {
   flex: 1;
   min-width: 120px;
-  padding: 0.35rem;
+  padding: 0.25rem;
   border: 1px solid #d9d9d9;
   border-radius: 4px;
   font-size: 0.85rem;
 }
 
 .roll-attack-button {
-  padding: 0.35rem 0.75rem;
+  padding: 0.25rem 0.5rem;
   background-color: #1890ff;
   color: white;
   border: none;
@@ -1293,27 +1299,28 @@
 }
 
 .pending-attack-result {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
   background-color: #f6ffed;
   border: 1px solid #b7eb8f;
   border-radius: 4px;
 }
 
 .attack-result-message {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   font-size: 0.85rem;
   white-space: pre-wrap;
+  line-height: 1.2;
 }
 
 .damage-modifier-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .damage-button {
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.4rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -1321,7 +1328,7 @@
   transition: all 0.2s;
   flex: 1;
   text-align: center;
-  min-width: 60px;
+  min-width: 50px;
 }
 
 .damage-button.full-damage {
