@@ -35,7 +35,7 @@
 }
 
 .current-turn {
-  background-color: #edf2f7;
+  background-color: #e6f7ff;
   border-radius: 6px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -43,22 +43,26 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
+  border: 2px solid #3182ce;
+  box-shadow: 0 0 10px rgba(49, 130, 206, 0.3);
 }
 
 .current-turn-label {
-  font-weight: 600;
-  color: #4a5568;
+  font-weight: 700;
+  color: #2c5282;
+  font-size: 1.1rem;
 }
 
 .current-turn-entity {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.75rem;
   font-weight: 600;
   border-radius: 4px;
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
   margin-left: 0.5rem;
+  flex: 1;
 }
 
 .current-turn-entity.character {
@@ -94,6 +98,9 @@
   background-color: rgba(255, 255, 255, 0.5);
   border-radius: 4px;
   padding: 0.2rem 0.4rem;
+  text-align: center;
+  min-width: 50px;
+  display: inline-block;
 }
 
 .turn-order-controls {
@@ -141,20 +148,25 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-height: 300px;
+  max-height: 400px;
   overflow-y: auto;
   padding-right: 0.5rem;
+  padding-left: 0.25rem;
 }
 
 .turn-order-item {
   display: grid;
-  grid-template-columns: 2rem 1fr auto auto auto;
-  gap: 0.5rem;
+  grid-template-columns: 2rem minmax(120px, 1fr) 60px 100px auto;
+  gap: 0.75rem;
   align-items: center;
-  padding: 0.5rem;
+  padding: 0rem 0.5rem;
   border-radius: 4px;
   background-color: #edf2f7;
   transition: background-color 0.2s;
+  position: relative;
+  overflow: visible;
+  margin-left: 12px;
+  min-height: 60px;
 }
 
 .turn-order-item:hover {
@@ -162,8 +174,20 @@
 }
 
 .turn-order-item.current {
-  background-color: #ebf8ff;
-  border-left: 3px solid #3182ce;
+  background-color: #e6f7ff;
+  border-left: 5px solid #3182ce;
+  box-shadow: 0 0 6px rgba(49, 130, 206, 0.5);
+  position: relative;
+}
+
+.turn-order-item.current::before {
+  content: "▶";
+  position: absolute;
+  left: -15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #3182ce;
+  font-size: 12px;
 }
 
 .turn-order-item.character {
@@ -265,31 +289,120 @@
   font-size: 0.75rem;
 }
 
-/* Responsive design */
-@media (max-width: 576px) {
+/* Improve entity info container */
+.entity-info {
+  display: flex;
+  flex-direction: column;
+}
+
+/* HP Information styles */
+.entity-hp-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+  font-size: 0.85rem;
+  justify-content: center;
+}
+
+.mini-health-bar-container {
+  width: 100%;
+  height: 6px;
+  background-color: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.mini-health-bar {
+  height: 100%;
+  transition: width 0.3s, background-color 0.3s;
+}
+
+/* Group member indicators */
+.group-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 3px;
+  justify-content: center;
+  max-width: 120px;
+}
+
+.group-member-hp {
+  font-size: 0.7rem;
+  background-color: rgba(66, 153, 225, 0.2);
+  border-radius: 3px;
+  padding: 1px 4px;
+  color: #2c5282;
+  font-weight: 600;
+}
+
+/* Make sure turn order item content is centered */
+.turn-order-item > * {
+  align-self: center;
+}
+
+/* Improve health bar visibility in the initiative table */
+.turn-order-item .mini-health-bar-container {
+  width: 100%;
+  min-width: 50px;
+  height: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
   .turn-order-item {
-    grid-template-columns: 2rem 1fr auto;
+    grid-template-columns: 2rem 1fr auto auto;
     grid-template-rows: auto auto;
+    padding: 0.5rem;
+    gap: 0.5rem;
   }
   
-  .entity-type,
-  .initiative-value {
+  .entity-info {
     grid-column: 2;
+    grid-row: 1;
+  }
+  
+  .initiative-value {
+    grid-column: 3;
+    grid-row: 1;
+    margin-right: 0.5rem;
+  }
+  
+  .entity-hp-info {
     grid-row: 2;
+    grid-column: 1 / span 4;
+    align-items: flex-start;
+    margin-top: 0.5rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem;
+    width: 100%;
   }
   
   .turn-order-actions {
-    grid-column: 3;
-    grid-row: 1 / span 2;
+    grid-column: 4;
+    grid-row: 1;
   }
   
-  .current-turn {
-    flex-direction: column;
-    align-items: flex-start;
+  .hp-text {
+    margin-bottom: 0;
   }
   
-  .current-turn-entity {
-    margin-left: 0;
+  .mini-health-bar-container {
     width: 100%;
+    margin-top: 0;
+    align-self: center;
   }
+  
+  .group-members {
+    grid-column: 1 / span 2;
+    margin-top: 0.25rem;
+  }
+}
+
+.hp-text {
+  font-weight: 600;
+  margin-bottom: 2px;
 } 

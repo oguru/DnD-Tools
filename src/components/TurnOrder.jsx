@@ -14,13 +14,84 @@ const TurnOrder = () => {
     moveTurnOrderUp,
     moveTurnOrderDown,
     updateTurnOrder,
-    rollInitiative
+    rollInitiative,
+    calculateHealthPercentage,
+    getHealthColor
   } = useDnDStore();
 
   // Update turn order when component mounts
   useEffect(() => {
     updateTurnOrder();
   }, [updateTurnOrder]);
+
+  // Helper function to render HP information
+  const renderHpInfo = (entity) => {
+    if (entity.type === 'character' || entity.type === 'boss') {
+      // For individual characters and bosses
+      if (entity.maxHp) {
+        const healthPercentage = calculateHealthPercentage(entity.currentHp, entity.maxHp);
+        const healthColor = getHealthColor(healthPercentage);
+        
+        return (
+          <div className="entity-hp-info">
+            <span className="hp-text">{entity.currentHp}/{entity.maxHp}</span>
+            <div className="mini-health-bar-container">
+              <div 
+                className="mini-health-bar"
+                style={{
+                  width: `${healthPercentage}%`,
+                  backgroundColor: healthColor
+                }}
+              ></div>
+            </div>
+          </div>
+        );
+      }
+    } else if (entity.type === 'group') {
+      // For individual groups
+      if (entity.maxHp) {
+        return (
+          <div className="entity-hp-info">
+            <span className="hp-text">{entity.count}/{entity.originalCount}</span>
+            <div className="mini-health-bar-container">
+              <div 
+                className="mini-health-bar"
+                style={{
+                  width: `${calculateHealthPercentage(entity.count, entity.originalCount)}%`,
+                  backgroundColor: getHealthColor(calculateHealthPercentage(entity.count, entity.originalCount))
+                }}
+              ></div>
+            </div>
+          </div>
+        );
+      }
+    } else if (entity.type === 'groupCollection') {
+      // For group collections
+      return (
+        <div className="entity-hp-info">
+          <span className="hp-text">{entity.totalCount}/{entity.totalOriginalCount}</span>
+          <div className="mini-health-bar-container">
+            <div 
+              className="mini-health-bar"
+              style={{
+                width: `${calculateHealthPercentage(entity.totalCount, entity.totalOriginalCount)}%`,
+                backgroundColor: getHealthColor(calculateHealthPercentage(entity.totalCount, entity.totalOriginalCount))
+              }}
+            ></div>
+          </div>
+          <div className="group-members">
+            {entity.groups && entity.groups.map((group) => (
+              <div key={group.id} className="group-member-hp" title={`${group.count}/${group.originalCount} creatures - HP: ${group.currentHp}/${group.maxHp}`}>
+                <span>{group.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
+  };
 
   // No entities with initiative
   if (turnOrder.length === 0) {
@@ -79,6 +150,7 @@ const TurnOrder = () => {
                   : `(${currentEntity.type})`}
               </span>
               <span className="initiative-value">Initiative: {currentEntity.initiative}</span>
+              {renderHpInfo(currentEntity)}
             </span>
           </div>
           
@@ -113,13 +185,16 @@ const TurnOrder = () => {
                 className={`turn-order-item ${index === currentTurnIndex ? 'current' : ''} ${entity.type}`}
               >
                 <span className="turn-number">{index + 1}</span>
-                <span className="entity-name">{entity.name}</span>
-                <span className="entity-type">
-                  {entity.type === 'groupCollection' 
-                    ? `${entity.ids?.length || 0} groups` 
-                    : entity.type}
-                </span>
+                <div className="entity-info">
+                  <span className="entity-name">{entity.name}</span>
+                  <span className="entity-type">
+                    {entity.type === 'groupCollection' 
+                      ? `${entity.ids?.length || 0} groups` 
+                      : entity.type}
+                  </span>
+                </div>
                 <span className="initiative-value">{entity.initiative}</span>
+                {renderHpInfo(entity)}
                 <div className="turn-order-actions">
                   <button
                     className="move-up-button"

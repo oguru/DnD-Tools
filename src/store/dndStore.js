@@ -625,7 +625,7 @@ const useDnDStore = create((set, get) => {
           ? `Critical hit! ${damage} damage to ${group.name} (${killCount} killed)`
           : `Hit! ${damage} damage to ${group.name} (${killCount} killed)`;
         
-        // If the group was defeated, update turn order after state update
+        // If the group was defeated, update turn order after state update but don't reset
         if (isGroupDefeated) {
           setTimeout(() => get().updateTurnOrder(false, groupId, 'group'), 0);
         }
@@ -1583,19 +1583,23 @@ const useDnDStore = create((set, get) => {
     // Turn order functions
     updateTurnOrder: (resetToStart = false, removedId = null, removedType = null) => {
       set(state => {
-        // First, collect all individual entities
+        // First, collect all individual entities with their HP information
         const characters = state.characters.map(char => ({ 
           id: char.id, 
           name: char.name, 
           type: 'character', 
-          initiative: char.initiative || 0 
+          initiative: char.initiative || 0,
+          currentHp: char.currentHp,
+          maxHp: char.maxHp
         }));
         
         const bosses = state.bosses.map(boss => ({ 
           id: boss.id, 
           name: boss.name, 
           type: 'boss', 
-          initiative: boss.initiative || 0 
+          initiative: boss.initiative || 0,
+          currentHp: boss.currentHp,
+          maxHp: boss.maxHp
         }));
         
         // For enemy groups, we need special handling to group them
@@ -1603,7 +1607,11 @@ const useDnDStore = create((set, get) => {
           id: group.id, 
           name: group.name, 
           type: 'group', 
-          initiative: group.initiative || 0 
+          initiative: group.initiative || 0,
+          currentHp: group.currentHp,
+          maxHp: group.maxHp,
+          count: group.count,
+          originalCount: group.originalCount || group.count
         }));
         
         // Group enemy groups with the same initiative
@@ -1625,10 +1633,29 @@ const useDnDStore = create((set, get) => {
               name: baseName,
               type: 'groupCollection',
               initiative: initiative,
-              baseNamePattern: baseName
+              baseNamePattern: baseName,
+              // For group collections, track total count and HP
+              totalCount: group.count,
+              totalOriginalCount: group.originalCount || group.count,
+              groups: [{ 
+                id: group.id, 
+                count: group.count,
+                originalCount: group.originalCount || group.count,
+                currentHp: group.currentHp,
+                maxHp: group.maxHp
+              }]
             };
           } else {
             groupedEnemies[key].ids.push(group.id);
+            groupedEnemies[key].totalCount += group.count;
+            groupedEnemies[key].totalOriginalCount += (group.originalCount || group.count);
+            groupedEnemies[key].groups.push({ 
+              id: group.id, 
+              count: group.count,
+              originalCount: group.originalCount || group.count,
+              currentHp: group.currentHp,
+              maxHp: group.maxHp
+            });
           }
         });
         
@@ -1649,7 +1676,7 @@ const useDnDStore = create((set, get) => {
         // Determine new current turn index
         let newCurrentTurnIndex = state.currentTurnIndex;
         
-        // If we need to reset to the start of combat
+        // If we need to reset to the start of combat (only when initiative changes)
         if (resetToStart) {
           newCurrentTurnIndex = 0;
         } 

@@ -787,7 +787,6 @@ const GroupsSection = () => {
               <>
                 <h4>Bosses</h4>
               <div className="bosses-list">
-                <div className="entities-grid">
                   {bosses.map(boss => {
                     const healthPercentage = calculateHealthPercentage(boss.currentHp, boss.maxHp);
                     const healthColor = getHealthColor(healthPercentage);
@@ -796,8 +795,8 @@ const GroupsSection = () => {
                                       targetEntity.id === boss.id;
                     
                     return (
+                      <div key={boss.id}  className="entities-grid">
                       <div 
-                        key={boss.id} 
                         className={`entity-card ${isTargeted ? 'targeted' : ''} ${boss.inAoe ? 'in-aoe' : ''}`}
                         onClick={() => handleSetBossAsTarget(boss)}
                       >
@@ -841,10 +840,10 @@ const GroupsSection = () => {
                           </button>
                         </div>
                       </div>
+                  </div>
                     );
                   })}
                 </div>
-              </div>
               </>
             )}
 
