@@ -922,4 +922,262 @@
   color: #9a3412;
   font-size: 0.9rem;
   text-align: center;
+}
+
+/* Healing Section */
+.healing-section {
+  background-color: #f0fff4;
+  border: 1px solid #c6f6d5;
+}
+
+.healing-section h4 {
+  color: #276749;
+}
+
+.healing-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.apply-healing-button {
+  background-color: #38a169;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  margin-top: 0.5rem;
+}
+
+.apply-healing-button:hover {
+  background-color: #2f855a;
+}
+
+.apply-healing-button:disabled {
+  background-color: #9ae6b4;
+  cursor: not-allowed;
+}
+
+.healing-help {
+  margin-top: 1rem;
+  background-color: #e6fffa;
+  border: 1px solid #b2f5ea;
+  border-radius: 4px;
+  padding: 0.75rem;
+}
+
+.healing-help p {
+  margin: 0;
+  color: #2c7a7b;
+  font-size: 0.9rem;
+}
+
+/* Multi-select container for healing */
+.multi-select-container {
+  margin-top: 1rem;
+  border: 1px solid #c6f6d5;
+  border-radius: 4px;
+  padding: 0.75rem;
+  background-color: #f0fff4;
+}
+
+.multi-select-container h5 {
+  margin: 0 0 0.75rem 0;
+  color: #276749;
+  font-size: 1rem;
+}
+
+.entity-select-section {
+  margin-bottom: 1rem;
+}
+
+.entity-select-section h6 {
+  margin: 0 0 0.5rem 0;
+  color: #2f855a;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #c6f6d5;
+  padding-bottom: 0.25rem;
+}
+
+.entity-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.entity-select-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #c6f6d5;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.entity-select-item:hover {
+  background-color: #e6fffa;
+  border-color: #81e6d9;
+}
+
+.entity-select-item.selected {
+  background-color: #38a169;
+  color: white;
+  border-color: #2f855a;
+}
+
+.entity-select-item .entity-name {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.entity-select-item .entity-hp {
+  font-size: 0.8rem;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.entity-select-item .entity-count {
+  background-color: #38a169;
+  color: white;
+  padding: 0.1rem 0.3rem;
+  border-radius: 1rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  align-self: flex-start;
+  margin-bottom: 0.25rem;
+}
+
+.entity-select-item.selected .entity-count {
+  background-color: white;
+  color: #38a169;
+}
+
+.selected-entities-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: #e6fffa;
+  border-radius: 4px;
+  border: 1px solid #b2f5ea;
+}
+
+.clear-selections-button {
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.clear-selections-button:hover {
+  background-color: #3182ce;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .entity-select-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Make multi-select container more compact */
+.multi-select-container.compact {
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.multi-select-container.compact h5 {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.multi-select-container.compact .entity-select-section {
+  margin-bottom: 0.5rem;
+}
+
+.multi-select-container.compact h6 {
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.multi-select-container.compact .entity-select-grid {
+  max-height: 150px;
+  gap: 0.3rem;
+}
+
+.multi-select-container.compact .entity-select-item {
+  padding: 0.35rem;
+}
+
+.entity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.1rem;
+}
+
+/* Creature HP indicators */
+.creature-hp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.25rem;
+}
+
+.creature-hp-indicator {
+  position: relative;
+  height: 0.5rem;
+  background-color: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.creature-hp-indicator .creature-hp-bar {
+  height: 100%;
+  background-color: #38a169;
+  transition: width 0.2s;
+}
+
+/* Make health bars more visible in selected items */
+.entity-select-item.selected .creature-hp-indicator {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.entity-select-item.selected .creature-hp-indicator .creature-hp-bar {
+  background-color: #bee3f8; /* Light blue */
+}
+
+.creature-hp-indicator.dead .creature-hp-bar {
+  background-color: #a0aec0;
+}
+
+.creature-hp-indicator .creature-hp-text {
+  position: absolute;
+  right: 2px;
+  top: 0;
+  font-size: 0.55rem;
+  color: white;
+  font-weight: bold;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.entity-select-item.selected .creature-hp-indicator .creature-hp-text {
+  color: #2c5282; /* Darker blue */
+}
+
+.creature-hp-indicator.dead .creature-hp-text {
+  color: #a0aec0;
 } 

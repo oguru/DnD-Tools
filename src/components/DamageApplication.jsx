@@ -21,7 +21,10 @@ const DamageApplication = () => {
     applyDamageToAllBossesInAoe,
     setDamageApplicationRef,
     aoeDamageParams,
-    clearAllAoeTargets
+    clearAllAoeTargets,
+    updateEnemyGroup,
+    updateBoss,
+    updateCharacter
   } = useDnDStore();
 
   // Local state for single target damage
@@ -31,6 +34,12 @@ const DamageApplication = () => {
     criticalHit: false,
     advantage: false,
     disadvantage: false
+  });
+
+  // Healing state
+  const [healingState, setHealingState] = useState({
+    healingAmount: '',
+    selectedEntities: []
   });
 
   // AOE damage state
@@ -420,6 +429,182 @@ const DamageApplication = () => {
   // Add a variable to check if AOE damage is coming from a boss attack
   const isAoeFromBossAttack = !!aoeDamageParams;
 
+  // Handle changes to healing state
+  const handleHealingChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setHealingState(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  // Toggle entity selection for multi-healing
+  const toggleEntityForHealing = (entityType, entityId) => {
+    setHealingState(prev => {
+      // Check if entity is already selected
+      const isSelected = prev.selectedEntities.some(
+        item => item.type === entityType && item.id === entityId
+      );
+      
+      // Create new array - either adding or removing the entity
+      const newSelectedEntities = isSelected
+        ? prev.selectedEntities.filter(
+            item => !(item.type === entityType && item.id === entityId)
+          )
+        : [...prev.selectedEntities, { type: entityType, id: entityId }];
+      
+      return {
+        ...prev,
+        selectedEntities: newSelectedEntities
+      };
+    });
+  };
+  
+  // Check if an entity is selected for healing
+  const isEntitySelectedForHealing = (entityType, entityId) => {
+    return healingState.selectedEntities.some(
+      entity => entity.type === entityType && entity.id === entityId
+    );
+  };
+  
+  // Helper function to apply healing to a group
+  const applyHealingToGroup = (groupId, amount) => {
+    const group = enemyGroups.find(g => g.id === groupId);
+    if (!group || !group.creatures || amount <= 0) return;
+    
+    // Create a copy of the group
+    const updatedGroup = { ...group };
+    const updatedCreatures = [...group.creatures];
+    
+    // Sort creatures by current HP (highest first, but exclude those with 0 HP)
+    updatedCreatures.sort((a, b) => {
+      // Dead creatures (0 HP) go last
+      if (a.hp === 0) return 1;
+      if (b.hp === 0) return -1;
+      
+      // Otherwise sort by current HP, highest first
+      return b.hp - a.hp;
+    });
+    
+    let remainingHealing = amount;
+    
+    // Apply healing to each creature that isn't dead, starting with highest HP
+    for (let i = 0; i < updatedCreatures.length && remainingHealing > 0; i++) {
+      const creature = updatedCreatures[i];
+      
+      // Skip dead creatures
+      if (creature.hp === 0) continue;
+      
+      const missingHP = group.maxHp - creature.hp;
+      
+      if (missingHP > 0) {
+        // Apply healing up to max HP
+        const healingToApply = Math.min(remainingHealing, missingHP);
+        creature.hp += healingToApply;
+        remainingHealing -= healingToApply;
+      }
+    }
+    
+    // Update the group with healed creatures
+    updatedGroup.creatures = updatedCreatures;
+    
+    // Calculate new current HP for the group
+    const totalCurrentHP = updatedCreatures.reduce((sum, creature) => sum + creature.hp, 0);
+    updatedGroup.currentHp = Math.floor(totalCurrentHP / updatedCreatures.length);
+    
+    // Update the group in the store
+    updateEnemyGroup(groupId, null, updatedGroup);
+  };
+  
+  // Get detailed group information including individual creature HP
+  const getGroupDetails = (group) => {
+    if (!group || !group.creatures) return null;
+    
+    return {
+      ...group,
+      creatureDetails: group.creatures.map((creature, index) => ({
+        id: index,
+        hp: creature.hp,
+        maxHp: group.maxHp,
+        percent: Math.floor((creature.hp / group.maxHp) * 100)
+      }))
+    };
+  };
+  
+  // Helper function to apply healing to a boss
+  const applyHealingToBoss = (bossId, amount) => {
+    const boss = bosses.find(b => b.id === bossId);
+    if (!boss || amount <= 0) return;
+    
+    // Calculate new HP
+    const newHP = Math.min(boss.maxHp, boss.currentHp + amount);
+    
+    // Update the boss HP
+    updateBoss(bossId, 'currentHp', newHP);
+  };
+
+  // Get healable entities
+  const getHealableEntities = () => {
+    return {
+      characters: characters,
+      // Filter out groups where all creatures have 0 HP
+      groups: enemyGroups.filter(group => 
+        group.creatures && group.creatures.some(creature => creature.hp > 0)
+      ),
+      bosses: bosses
+    };
+  };
+  
+  // Get healable entities
+  const healableEntities = getHealableEntities();
+
+  // Helper function to apply healing to a character
+  const applyHealingToCharacter = (characterId, amount) => {
+    const character = characters.find(c => c.id === characterId);
+    if (!character || amount <= 0) return;
+    
+    // For characters, allow healing from 0 HP
+    // Get current character HP, making sure we don't go negative
+    const currentHp = Math.max(0, character.currentHp);
+    const newHp = Math.min(character.maxHp, currentHp + amount);
+    
+    // Use the updateCharacter function from the store
+    updateCharacter(characterId, 'currentHp', newHp);
+  };
+
+  // Apply healing to multiple entities
+  const handleApplyMultiHealing = () => {
+    // Parse healing amount
+    const healing = parseInt(healingState.healingAmount);
+    if (isNaN(healing) || healing <= 0) {
+      alert('Please enter a valid healing amount');
+      return;
+    }
+    
+    if (healingState.selectedEntities.length === 0) {
+      alert('Please select at least one entity to heal');
+      return;
+    }
+    
+    // Apply healing to each selected entity
+    healingState.selectedEntities.forEach(entity => {
+      if (entity.type === 'group') {
+        applyHealingToGroup(entity.id, healing);
+      } else if (entity.type === 'boss') {
+        applyHealingToBoss(entity.id, healing);
+      } else if (entity.type === 'character') {
+        applyHealingToCharacter(entity.id, healing);
+      }
+    });
+    
+    // Reset healing amount AND clear selected entities
+    setHealingState(prev => ({
+      ...prev,
+      healingAmount: '',
+      selectedEntities: []
+    }));
+  };
+
   return (
     <div className="damage-application" ref={sectionRef}>
       <div className="section-header">
@@ -803,6 +988,141 @@ const DamageApplication = () => {
               <div className="aoe-help">
                 <p>
                   <strong>To use AoE:</strong> First mark targets with &quot;Add to AoE&quot; in their respective sections, then apply damage here.
+                </p>
+              </div>
+            </div>
+
+            {/* Healing Section */}
+            <div className="damage-section healing-section">
+              <h4>Healing</h4>
+              
+              <div className="healing-controls">
+                <div className="control-row">
+                  <div className="control-field">
+                    <label>Healing Amount:</label>
+                    <input
+                      type="number"
+                      name="healingAmount"
+                      value={healingState.healingAmount}
+                      onChange={handleHealingChange}
+                      placeholder="Healing amount"
+                      min="0"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="multi-select-container compact">
+                  <h5>Select Entities to Heal</h5>
+                  
+                  {/* Characters section */}
+                  {healableEntities.characters.length > 0 && (
+                    <div className="entity-select-section">
+                      <h6>Characters</h6>
+                      <div className="entity-select-grid">
+                        {healableEntities.characters.map(character => (
+                          <div 
+                            key={`character-${character.id}`}
+                            className={`entity-select-item ${isEntitySelectedForHealing('character', character.id) ? 'selected' : ''}`}
+                            onClick={() => toggleEntityForHealing('character', character.id)}
+                          >
+                            <span className="entity-name">{character.name}</span>
+                            <span className="entity-hp">{character.currentHp}/{character.maxHp} HP</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Enemy Groups section */}
+                  {healableEntities.groups.length > 0 && (
+                    <div className="entity-select-section">
+                      <h6>Enemy Groups</h6>
+                      <div className="entity-select-grid">
+                        {healableEntities.groups.map(group => {
+                          const groupDetails = getGroupDetails(group);
+                          return (
+                            <div 
+                              key={`group-${group.id}`}
+                              className={`entity-select-item ${isEntitySelectedForHealing('group', group.id) ? 'selected' : ''}`}
+                              onClick={() => toggleEntityForHealing('group', group.id)}
+                            >
+                              <div className="entity-header">
+                                <span className="entity-name">{group.name}</span>
+                                <span className="entity-count">x{group.count}</span>
+                              </div>
+                              <span className="entity-hp">{group.currentHp}/{group.maxHp} HP</span>
+                              
+                              {groupDetails && groupDetails.creatureDetails && (
+                                <div className="creature-hp-list">
+                                  {groupDetails.creatureDetails.map((creature, idx) => (
+                                    <div 
+                                      key={idx} 
+                                      className={`creature-hp-indicator ${creature.hp === 0 ? 'dead' : ''}`}
+                                      title={`Creature ${idx+1}: ${creature.hp}/${creature.maxHp} HP`}
+                                    >
+                                      <div 
+                                        className="creature-hp-bar" 
+                                        style={{width: `${creature.percent}%`}}
+                                      ></div>
+                                      <span className="creature-hp-text">{creature.hp}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Bosses section */}
+                  {healableEntities.bosses.length > 0 && (
+                    <div className="entity-select-section">
+                      <h6>Bosses</h6>
+                      <div className="entity-select-grid">
+                        {healableEntities.bosses.map(boss => (
+                          <div 
+                            key={`boss-${boss.id}`}
+                            className={`entity-select-item ${isEntitySelectedForHealing('boss', boss.id) ? 'selected' : ''}`}
+                            onClick={() => toggleEntityForHealing('boss', boss.id)}
+                          >
+                            <span className="entity-name">{boss.name}</span>
+                            <span className="entity-hp">{boss.currentHp}/{boss.maxHp} HP</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Selected entities summary */}
+                  <div className="selected-entities-summary">
+                    <span>Selected: {healingState.selectedEntities.length} entities</span>
+                    {healingState.selectedEntities.length > 0 && (
+                      <button 
+                        className="clear-selections-button"
+                        onClick={() => setHealingState(prev => ({...prev, selectedEntities: []}))}
+                      >
+                        Clear All
+                      </button>
+                    )}
+                  </div>
+                </div>
+                
+                <button
+                  className="apply-healing-button"
+                  onClick={handleApplyMultiHealing}
+                  disabled={!healingState.healingAmount || healingState.selectedEntities.length === 0}
+                >
+                  Apply Healing to {healingState.selectedEntities.length} {healingState.selectedEntities.length === 1 ? 'Entity' : 'Entities'}
+                </button>
+              </div>
+              
+              <div className="healing-help">
+                <p>
+                  <strong>Note:</strong> Healing is applied to the most damaged creatures first. For groups, 
+                  multi-target healing will distribute healing among all damaged creatures.
                 </p>
               </div>
             </div>
