@@ -34,7 +34,7 @@ const TurnOrder = () => {
         
         return (
           <div className="entity-hp-info">
-            <span className="hp-text">{entity.currentHp}/{entity.maxHp}</span>
+            <span className="hp-text">{entity.currentHp}/{entity.maxHp} HP</span>
             <div className="mini-health-bar-container">
               <div 
                 className="mini-health-bar"
@@ -50,15 +50,21 @@ const TurnOrder = () => {
     } else if (entity.type === 'group') {
       // For individual groups
       if (entity.maxHp) {
+        // Calculate total HP for the group
+        const totalCurrentHp = entity.count * entity.currentHp;
+        const totalMaxHp = entity.originalCount * entity.maxHp;
+        const healthPercentage = calculateHealthPercentage(totalCurrentHp, totalMaxHp);
+        const healthColor = getHealthColor(healthPercentage);
+        
         return (
           <div className="entity-hp-info">
-            <span className="hp-text">{entity.count}/{entity.originalCount}</span>
+            <span className="hp-text">{entity.count}/{entity.originalCount} ({totalCurrentHp}/{totalMaxHp} HP)</span>
             <div className="mini-health-bar-container">
               <div 
                 className="mini-health-bar"
                 style={{
-                  width: `${calculateHealthPercentage(entity.count, entity.originalCount)}%`,
-                  backgroundColor: getHealthColor(calculateHealthPercentage(entity.count, entity.originalCount))
+                  width: `${healthPercentage}%`,
+                  backgroundColor: healthColor
                 }}
               ></div>
             </div>
@@ -67,27 +73,41 @@ const TurnOrder = () => {
       }
     } else if (entity.type === 'groupCollection') {
       // For group collections
-      return (
-        <div className="entity-hp-info">
-          <span className="hp-text">{entity.totalCount}/{entity.totalOriginalCount}</span>
-          <div className="mini-health-bar-container">
-            <div 
-              className="mini-health-bar"
-              style={{
-                width: `${calculateHealthPercentage(entity.totalCount, entity.totalOriginalCount)}%`,
-                backgroundColor: getHealthColor(calculateHealthPercentage(entity.totalCount, entity.totalOriginalCount))
-              }}
-            ></div>
+      if (entity.groups && entity.groups.length > 0) {
+        // Calculate total HP for all groups in the collection
+        let totalCurrentHp = 0;
+        let totalMaxHp = 0;
+        
+        entity.groups.forEach(group => {
+          totalCurrentHp += (group.count * group.currentHp);
+          totalMaxHp += (group.originalCount * group.maxHp);
+        });
+        
+        const healthPercentage = calculateHealthPercentage(totalCurrentHp, totalMaxHp);
+        const healthColor = getHealthColor(healthPercentage);
+        
+        return (
+          <div className="entity-hp-info">
+            <span className="hp-text">{entity.totalCount}/{entity.totalOriginalCount} ({totalCurrentHp}/{totalMaxHp} HP)</span>
+            <div className="mini-health-bar-container">
+              <div 
+                className="mini-health-bar"
+                style={{
+                  width: `${healthPercentage}%`,
+                  backgroundColor: healthColor
+                }}
+              ></div>
+            </div>
+            <div className="group-members">
+              {entity.groups.map((group) => (
+                <div key={group.id} className="group-member-hp" title={`${group.count}/${group.originalCount} creatures - HP: ${group.currentHp}/${group.maxHp}`}>
+                  <span>{group.count}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="group-members">
-            {entity.groups && entity.groups.map((group) => (
-              <div key={group.id} className="group-member-hp" title={`${group.count}/${group.originalCount} creatures - HP: ${group.currentHp}/${group.maxHp}`}>
-                <span>{group.count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
+        );
+      }
     }
     
     return null;

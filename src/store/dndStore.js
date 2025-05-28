@@ -628,6 +628,9 @@ const useDnDStore = create((set, get) => {
         // If the group was defeated, update turn order after state update but don't reset
         if (isGroupDefeated) {
           setTimeout(() => get().updateTurnOrder(false, groupId, 'group'), 0);
+        } else {
+          // Update turn order to refresh HP information in initiative table
+          setTimeout(() => get().updateTurnOrder(), 0);
         }
         
         return { 
@@ -966,6 +969,9 @@ const useDnDStore = create((set, get) => {
             ? `Critical hit! ${damage} damage to ${boss?.name}`
             : `Hit! ${damage} damage to ${boss?.name}`;
             
+        // Update turn order to refresh HP information
+        setTimeout(() => get().updateTurnOrder(), 0);
+        
         return { 
           bosses: updatedBosses,
           attackResults: [
@@ -1072,6 +1078,9 @@ const useDnDStore = create((set, get) => {
             ? `Critical hit! ${damage} damage to ${character?.name}${modifierText}`
             : `Hit! ${damage} damage to ${character?.name}${modifierText}`;
             
+        // Update turn order to refresh HP information
+        setTimeout(() => get().updateTurnOrder(), 0);
+        
         return { 
           characters: updatedCharacters,
           attackResults: [
@@ -1479,6 +1488,9 @@ const useDnDStore = create((set, get) => {
             timestamp: Date.now()
           };
         }).filter(Boolean);
+        
+        // Update turn order to refresh HP information
+        setTimeout(() => get().updateTurnOrder(), 0);
         
         return { 
           characters: updatedCharacters,
