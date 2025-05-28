@@ -124,6 +124,9 @@ const useDnDStore = create((set, get) => {
         localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
         return { characters: updatedCharacters };
       });
+      
+      // Update turn order after adding a character
+      setTimeout(() => get().updateTurnOrder(), 0);
     },
     
     updateCharacter: (id, field, value) => {
@@ -135,6 +138,12 @@ const useDnDStore = create((set, get) => {
           return char;
         });
         localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
+        
+        // If initiative was updated, update the turn order
+        if (field === 'initiative') {
+          setTimeout(() => get().updateTurnOrder(true), 0);
+        }
+        
         return { characters: updatedCharacters };
       });
     },
@@ -149,6 +158,10 @@ const useDnDStore = create((set, get) => {
         }
         
         localStorage.setItem('dnd-characters', JSON.stringify(newState.characters));
+        
+        // Update turn order after removing a character
+        setTimeout(() => get().updateTurnOrder(false, id, 'character'), 0);
+        
         return newState;
       });
     },
@@ -187,6 +200,9 @@ const useDnDStore = create((set, get) => {
         localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
         return { bosses: updatedBosses };
       });
+      
+      // Update turn order after adding a boss
+      setTimeout(() => get().updateTurnOrder(), 0);
     },
     
     removeBoss: (id) => {
@@ -199,6 +215,10 @@ const useDnDStore = create((set, get) => {
         }
         
         localStorage.setItem('dnd-bosses', JSON.stringify(newState.bosses));
+        
+        // Update turn order after removing a boss
+        setTimeout(() => get().updateTurnOrder(false, id, 'boss'), 0);
+        
         return newState;
       });
     },
@@ -212,6 +232,12 @@ const useDnDStore = create((set, get) => {
           return boss;
         });
         localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+        
+        // If initiative was updated, update the turn order
+        if (field === 'initiative') {
+          setTimeout(() => get().updateTurnOrder(true), 0);
+        }
+        
         return { bosses: updatedBosses };
       });
     },
@@ -368,6 +394,9 @@ const useDnDStore = create((set, get) => {
         localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
         return { enemyGroups: updatedGroups };
       });
+      
+      // Update turn order after adding a group
+      setTimeout(() => get().updateTurnOrder(), 0);
     },
     
     addMultipleEnemyGroups: (count) => {
@@ -398,6 +427,9 @@ const useDnDStore = create((set, get) => {
         localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
         return { enemyGroups: updatedGroups };
       });
+      
+      // Update turn order after adding multiple groups
+      setTimeout(() => get().updateTurnOrder(), 0);
     },
     
     removeEnemyGroup: (id) => {
@@ -410,6 +442,10 @@ const useDnDStore = create((set, get) => {
         }
         
         localStorage.setItem('dnd-enemy-groups', JSON.stringify(newState.enemyGroups));
+        
+        // Update turn order after removing a group
+        setTimeout(() => get().updateTurnOrder(false, id, 'group'), 0);
+        
         return newState;
       });
     },
@@ -430,6 +466,9 @@ const useDnDStore = create((set, get) => {
         localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
         return { enemyGroups: updatedGroups };
       });
+      
+      // Update turn order after duplicating a group
+      setTimeout(() => get().updateTurnOrder(), 0);
     },
     
     toggleGroupAoeTarget: (id) => {
@@ -558,13 +597,26 @@ const useDnDStore = create((set, get) => {
           updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
         }
         
-        // Create the updated groups array
-        const updatedGroups = state.enemyGroups.map(g => {
-          if (g.id === groupId) {
-            return updatedGroup;
+        // Check if the group is completely defeated
+        const isGroupDefeated = updatedGroup.count === 0;
+        
+        // Create the updated groups array - remove the group if it's defeated
+        let updatedGroups;
+        if (isGroupDefeated) {
+          updatedGroups = state.enemyGroups.filter(g => g.id !== groupId);
+          
+          // If this group was targeted, clear the target
+          if (state.targetEntity && state.targetEntity.type === 'group' && state.targetEntity.id === groupId) {
+            state.targetEntity = null;
           }
-          return g;
-        });
+        } else {
+          updatedGroups = state.enemyGroups.map(g => {
+            if (g.id === groupId) {
+              return updatedGroup;
+            }
+            return g;
+          });
+        }
         
         localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
         
@@ -572,7 +624,12 @@ const useDnDStore = create((set, get) => {
         const resultMessage = hitStatus === 'critical'
           ? `Critical hit! ${damage} damage to ${group.name} (${killCount} killed)`
           : `Hit! ${damage} damage to ${group.name} (${killCount} killed)`;
-            
+        
+        // If the group was defeated, update turn order after state update
+        if (isGroupDefeated) {
+          setTimeout(() => get().updateTurnOrder(false, groupId, 'group'), 0);
+        }
+        
         return { 
           enemyGroups: updatedGroups,
           attackResults: [
@@ -1524,36 +1581,132 @@ const useDnDStore = create((set, get) => {
     },
     
     // Turn order functions
-    updateTurnOrder: () => {
+    updateTurnOrder: (resetToStart = false, removedId = null, removedType = null) => {
       set(state => {
+        // First, collect all individual entities
+        const characters = state.characters.map(char => ({ 
+          id: char.id, 
+          name: char.name, 
+          type: 'character', 
+          initiative: char.initiative || 0 
+        }));
+        
+        const bosses = state.bosses.map(boss => ({ 
+          id: boss.id, 
+          name: boss.name, 
+          type: 'boss', 
+          initiative: boss.initiative || 0 
+        }));
+        
+        // For enemy groups, we need special handling to group them
+        let enemyGroups = state.enemyGroups.map(group => ({ 
+          id: group.id, 
+          name: group.name, 
+          type: 'group', 
+          initiative: group.initiative || 0 
+        }));
+        
+        // Group enemy groups with the same initiative
+        const groupedEnemies = {};
+        enemyGroups.forEach(group => {
+          const initiative = group.initiative;
+          
+          // Extract base name (remove numbers at the end)
+          // For example: "Goblins 1" -> "Goblins"
+          const baseNameMatch = group.name.match(/^(.*?)(?:\s+\d+)?$/);
+          const baseName = baseNameMatch ? baseNameMatch[1].trim() : group.name;
+          
+          // Create a key combining initiative and base name
+          const key = `${initiative}-${baseName}`;
+          
+          if (!groupedEnemies[key]) {
+            groupedEnemies[key] = {
+              ids: [group.id],
+              name: baseName,
+              type: 'groupCollection',
+              initiative: initiative,
+              baseNamePattern: baseName
+            };
+          } else {
+            groupedEnemies[key].ids.push(group.id);
+          }
+        });
+        
+        // Convert the grouped enemies back to an array, but only include groups that have members
+        const groupedEnemyArray = Object.values(groupedEnemies)
+          .filter(group => group.ids && group.ids.length > 0);
+        
+        // Combine all entities and sort by initiative
         const entities = [
-          ...state.characters.map(char => ({ 
-            id: char.id, 
-            name: char.name, 
-            type: 'character', 
-            initiative: char.initiative || 0 
-          })),
-          ...state.bosses.map(boss => ({ 
-            id: boss.id, 
-            name: boss.name, 
-            type: 'boss', 
-            initiative: boss.initiative || 0 
-          })),
-          ...state.enemyGroups.map(group => ({ 
-            id: group.id, 
-            name: group.name, 
-            type: 'group', 
-            initiative: group.initiative || 0 
-          }))
-        ];
+          ...characters,
+          ...bosses,
+          ...groupedEnemyArray
+        ].sort((a, b) => b.initiative - a.initiative);
         
-        // Sort by initiative (highest first)
-        const sortedEntities = entities.sort((a, b) => b.initiative - a.initiative);
+        // Save to localStorage
+        localStorage.setItem('dnd-turn-order', JSON.stringify(entities));
         
-        localStorage.setItem('dnd-turn-order', JSON.stringify(sortedEntities));
+        // Determine new current turn index
+        let newCurrentTurnIndex = state.currentTurnIndex;
+        
+        // If we need to reset to the start of combat
+        if (resetToStart) {
+          newCurrentTurnIndex = 0;
+        } 
+        // If an entity was removed, check if it affects the current turn
+        else if (removedId && removedType) {
+          // Get the current entity
+          const currentEntity = state.turnOrder[state.currentTurnIndex];
+          
+          // If the removed entity was the current turn
+          if (currentEntity) {
+            if (
+              // If a direct match (character or boss)
+              (currentEntity.type === removedType && currentEntity.id === removedId) ||
+              // Or if it was part of a group collection
+              (currentEntity.type === 'groupCollection' && 
+               removedType === 'group' && 
+               currentEntity.ids && 
+               currentEntity.ids.includes(removedId))
+            ) {
+              // Keep the same index, which will now point to the next entity
+              // But ensure it's within bounds
+              newCurrentTurnIndex = Math.min(state.currentTurnIndex, entities.length - 1);
+            }
+          }
+        }
+        // Check if we need to adjust due to group collection changes
+        else if (!resetToStart && !removedId) {
+          // Get the current entity
+          const currentEntity = state.turnOrder[state.currentTurnIndex];
+          
+          // If the current entity was a group collection, try to find it in the new entities
+          if (currentEntity && currentEntity.type === 'groupCollection') {
+            const newEntityIndex = entities.findIndex(e => 
+              e.type === 'groupCollection' && 
+              e.baseNamePattern === currentEntity.baseNamePattern &&
+              e.initiative === currentEntity.initiative
+            );
+            
+            if (newEntityIndex >= 0) {
+              newCurrentTurnIndex = newEntityIndex;
+            } else {
+              // Group collection no longer exists, move to next entity
+              newCurrentTurnIndex = Math.min(state.currentTurnIndex, entities.length - 1);
+            }
+          }
+        }
+        
+        // Ensure the index is valid
+        if (entities.length === 0) {
+          newCurrentTurnIndex = 0;
+        } else {
+          newCurrentTurnIndex = Math.min(newCurrentTurnIndex, entities.length - 1);
+        }
+        
         return { 
-          turnOrder: sortedEntities,
-          currentTurnIndex: state.turnOrder.length > 0 ? Math.min(state.currentTurnIndex, sortedEntities.length - 1) : 0
+          turnOrder: entities,
+          currentTurnIndex: newCurrentTurnIndex
         };
       });
     },
@@ -1563,7 +1716,21 @@ const useDnDStore = create((set, get) => {
         if (state.turnOrder.length === 0) return state;
         
         const nextIndex = (state.currentTurnIndex + 1) % state.turnOrder.length;
-        return { currentTurnIndex: nextIndex };
+        
+        // When moving to a new turn, if it's a groupCollection type,
+        // update the targetEntity to the first group in the collection
+        const nextEntity = state.turnOrder[nextIndex];
+        let newTargetEntity = state.targetEntity;
+        
+        if (nextEntity.type === 'groupCollection' && nextEntity.ids && nextEntity.ids.length > 0) {
+          // Set the first group in the collection as the target
+          newTargetEntity = { type: 'group', id: nextEntity.ids[0] };
+        }
+        
+        return { 
+          currentTurnIndex: nextIndex,
+          targetEntity: newTargetEntity
+        };
       });
     },
     
@@ -1572,7 +1739,21 @@ const useDnDStore = create((set, get) => {
         if (state.turnOrder.length === 0) return state;
         
         const prevIndex = (state.currentTurnIndex - 1 + state.turnOrder.length) % state.turnOrder.length;
-        return { currentTurnIndex: prevIndex };
+        
+        // When moving to a new turn, if it's a groupCollection type,
+        // update the targetEntity to the first group in the collection
+        const prevEntity = state.turnOrder[prevIndex];
+        let newTargetEntity = state.targetEntity;
+        
+        if (prevEntity.type === 'groupCollection' && prevEntity.ids && prevEntity.ids.length > 0) {
+          // Set the first group in the collection as the target
+          newTargetEntity = { type: 'group', id: prevEntity.ids[0] };
+        }
+        
+        return { 
+          currentTurnIndex: prevIndex,
+          targetEntity: newTargetEntity
+        };
       });
     },
     
@@ -1661,8 +1842,8 @@ const useDnDStore = create((set, get) => {
         };
       });
       
-      // Update turn order with new initiative values
-      get().updateTurnOrder();
+      // Update turn order with new initiative values and reset to start
+      get().updateTurnOrder(true);
     },
     
     updateEnemyGroup: (id, field, value) => {
@@ -1674,6 +1855,12 @@ const useDnDStore = create((set, get) => {
           return group;
         });
         localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
+        
+        // If initiative was updated, update the turn order
+        if (field === 'initiative') {
+          setTimeout(() => get().updateTurnOrder(true), 0);
+        }
+        
         return { enemyGroups: updatedGroups };
       });
     }

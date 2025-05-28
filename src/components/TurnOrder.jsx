@@ -73,7 +73,11 @@ const TurnOrder = () => {
             <span className="current-turn-label">Current Turn:</span>
             <span className={`current-turn-entity ${currentEntity.type}`}>
               {currentEntity.name}
-              <span className="entity-type">({currentEntity.type})</span>
+              <span className="entity-type">
+                {currentEntity.type === 'groupCollection' 
+                  ? `(${currentEntity.ids?.length || 0} groups)` 
+                  : `(${currentEntity.type})`}
+              </span>
               <span className="initiative-value">Initiative: {currentEntity.initiative}</span>
             </span>
           </div>
@@ -105,12 +109,16 @@ const TurnOrder = () => {
           <div className="turn-order-list">
             {turnOrder.map((entity, index) => (
               <div 
-                key={`${entity.type}-${entity.id}`}
+                key={entity.type === 'groupCollection' ? `collection-${entity.baseNamePattern}` : `${entity.type}-${entity.id}`}
                 className={`turn-order-item ${index === currentTurnIndex ? 'current' : ''} ${entity.type}`}
               >
                 <span className="turn-number">{index + 1}</span>
                 <span className="entity-name">{entity.name}</span>
-                <span className="entity-type">{entity.type}</span>
+                <span className="entity-type">
+                  {entity.type === 'groupCollection' 
+                    ? `${entity.ids?.length || 0} groups` 
+                    : entity.type}
+                </span>
                 <span className="initiative-value">{entity.initiative}</span>
                 <div className="turn-order-actions">
                   <button

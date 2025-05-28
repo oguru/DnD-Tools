@@ -76,6 +76,11 @@
   color: #2c5282;
 }
 
+.current-turn-entity.groupCollection {
+  background-color: #bee3f8;
+  color: #2c5282;
+}
+
 .entity-type {
   font-size: 0.8rem;
   font-weight: normal;
@@ -173,6 +178,10 @@
   border-left: 3px solid #4299e1;
 }
 
+.turn-order-item.groupCollection {
+  border-left: 3px solid #4299e1;
+}
+
 .turn-number {
   font-weight: 600;
   text-align: center;
@@ -198,6 +207,10 @@
 }
 
 .turn-order-item.group .entity-type {
+  color: #4299e1;
+}
+
+.turn-order-item.groupCollection .entity-type {
   color: #4299e1;
 }
 
@@ -238,6 +251,18 @@
   background-color: #edf2f7;
   border-radius: 6px;
   margin-bottom: 1rem;
+}
+
+/* Add styles to make the grouped entities stand out */
+.turn-order-item.groupCollection .entity-name {
+  font-weight: 600;
+}
+
+.turn-order-item.groupCollection .entity-type {
+  background-color: rgba(66, 153, 225, 0.2);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
 }
 
 /* Responsive design */

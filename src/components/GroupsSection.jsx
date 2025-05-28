@@ -49,7 +49,7 @@ const GroupsSection = () => {
   const [characterAcOverrides, setCharacterAcOverrides] = useState({});
   const [damageModifiers, setDamageModifiers] = useState({});
   const [damageAdjustments, setDamageAdjustments] = useState({});
-  const [showGlobalAttacks, setShowGlobalAttacks] = useState(false);
+  const [showGlobalAttacks, setShowGlobalAttacks] = useState(true);
 
   // Handle changes to the group template
   const handleGroupTemplateChange = (e) => {
@@ -784,8 +784,9 @@ const GroupsSection = () => {
           <div className="entities-container">
             {/* Display Bosses */}
             {bosses && bosses.length > 0 && (
-              <div className="bosses-list">
+              <>
                 <h4>Bosses</h4>
+              <div className="bosses-list">
                 <div className="entities-grid">
                   {bosses.map(boss => {
                     const healthPercentage = calculateHealthPercentage(boss.currentHp, boss.maxHp);
@@ -844,6 +845,7 @@ const GroupsSection = () => {
                   })}
                 </div>
               </div>
+              </>
             )}
 
             {/* Display Enemy Groups */}
