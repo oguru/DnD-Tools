@@ -862,4 +862,64 @@
   0% { box-shadow: 0 0 0 0 rgba(49, 130, 206, 0.4); }
   70% { box-shadow: 0 0 0 10px rgba(49, 130, 206, 0); }
   100% { box-shadow: 0 0 0 0 rgba(49, 130, 206, 0); }
+}
+
+/* AoE Entity Sections */
+.aoe-entity-section {
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 0.25rem;
+}
+
+.aoe-entity-section h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #0369a1;
+}
+
+.aoe-entity-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.aoe-entity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  border-radius: 0.25rem;
+}
+
+.entity-name {
+  font-weight: 500;
+  color: #0c4a6e;
+}
+
+.entity-count {
+  background-color: #0ea5e9;
+  color: white;
+  padding: 0.1rem 0.4rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.no-targets-message {
+  padding: 1rem;
+  background-color: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 0.25rem;
+  margin: 1rem 0;
+}
+
+.no-targets-message p {
+  margin: 0;
+  color: #9a3412;
+  font-size: 0.9rem;
+  text-align: center;
 } 

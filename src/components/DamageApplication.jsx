@@ -85,6 +85,31 @@ const DamageApplication = () => {
     }
   }, [showAoeSaves, characters, aoeState.applyToAll]);
 
+  // Get lists of entities marked for AoE
+  const getAoeTargets = () => {
+    const groupsInAoe = aoeState.applyToAll 
+      ? enemyGroups 
+      : enemyGroups.filter(group => group.inAoe);
+    
+    const bossesInAoe = aoeState.applyToAll
+      ? bosses
+      : bosses.filter(boss => boss.inAoe);
+
+    const charactersInAoe = aoeState.applyToAll
+      ? characters
+      : characters.filter(char => char.inAoe);
+    
+    return {
+      groups: groupsInAoe,
+      bosses: bossesInAoe,
+      characters: charactersInAoe,
+      hasTargets: groupsInAoe.length > 0 || bossesInAoe.length > 0 || charactersInAoe.length > 0
+    };
+  };
+
+  // Get targets for display
+  const aoeTargets = getAoeTargets();
+
   // Add useEffect to handle AOE parameters when they are set
   useEffect(() => {
     if (aoeDamageParams) {
@@ -719,6 +744,42 @@ const DamageApplication = () => {
                   ) : (
                     <div className="no-characters-message">
                       <p>No characters marked for AoE damage.</p>
+                    </div>
+                  )}
+                  
+                  {/* Display Enemy Groups in AoE */}
+                  {aoeTargets.groups.length > 0 && (
+                    <div className="aoe-entity-section">
+                      <h5>Enemy Groups in AoE:</h5>
+                      <div className="aoe-entity-list">
+                        {aoeTargets.groups.map(group => (
+                          <div key={group.id} className="aoe-entity-item">
+                            <span className="entity-name">{group.name}</span>
+                            <span className="entity-count">x{group.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Display Bosses in AoE */}
+                  {aoeTargets.bosses.length > 0 && (
+                    <div className="aoe-entity-section">
+                      <h5>Bosses in AoE:</h5>
+                      <div className="aoe-entity-list">
+                        {aoeTargets.bosses.map(boss => (
+                          <div key={boss.id} className="aoe-entity-item">
+                            <span className="entity-name">{boss.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No targets message if nothing is selected */}
+                  {!aoeTargets.hasTargets && (
+                    <div className="no-targets-message">
+                      <p>No entities are marked for AoE damage. Use &quot;Add to AoE&quot; buttons on enemy groups and bosses to select targets.</p>
                     </div>
                   )}
                   
