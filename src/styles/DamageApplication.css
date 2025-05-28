@@ -45,6 +45,7 @@
   background-color: white;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
+  box-shadow: 0 0 10px rgba(49, 130, 206, 0.2);
   padding: 1rem;
 }
 
@@ -853,7 +854,6 @@
 
 .aoe-section.aoe-from-boss {
   background-color: #f0f9ff;
-  border: 2px solid #3182ce;
   box-shadow: 0 0 10px rgba(49, 130, 206, 0.2);
   animation: pulse-highlight 1s;
 }
