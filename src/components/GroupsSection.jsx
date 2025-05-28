@@ -1,4 +1,5 @@
 import '../styles/GroupsSection.css';
+import '../styles/BossTracker.css';
 
 import useDnDStore from '../store/dndStore';
 import { useState } from 'react';
@@ -19,7 +20,6 @@ const GroupsSection = () => {
     duplicateGroup,
     setTargetEntity,
     toggleGroupAoeTarget,
-    toggleBossAoeTarget,
     toggleGroupSavingThrows,
     toggleGroupTemplateSavingThrows,
     updateGroupSavingThrow,
@@ -32,7 +32,16 @@ const GroupsSection = () => {
     rollDice,
     rollGroupsAttacks,
     applyDamageToMultipleCharacters,
-    updateEnemyGroup
+    updateEnemyGroup,
+    removeBoss,
+    updateBoss,
+    updateBossHp,
+    toggleBossSavingThrows,
+    updateBossSavingThrow,
+    setBossTarget,
+    setBossAoeTarget,
+    prepareBossAoeAttack,
+    addBossAttackResult
   } = useDnDStore();
 
   // State for number of groups to add
@@ -50,6 +59,212 @@ const GroupsSection = () => {
   const [damageModifiers, setDamageModifiers] = useState({});
   const [damageAdjustments, setDamageAdjustments] = useState({});
   const [showGlobalAttacks, setShowGlobalAttacks] = useState(true);
+
+  // State for showing/hiding notes and attacks for bosses
+  const [showNotes, setShowNotes] = useState({});
+  const [showAttacks, setShowAttacks] = useState({});
+  
+  // State for boss targets and pending attacks
+  const [bossTargets, setBossTargets] = useState({});
+  const [pendingAttacks, setPendingAttacks] = useState({});
+
+  // Toggle visibility of boss notes
+  const toggleNotes = (bossId) => {
+    setShowNotes(prev => ({
+      ...prev,
+      [bossId]: !prev[bossId]
+    }));
+  };
+
+  // Toggle visibility of boss attacks
+  const toggleAttacks = (bossId) => {
+    setShowAttacks(prev => ({
+      ...prev,
+      [bossId]: !prev[bossId]
+    }));
+  };
+
+  // Handle boss target selection
+  const handleBossTargetChange = (bossId, targetId) => {
+    setBossTargets(prev => ({
+      ...prev,
+      [bossId]: targetId
+    }));
+  };
+
+  // Roll attack for a boss
+  const handleRollAttack = (boss, attack) => {
+    // For AOE attacks, populate the AOE section instead
+    if (attack.isAoE) {
+      prepareBossAoeAttack(boss.id, attack);
+      return;
+    }
+
+    // Roll to hit
+    const rollResult = rollD20();
+    const criticalHit = rollResult === 20;
+    const criticalMiss = rollResult === 1;
+    const totalHit = rollResult + attack.hitBonus;
+    
+    // Roll damage
+    let damageRoll = rollDice(attack.numDice, attack.diceType);
+    let totalDamage = damageRoll + attack.modifier;
+    
+    // Double damage dice on critical hit
+    if (criticalHit) {
+      const critDamageRoll = rollDice(attack.numDice, attack.diceType);
+      totalDamage += critDamageRoll;
+    }
+    
+    // Generate result message
+    let resultMessage;
+    if (criticalMiss) {
+      resultMessage = `Critical Miss!`;
+    } else if (criticalHit) {
+      resultMessage = `Critical Hit! ${totalDamage} damage (${damageRoll} + ${damageRoll} + ${attack.modifier})`;
+    } else {
+      resultMessage = `Attack roll: ${totalHit} (${rollResult} + ${attack.hitBonus})
+Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
+    }
+    
+    // Add attack result
+    addBossAttackResult(boss.id, {
+      id: Date.now().toString(),
+      attackName: attack.name,
+      message: resultMessage,
+      damage: totalDamage,
+      rollToHit: totalHit,
+      criticalHit,
+      criticalMiss,
+      isAoE: false,
+      saveType: attack.saveType,
+      saveDC: attack.saveDC,
+      halfOnSave: attack.halfOnSave
+    });
+
+    // Set the boss as the target and scroll to damage section
+    setBossTarget(boss.id);
+    scrollToDamageSection();
+  };
+
+  // Roll an attack against a targeted player
+  const handleRollAttackAgainstPlayer = (boss, attack, targetId) => {
+    if (!targetId) return;
+    
+    // Find the target character
+    const targetCharacter = characters.find(c => c.id === targetId);
+    if (!targetCharacter) return;
+    
+    // Roll to hit
+    const rollResult = rollD20();
+    const criticalHit = rollResult === 20;
+    const criticalMiss = rollResult === 1;
+    const totalHit = rollResult + attack.hitBonus;
+    
+    // Determine if the attack hits
+    const hits = criticalHit || (!criticalMiss && totalHit >= targetCharacter.ac);
+    
+    // Roll damage
+    let damageRoll = rollDice(attack.numDice, attack.diceType);
+    let totalDamage = damageRoll + attack.modifier;
+    
+    // Double damage dice on critical hit
+    if (criticalHit) {
+      const critDamageRoll = rollDice(attack.numDice, attack.diceType);
+      totalDamage += critDamageRoll;
+    }
+    
+    // Generate result message
+    let resultMessage;
+    let hitStatus;
+    
+    if (criticalMiss) {
+      resultMessage = `Critical Miss against ${targetCharacter.name} (AC ${targetCharacter.ac})!`;
+      hitStatus = 'miss';
+    } else if (criticalHit) {
+      resultMessage = `Critical Hit against ${targetCharacter.name}! ${totalDamage} damage (${damageRoll} + ${damageRoll} + ${attack.modifier})`;
+      hitStatus = 'critical';
+    } else if (hits) {
+      resultMessage = `Hit ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})! Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
+      hitStatus = 'hit';
+    } else {
+      resultMessage = `Miss against ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})`;
+      hitStatus = 'miss';
+    }
+    
+    // Create attack result object
+    const attackResult = {
+      id: Date.now().toString(),
+      attackName: attack.name,
+      message: resultMessage,
+      damage: totalDamage,
+      rollToHit: totalHit,
+      criticalHit,
+      criticalMiss,
+      isAoE: false,
+      targetId: targetId,
+      targetName: targetCharacter.name,
+      hitStatus,
+      timestamp: Date.now()
+    };
+    
+    // Store in pending attacks if it hit
+    if (hits) {
+      setPendingAttacks(prev => ({
+        ...prev,
+        [attackResult.id]: {
+          ...attackResult,
+          modifier: 'full'  // Default to full damage
+        }
+      }));
+    } else {
+      // If it's a miss, just add the result
+      addBossAttackResult(boss.id, attackResult);
+    }
+  };
+
+  // Handle applying damage with modifier
+  const handleApplyDamage = (bossId, attackResultId, modifier) => {
+    const pendingAttack = pendingAttacks[attackResultId];
+    if (!pendingAttack) return;
+    
+    // Calculate damage based on modifier
+    let finalDamage = pendingAttack.damage;
+    let modifierText = '';
+    
+    if (modifier === 'half') {
+      finalDamage = Math.floor(finalDamage / 2);
+      modifierText = ' (half damage)';
+    } else if (modifier === 'quarter') {
+      finalDamage = Math.floor(finalDamage / 4);
+      modifierText = ' (quarter damage)';
+    } else if (modifier === 'none') {
+      finalDamage = 0;
+      modifierText = ' (no damage)';
+    }
+    
+    // Update result message with modifier info
+    const updatedMessage = pendingAttack.message + modifierText;
+    
+    // Add the attack result to the boss's history
+    addBossAttackResult(bossId, {
+      ...pendingAttack,
+      message: updatedMessage,
+      appliedDamage: finalDamage
+    });
+    
+    // Apply damage to character if not "none"
+    if (modifier !== 'none' && finalDamage > 0) {
+      applyDamageToCharacter(pendingAttack.targetId, finalDamage, pendingAttack.hitStatus, modifierText);
+    }
+    
+    // Remove from pending attacks
+    setPendingAttacks(prev => {
+      const newPending = { ...prev };
+      delete newPending[attackResultId];
+      return newPending;
+    });
+  };
 
   // Handle changes to the group template
   const handleGroupTemplateChange = (e) => {
@@ -86,21 +301,6 @@ const GroupsSection = () => {
     }
   };
 
-  // Set a boss as the target
-  const handleSetBossAsTarget = (boss) => {
-    const isTargeted = targetEntity && 
-                      targetEntity.type === 'boss' && 
-                      targetEntity.id === boss.id;
-                      
-    if (isTargeted) {
-      // If already targeted, just scroll to damage section
-      scrollToDamageSection();
-    } else {
-      // Target this boss and scroll
-      setTargetEntity({ type: 'boss', id: boss.id });
-    }
-  };
-
   // Handle adding a single group
   const handleAddGroup = () => {
     if (!groupTemplate.name || groupTemplate.count <= 0 || groupTemplate.maxHp <= 0) {
@@ -127,8 +327,8 @@ const GroupsSection = () => {
 
   // Toggle AOE for a boss
   const handleToggleBossAoe = (e, bossId) => {
-    e.stopPropagation(); // Prevent targeting
-    toggleBossAoeTarget(bossId);
+    if (e) e.stopPropagation(); // Prevent targeting
+    setBossAoeTarget(bossId, !bosses.find(b => b.id === bossId)?.inAoe);
   };
   
   // Handle selecting a character target for a group
@@ -214,7 +414,7 @@ const GroupsSection = () => {
   };
   
   // Apply damage from a group attack to a character
-  const handleApplyDamage = (e, groupId, damageModifier = 'full') => {
+  const handleApplyDamageGroup = (e, groupId, damageModifier = 'full') => {
     e.stopPropagation(); // Prevent group targeting
     
     const attackResult = attackResults[groupId];
@@ -529,6 +729,11 @@ const GroupsSection = () => {
     updateEnemyGroup(groupId, 'initiative', value);
   };
 
+  // Handle changes to boss saving throws
+  const handleBossSavingThrowChange = (bossId, ability, value) => {
+    updateBossSavingThrow(bossId, ability, parseInt(value) || 0);
+  };
+
   return (
     <div className="groups-section">
       <div className="section-header">
@@ -786,7 +991,7 @@ const GroupsSection = () => {
             {bosses && bosses.length > 0 && (
               <>
                 <h4>Bosses</h4>
-              <div className="bosses-list">
+                <div className="bosses-list">
                   {bosses.map(boss => {
                     const healthPercentage = calculateHealthPercentage(boss.currentHp, boss.maxHp);
                     const healthColor = getHealthColor(healthPercentage);
@@ -795,27 +1000,93 @@ const GroupsSection = () => {
                                       targetEntity.id === boss.id;
                     
                     return (
-                      <div key={boss.id}  className="entities-grid">
                       <div 
-                        className={`entity-card ${isTargeted ? 'targeted' : ''} ${boss.inAoe ? 'in-aoe' : ''}`}
-                        onClick={() => handleSetBossAsTarget(boss)}
+                        key={boss.id} 
+                        className={`boss-card ${isTargeted ? 'targeted' : ''} ${boss.inAoe ? 'in-aoe' : ''}`}
                       >
-                        <div className="entity-header">
-                          <h5>{boss.name}</h5>
+                        <div className="boss-header">
+                          <h4>{boss.name}</h4>
+                          <div className="boss-actions">
+                            <button 
+                              className="remove-boss-button"
+                              onClick={() => removeBoss(boss.id)}
+                              title="Remove Boss"
+                            >
+                              ×
+                            </button>
+                          </div>
                         </div>
-                        <div className="entity-details">
-                          <div className="entity-field">
+                        
+                        <div className="boss-stats">
+                          <div className="boss-stat">
                             <span>HP:</span>
-                            <span>{boss.currentHp}/{boss.maxHp}</span>
+                            <div className="boss-hp-controls">
+                              <button 
+                                onClick={() => updateBossHp(boss.id, -5)}
+                                className="hp-button"
+                              >
+                                -5
+                              </button>
+                              <button 
+                                onClick={() => updateBossHp(boss.id, -1)}
+                                className="hp-button"
+                              >
+                                -1
+                              </button>
+                              <input
+                                type="number"
+                                value={boss.currentHp}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value) || 0;
+                                  updateBoss(boss.id, 'currentHp', Math.max(0, Math.min(value, boss.maxHp)));
+                                }}
+                                min="0"
+                                max={boss.maxHp}
+                              />
+                              <span>/ {boss.maxHp}</span>
+                              <button 
+                                onClick={() => updateBossHp(boss.id, 1)}
+                                className="hp-button"
+                              >
+                                +1
+                              </button>
+                              <button 
+                                onClick={() => updateBossHp(boss.id, 5)}
+                                className="hp-button"
+                              >
+                                +5
+                              </button>
+                            </div>
                           </div>
-                          <div className="entity-field">
+                          <div className="boss-stat">
                             <span>AC:</span>
-                            <span>{boss.ac}</span>
+                            <input
+                              type="number"
+                              value={boss.ac}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 0;
+                                updateBoss(boss.id, 'ac', Math.max(0, value));
+                              }}
+                              min="0"
+                            />
+                          </div>
+                          <div className="boss-stat">
+                            <span>Init:</span>
+                            <input
+                              type="number"
+                              value={boss.initiative || 0}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 0;
+                                updateBoss(boss.id, 'initiative', Math.max(0, value));
+                              }}
+                              min="0"
+                            />
                           </div>
                         </div>
-                        <div className="entity-health-bar-container">
+                        
+                        <div className="boss-health-bar-container">
                           <div 
-                            className="entity-health-bar"
+                            className="boss-health-bar"
                             style={{
                               width: `${healthPercentage}%`,
                               backgroundColor: healthColor
@@ -823,24 +1094,155 @@ const GroupsSection = () => {
                           ></div>
                         </div>
                         
-                        <div className="entity-actions">
+                        {/* Saving Throws Toggle */}
+                        <div className="saving-throws-container">
+                          <div 
+                            className="saving-throws-header" 
+                            onClick={() => toggleBossSavingThrows(boss.id)}
+                          >
+                            <h5>Saving Throws {boss.showSavingThrows ? '▼' : '►'}</h5>
+                          </div>
+                          
+                          {boss.showSavingThrows && renderSavingThrows(boss.savingThrows, handleBossSavingThrowChange, boss.id)}
+                        </div>
+                        
+                        {/* Target buttons - updated to match the group UI */}
+                        <div className="boss-targeting">
                           <button 
                             className={`target-button ${isTargeted ? 'active' : ''}`}
-                            onClick={() => handleSetBossAsTarget(boss)}
-                            title={isTargeted ? "Scroll to damage application" : "Set as target"}
+                            onClick={() => setBossTarget(boss.id)}
+                            title={isTargeted ? "Already targeted" : "Set as target for single attack"}
                           >
-                            {isTargeted ? "Scroll to Damage" : "Target"}
+                            Target
                           </button>
                           <button 
                             className={`aoe-button ${boss.inAoe ? 'active' : ''}`}
-                            onClick={(e) => handleToggleBossAoe(e, boss.id)}
+                            onClick={() => handleToggleBossAoe(null, boss.id)}
                             title={boss.inAoe ? "Remove from AoE" : "Add to AoE"}
                           >
                             {boss.inAoe ? "In AoE" : "Add to AoE"}
                           </button>
                         </div>
+                        
+                        {boss.notes && (
+                          <div className="boss-notes-section">
+                            <div 
+                              className="notes-header"
+                              onClick={() => toggleNotes(boss.id)}
+                            >
+                              <h5>Notes {showNotes[boss.id] ? '▼' : '►'}</h5>
+                            </div>
+                            {showNotes[boss.id] && (
+                              <div className="boss-notes">
+                                <pre>{boss.notes}</pre>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {boss.attacks && boss.attacks.length > 0 && (
+                          <div className="boss-attacks-section">
+                            <div 
+                              className="attacks-header"
+                              onClick={() => toggleAttacks(boss.id)}
+                            >
+                              <h5>Attacks {showAttacks[boss.id] ? '▼' : '►'}</h5>
+                            </div>
+                            {showAttacks[boss.id] && (
+                              <div className="boss-attacks">
+                                <ul>
+                                  {boss.attacks.map(attack => (
+                                    <li key={attack.id} className="boss-attack-item">
+                                      <div className="attack-info">
+                                        <span className="attack-name">{attack.name}</span>
+                                        <span className="attack-details">
+                                          {attack.isAoE ? 'AoE - ' : ''}
+                                          {attack.numDice}d{attack.diceType}+{attack.modifier}
+                                          {!attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
+                                          {attack.isAoE && ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
+                                        </span>
+                                      </div>
+                                      
+                                      <div className="attack-controls">
+                                        {attack.isAoE ? (
+                                          <button 
+                                            className="roll-attack-button aoe-attack"
+                                            onClick={() => handleRollAttack(boss, attack)}
+                                          >
+                                            Use AoE
+                                          </button>
+                                        ) : (
+                                          <div className="target-attack-container">
+                                            <select 
+                                              className="player-target-select"
+                                              value={bossTargets[boss.id] || ''}
+                                              onChange={(e) => handleBossTargetChange(boss.id, e.target.value)}
+                                            >
+                                              <option value="">Select Target</option>
+                                              {characters.map(character => (
+                                                <option key={character.id} value={character.id}>
+                                                  {character.name} (AC: {character.ac})
+                                                </option>
+                                              ))}
+                                            </select>
+                                            <button 
+                                              className="roll-attack-button"
+                                              onClick={() => handleRollAttackAgainstPlayer(boss, attack, bossTargets[boss.id])}
+                                              disabled={!bossTargets[boss.id]}
+                                            >
+                                              Roll
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Display pending attack results with damage options */}
+                                      {Object.values(pendingAttacks)
+                                        .filter(pendingAttack => 
+                                          pendingAttack.targetId === bossTargets[boss.id] && 
+                                          pendingAttack.attackName === attack.name
+                                        )
+                                        .map(attackResult => (
+                                          <div key={attackResult.id} className="pending-attack-result">
+                                            <div className="attack-result-message">
+                                              {attackResult.message}
+                                            </div>
+                                            <div className="damage-modifier-controls">
+                                              <button 
+                                                className="damage-button full-damage"
+                                                onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
+                                              >
+                                                Full
+                                              </button>
+                                              <button 
+                                                className="damage-button half-damage"
+                                                onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
+                                              >
+                                                Half
+                                              </button>
+                                              <button 
+                                                className="damage-button quarter-damage"
+                                                onClick={() => handleApplyDamage(boss.id, attackResult.id, 'quarter')}
+                                              >
+                                                Quarter
+                                              </button>
+                                              <button 
+                                                className="damage-button no-damage"
+                                                onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
+                                              >
+                                                None
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                  </div>
                     );
                   })}
                 </div>
@@ -1021,19 +1423,19 @@ const GroupsSection = () => {
                             <div className="damage-modifier-buttons">
                               <button
                                 className="damage-modifier-button"
-                                onClick={(e) => handleApplyDamage(e, group.id, 'full')}
+                                onClick={(e) => handleApplyDamageGroup(e, group.id, 'full')}
                               >
                                 Full Damage
                               </button>
                               <button
                                 className="damage-modifier-button"
-                                onClick={(e) => handleApplyDamage(e, group.id, 'half')}
+                                onClick={(e) => handleApplyDamageGroup(e, group.id, 'half')}
                               >
                                 Half Damage
                               </button>
                               <button
                                 className="damage-modifier-button"
-                                onClick={(e) => handleApplyDamage(e, group.id, 'quarter')}
+                                onClick={(e) => handleApplyDamageGroup(e, group.id, 'quarter')}
                               >
                                 Quarter Damage
                               </button>
