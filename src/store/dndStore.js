@@ -1022,7 +1022,7 @@ const useDnDStore = create((set, get) => {
     },
     
     applyDamageToAllCharactersInAoe: (aoeParams, forceAll = false) => {
-      const { damage, saveType, saveDC, halfOnSave } = aoeParams;
+      const { damage, saveType, saveDC, halfOnSave, characterDamageParams } = aoeParams;
       if (damage <= 0) return;
       
       set(state => {
@@ -1037,6 +1037,21 @@ const useDnDStore = create((set, get) => {
           // Skip if not in AoE and not forcing all
           if (!forceAll && !char.inAoe) return char;
           
+          // Check if we have custom parameters for this character
+          if (characterDamageParams && characterDamageParams[char.id]) {
+            const customParams = characterDamageParams[char.id];
+            const customDamage = customParams.damage;
+            
+            // Apply damage
+            if (customDamage > 0) {
+              const newHp = Math.max(0, char.currentHp - customDamage);
+              return { ...char, currentHp: newHp };
+            }
+            
+            return char;
+          }
+          
+          // Standard behavior (used for NPCs/monsters) if no custom params
           // For now, we don't track saving throw bonuses for characters,
           // so we just roll a straight d20
           const saveRoll = Math.floor(Math.random() * 20) + 1;
@@ -1064,6 +1079,26 @@ const useDnDStore = create((set, get) => {
         const charNames = aoeCharacters.map(c => c.name).join(', ');
         const targetText = forceAll ? "all characters" : charNames;
         
+        // Create a more detailed message that includes save results
+        let message = `AoE: ${damage} ${saveType.toUpperCase()} save DC ${saveDC} to: ${targetText}`;
+        
+        // Add save roll details for characters with custom parameters
+        if (characterDamageParams) {
+          const saveDetails = [];
+          aoeCharacters.forEach(char => {
+            if (characterDamageParams[char.id]) {
+              const params = characterDamageParams[char.id];
+              const saveRoll = params.saveRoll === null ? 'Auto' : params.saveRoll;
+              const saveStatus = params.succeeded ? 'Success' : 'Failure';
+              saveDetails.push(`${char.name}: ${saveRoll} (${saveStatus}, ${params.damage} dmg)`);
+            }
+          });
+          
+          if (saveDetails.length > 0) {
+            message += ` - ${saveDetails.join('; ')}`;
+          }
+        }
+        
         return { 
           characters: updatedCharacters,
           attackResults: [
@@ -1071,7 +1106,7 @@ const useDnDStore = create((set, get) => {
             {
               id: Date.now().toString(),
               damage,
-              message: `AoE: ${damage} ${saveType.toUpperCase()} save DC ${saveDC} to: ${targetText}`,
+              message,
               isAoE: true,
               timestamp: Date.now()
             }

@@ -41,6 +41,12 @@ const DamageApplication = () => {
     percentAffected: 100
   });
 
+  // State for AoE manual saves
+  const [showAoeSaves, setShowAoeSaves] = useState(false);
+  const [characterSaves, setCharacterSaves] = useState({});
+  const [damageModifiers, setDamageModifiers] = useState({});
+  const [manualDamageAdjustments, setManualDamageAdjustments] = useState({});
+
   // Refs
   const sectionRef = useRef(null);
   
@@ -50,6 +56,32 @@ const DamageApplication = () => {
       setDamageApplicationRef(sectionRef);
     }
   }, [sectionRef, setDamageApplicationRef]);
+
+  // Initialize character saves when AoE save UI is shown
+  useEffect(() => {
+    if (showAoeSaves) {
+      const initialSaves = {};
+      const initialModifiers = {};
+      
+      // Only include characters marked for AoE or all if applyToAll is true
+      const affectedCharacters = aoeState.applyToAll
+        ? characters
+        : characters.filter(char => char.inAoe);
+      
+      affectedCharacters.forEach(character => {
+        initialSaves[character.id] = {
+          roll: '',
+          autoRoll: true, // Default to auto-roll
+          succeeded: false
+        };
+        initialModifiers[character.id] = 'default'; // Default, half, none
+      });
+      
+      setCharacterSaves(initialSaves);
+      setDamageModifiers(initialModifiers);
+      setManualDamageAdjustments({});
+    }
+  }, [showAoeSaves, characters, aoeState.applyToAll]);
 
   // Get the currently targeted entity details
   const getTargetDetails = () => {
@@ -145,8 +177,8 @@ const DamageApplication = () => {
     }));
   };
   
-  // Handle AoE damage application
-  const handleApplyAoeDamage = () => {
+  // Prepare AoE damage data - shows save UI
+  const prepareAoeDamage = () => {
     // Parse damage amount
     const damage = parseInt(aoeState.damageAmount);
     if (isNaN(damage) || damage <= 0) {
@@ -154,31 +186,154 @@ const DamageApplication = () => {
       return;
     }
     
+    // Show the AoE saves UI
+    setShowAoeSaves(true);
+  };
+  
+  // Auto-roll saves for a character
+  const autoRollSave = (characterId) => {
+    // Simple d20 roll
+    const roll = Math.floor(Math.random() * 20) + 1;
+    
+    // Check if save succeeds
+    const succeeded = roll >= aoeState.saveDC;
+    
+    setCharacterSaves(prev => ({
+      ...prev,
+      [characterId]: {
+        ...prev[characterId],
+        roll: roll,
+        autoRoll: true,
+        succeeded
+      }
+    }));
+    
+    // Set default damage modifier based on save result
+    setDamageModifiers(prev => ({
+      ...prev,
+      [characterId]: succeeded && aoeState.halfOnSave ? 'half' : 'default'
+    }));
+  };
+  
+  // Auto-roll saves for all characters
+  const autoRollAllSaves = () => {
+    Object.keys(characterSaves).forEach(characterId => {
+      autoRollSave(characterId);
+    });
+  };
+  
+  // Handle manual save roll input
+  const handleSaveRollChange = (characterId, value) => {
+    const roll = value === '' ? '' : parseInt(value);
+    const succeeded = roll !== '' ? roll >= aoeState.saveDC : false;
+    
+    setCharacterSaves(prev => ({
+      ...prev,
+      [characterId]: {
+        ...prev[characterId],
+        roll: value,
+        autoRoll: false,
+        succeeded
+      }
+    }));
+    
+    // Set default damage modifier based on save result
+    if (roll !== '') {
+      setDamageModifiers(prev => ({
+        ...prev,
+        [characterId]: succeeded && aoeState.halfOnSave ? 'half' : 'default'
+      }));
+    }
+  };
+  
+  // Handle damage modifier change
+  const handleDamageModifierChange = (characterId, value) => {
+    setDamageModifiers(prev => ({
+      ...prev,
+      [characterId]: value
+    }));
+  };
+  
+  // Handle manual damage adjustment
+  const handleDamageAdjustment = (characterId, amount) => {
+    setManualDamageAdjustments(prev => ({
+      ...prev,
+      [characterId]: (prev[characterId] || 0) + amount
+    }));
+  };
+  
+  // Apply the AoE damage with manual saves
+  const handleApplyAoeDamageWithSaves = () => {
+    // Parse damage amount
+    const damage = parseInt(aoeState.damageAmount);
+    if (isNaN(damage) || damage <= 0) {
+      alert('Please enter a valid damage amount');
+      return;
+    }
+    
+    // Create custom damage parameters for each character
+    const characterDamageParams = {};
+    
+    Object.keys(characterSaves).forEach(characterId => {
+      const saveInfo = characterSaves[characterId];
+      const modifier = damageModifiers[characterId];
+      const adjustment = manualDamageAdjustments[characterId] || 0;
+      
+      let damageToApply = damage;
+      
+      // Apply modifier
+      if (modifier === 'half') {
+        damageToApply = Math.floor(damage / 2);
+      } else if (modifier === 'quarter') {
+        damageToApply = Math.floor(damage / 4);
+      } else if (modifier === 'none') {
+        damageToApply = 0;
+      }
+      
+      // Apply manual adjustment
+      damageToApply = Math.max(0, damageToApply + adjustment);
+      
+      characterDamageParams[characterId] = {
+        damage: damageToApply,
+        saveRoll: saveInfo.roll === '' ? null : parseInt(saveInfo.roll),
+        succeeded: saveInfo.succeeded,
+        originalDamage: damage
+      };
+    });
+    
+    // Apply AoE damage with custom parameters
     const aoeParams = {
       damage,
       saveType: aoeState.saveType,
       saveDC: aoeState.saveDC,
       halfOnSave: aoeState.halfOnSave,
-      percentAffected: aoeState.percentAffected
+      percentAffected: aoeState.percentAffected,
+      characterDamageParams
     };
     
-    // Apply to all entities or just those marked for AoE
+    // Apply to monsters/bosses as normal
     if (aoeState.applyToAll) {
       applyDamageToAllGroups(aoeParams);
-      applyDamageToAllBossesInAoe(aoeParams, true); // Force apply to all
-      applyDamageToAllCharactersInAoe(aoeParams, true); // Force apply to all
+      applyDamageToAllBossesInAoe(aoeParams, true);
     } else {
-      // Only apply to entities marked for AoE
       applyDamageToAllGroupsInAoe(aoeParams);
       applyDamageToAllBossesInAoe(aoeParams);
-      applyDamageToAllCharactersInAoe(aoeParams);
     }
     
-    // Reset damage amount field
+    // Apply to characters with custom parameters
+    applyDamageToAllCharactersInAoe(aoeParams, aoeState.applyToAll);
+    
+    // Reset state
+    setShowAoeSaves(false);
     setAoeState(prev => ({
       ...prev,
       damageAmount: ''
     }));
+  };
+  
+  // Cancel AoE save UI
+  const handleCancelAoeSaves = () => {
+    setShowAoeSaves(false);
   };
   
   // Handle changes to single target state
@@ -335,94 +490,219 @@ const DamageApplication = () => {
             <div className="damage-section aoe-section">
               <h4>Area Effect Damage</h4>
               
-              <div className="damage-controls">
-                <div className="control-row">
-                  <div className="control-field">
-                    <label>Damage:</label>
-                    <input
-                      type="number"
-                      name="damageAmount"
-                      value={aoeState.damageAmount}
-                      onChange={handleAoeChange}
-                      placeholder="Damage amount"
-                      min="0"
-                      required
-                    />
+              {!showAoeSaves ? (
+                // AoE Damage Input Form
+                <div className="damage-controls">
+                  <div className="control-row">
+                    <div className="control-field">
+                      <label>Damage:</label>
+                      <input
+                        type="number"
+                        name="damageAmount"
+                        value={aoeState.damageAmount}
+                        onChange={handleAoeChange}
+                        placeholder="Damage amount"
+                        min="0"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="control-field">
+                      <label>Save Type:</label>
+                      <select
+                        name="saveType"
+                        value={aoeState.saveType}
+                        onChange={handleAoeChange}
+                      >
+                        <option value="str">STR</option>
+                        <option value="dex">DEX</option>
+                        <option value="con">CON</option>
+                        <option value="int">INT</option>
+                        <option value="wis">WIS</option>
+                        <option value="cha">CHA</option>
+                      </select>
+                    </div>
                   </div>
                   
-                  <div className="control-field">
-                    <label>Save Type:</label>
-                    <select
-                      name="saveType"
-                      value={aoeState.saveType}
-                      onChange={handleAoeChange}
-                    >
-                      <option value="str">STR</option>
-                      <option value="dex">DEX</option>
-                      <option value="con">CON</option>
-                      <option value="int">INT</option>
-                      <option value="wis">WIS</option>
-                      <option value="cha">CHA</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="control-row">
-                  <div className="control-field">
-                    <label>Save DC:</label>
-                    <input
-                      type="number"
-                      name="saveDC"
-                      value={aoeState.saveDC}
-                      onChange={handleAoeChange}
-                      min="1"
-                    />
+                  <div className="control-row">
+                    <div className="control-field">
+                      <label>Save DC:</label>
+                      <input
+                        type="number"
+                        name="saveDC"
+                        value={aoeState.saveDC}
+                        onChange={handleAoeChange}
+                        min="1"
+                      />
+                    </div>
+                    
+                    <div className="control-checkbox wide">
+                      <input
+                        type="checkbox"
+                        id="halfOnSave"
+                        name="halfOnSave"
+                        checked={aoeState.halfOnSave}
+                        onChange={handleAoeChange}
+                      />
+                      <label htmlFor="halfOnSave">Half damage on successful save</label>
+                    </div>
                   </div>
                   
                   <div className="control-checkbox wide">
                     <input
                       type="checkbox"
-                      id="halfOnSave"
-                      name="halfOnSave"
-                      checked={aoeState.halfOnSave}
+                      id="applyToAll"
+                      name="applyToAll"
+                      checked={aoeState.applyToAll}
                       onChange={handleAoeChange}
                     />
-                    <label htmlFor="halfOnSave">Half damage on successful save</label>
+                    <label htmlFor="applyToAll">Apply to ALL entities (ignore AoE markers)</label>
+                  </div>
+                  
+                  <div className="percent-affected">
+                    <label htmlFor="percentAffected">% Affected:</label>
+                    <input
+                      type="number"
+                      id="percentAffected"
+                      name="percentAffected"
+                      value={aoeState.percentAffected}
+                      onChange={handleAoeChange}
+                      min="1"
+                      max="100"
+                    />
+                  </div>
+                  
+                  <button
+                    className="apply-damage-button"
+                    onClick={prepareAoeDamage}
+                    disabled={!aoeState.damageAmount}
+                  >
+                    Next: Configure Saves
+                  </button>
+                </div>
+              ) : (
+                // AoE Saves Configuration UI
+                <div className="aoe-saves-container">
+                  <div className="aoe-saves-header">
+                    <h5>{aoeState.saveType.toUpperCase()} Save DC {aoeState.saveDC} - {aoeState.damageAmount} Damage</h5>
+                    <div className="aoe-saves-actions">
+                      <button
+                        className="auto-roll-button"
+                        onClick={autoRollAllSaves}
+                      >
+                        Auto-Roll All Saves
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {Object.keys(characterSaves).length > 0 ? (
+                    <div className="character-saves-table">
+                      <div className="character-saves-header">
+                        <div>Character</div>
+                        <div>Save Roll</div>
+                        <div>Result</div>
+                        <div>Damage</div>
+                        <div>Adjust</div>
+                        <div>Modifier</div>
+                      </div>
+                      
+                      {Object.keys(characterSaves).map(characterId => {
+                        const character = characters.find(c => c.id === characterId);
+                        if (!character) return null;
+                        
+                        const saveInfo = characterSaves[characterId];
+                        const modifier = damageModifiers[characterId];
+                        const adjustment = manualDamageAdjustments[characterId] || 0;
+                        
+                        // Calculate damage
+                        let baseDamage = aoeState.damageAmount;
+                        let finalDamage = parseInt(baseDamage);
+                        
+                        if (modifier === 'half') {
+                          finalDamage = Math.floor(finalDamage / 2);
+                        } else if (modifier === 'quarter') {
+                          finalDamage = Math.floor(finalDamage / 4);
+                        } else if (modifier === 'none') {
+                          finalDamage = 0;
+                        }
+                        
+                        // Apply manual adjustment
+                        finalDamage = Math.max(0, finalDamage + adjustment);
+                        
+                        return (
+                          <div key={characterId} className="character-saves-row">
+                            <div>{character.name}</div>
+                            <div className="save-roll-cell">
+                              <input
+                                type="number"
+                                value={saveInfo.roll}
+                                onChange={(e) => handleSaveRollChange(characterId, e.target.value)}
+                                placeholder="Roll"
+                                min="1"
+                                max="20"
+                              />
+                              <button
+                                className="auto-roll-single"
+                                onClick={() => autoRollSave(characterId)}
+                                title="Auto-roll save"
+                              >
+                                🎲
+                              </button>
+                            </div>
+                            <div className={`save-result ${saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'success' : 'failure')}`}>
+                              {saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'Success' : 'Failure')}
+                            </div>
+                            <div className="damage-value">
+                              {finalDamage}
+                              {adjustment !== 0 && (
+                                <span className="damage-adjustment">
+                                  {adjustment > 0 ? ` (+${adjustment})` : ` (${adjustment})`}
+                                </span>
+                              )}
+                            </div>
+                            <div className="damage-adjustment-controls">
+                              <button onClick={() => handleDamageAdjustment(characterId, -5)}>-5</button>
+                              <button onClick={() => handleDamageAdjustment(characterId, -1)}>-1</button>
+                              <button onClick={() => handleDamageAdjustment(characterId, 1)}>+1</button>
+                              <button onClick={() => handleDamageAdjustment(characterId, 5)}>+5</button>
+                            </div>
+                            <div>
+                              <select
+                                value={modifier}
+                                onChange={(e) => handleDamageModifierChange(characterId, e.target.value)}
+                              >
+                                <option value="default">Default Damage</option>
+                                <option value="half">Half Damage</option>
+                                <option value="quarter">Quarter Damage</option>
+                                <option value="none">No Damage</option>
+                              </select>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="no-characters-message">
+                      <p>No characters marked for AoE damage.</p>
+                    </div>
+                  )}
+                  
+                  <div className="aoe-saves-footer">
+                    <button
+                      className="cancel-button"
+                      onClick={handleCancelAoeSaves}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="apply-damage-button"
+                      onClick={handleApplyAoeDamageWithSaves}
+                    >
+                      Apply AoE Damage
+                    </button>
                   </div>
                 </div>
-                
-                <div className="control-checkbox wide">
-                  <input
-                    type="checkbox"
-                    id="applyToAll"
-                    name="applyToAll"
-                    checked={aoeState.applyToAll}
-                    onChange={handleAoeChange}
-                  />
-                  <label htmlFor="applyToAll">Apply to ALL entities (ignore AoE markers)</label>
-                </div>
-                
-                <div className="percent-affected">
-                  <label htmlFor="percentAffected">% Affected:</label>
-                  <input
-                    type="number"
-                    id="percentAffected"
-                    name="percentAffected"
-                    value={aoeState.percentAffected}
-                    onChange={handleAoeChange}
-                    min="1"
-                    max="100"
-                  />
-                </div>
-                
-                <button
-                  className="apply-damage-button"
-                  onClick={handleApplyAoeDamage}
-                  disabled={!aoeState.damageAmount}
-                >
-                  Apply AoE Damage
-                </button>
-              </div>
+              )}
               
               <div className="aoe-help">
                 <p>
