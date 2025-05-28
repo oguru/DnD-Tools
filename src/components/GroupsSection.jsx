@@ -41,8 +41,50 @@ const GroupsSection = () => {
     setBossTarget,
     setBossAoeTarget,
     prepareBossAoeAttack,
-    addBossAttackResult
+    addBossAttackResult,
+    addBoss,
+    resetBossesHealth,
+    clearAllBosses,
+    toggleBossTemplateSavingThrows
   } = useDnDStore();
+
+  // Toggle between adding a group or a boss
+  const [addEntityType, setAddEntityType] = useState('group'); // 'group' or 'boss'
+
+  // Boss template state
+  const [bossTemplate, setBossTemplate] = useState({
+    name: '',
+    maxHp: 100,
+    currentHp: 100,
+    ac: 15,
+    notes: '',
+    attacks: [],
+    savingThrows: {
+      str: 0,
+      dex: 0,
+      con: 0,
+      wis: 0,
+      int: 0,
+      cha: 0
+    },
+    showSavingThrows: false,
+    initiative: 0
+  });
+
+  // Attack/spell template for bosses
+  const [attackTemplate, setAttackTemplate] = useState({
+    id: Date.now().toString(),
+    name: '',
+    type: 'melee',
+    numDice: 2,
+    diceType: 6,
+    modifier: 3,
+    hitBonus: 5,
+    saveType: 'dex',
+    saveDC: 13,
+    halfOnSave: true,
+    isAoE: false,
+  });
 
   // State for number of groups to add
   const [groupCount, setGroupCount] = useState(5);
@@ -67,6 +109,90 @@ const GroupsSection = () => {
   // State for boss targets and pending attacks
   const [bossTargets, setBossTargets] = useState({});
   const [pendingAttacks, setPendingAttacks] = useState({});
+
+  // Handle changes to the boss template
+  const handleBossTemplateChange = (e) => {
+    const { name, value } = e.target;
+    const parsedValue = ['maxHp', 'currentHp', 'ac', 'initiative'].includes(name) 
+      ? parseInt(value) || 0
+      : value;
+    setBossTemplate(prev => ({ ...prev, [name]: parsedValue }));
+  };
+
+  // Handle changes to saving throws in boss template
+  const handleBossTemplateSavingThrowChange = (ability, value) => {
+    setBossTemplate(prev => ({
+      ...prev,
+      savingThrows: {
+        ...prev.savingThrows,
+        [ability]: parseInt(value) || 0
+      }
+    }));
+  };
+
+  // Add a new boss
+  const handleAddBoss = () => {
+    if (!bossTemplate.name || bossTemplate.maxHp <= 0 || bossTemplate.ac <= 0) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    addBoss({ ...bossTemplate, id: Date.now().toString(), currentHp: bossTemplate.maxHp });
+    
+    // Optionally reset form or clear some fields
+    setBossTemplate(prev => ({
+      ...prev,
+      name: '',
+      notes: '',
+    }));
+  };
+
+  // Add attack to boss template
+  const handleAddAttack = () => {
+    if (!attackTemplate.name) {
+      alert('Please enter an attack name');
+      return;
+    }
+    
+    const newAttack = { ...attackTemplate, id: Date.now().toString() };
+    
+    setBossTemplate(prev => ({
+      ...prev,
+      attacks: [...prev.attacks, newAttack]
+    }));
+    
+    // Reset attack name but keep other values
+    setAttackTemplate(prev => ({ 
+      ...prev, 
+      name: '',
+      id: Date.now().toString()
+    }));
+  };
+
+  // Remove attack from boss template
+  const handleRemoveAttack = (attackId) => {
+    setBossTemplate(prev => ({
+      ...prev,
+      attacks: prev.attacks.filter(attack => attack.id !== attackId)
+    }));
+  };
+
+  // Handle changes to the attack template
+  const handleAttackTemplateChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    
+    // Handle different input types
+    let parsedValue;
+    if (type === 'checkbox') {
+      parsedValue = checked;
+    } else if (['numDice', 'diceType', 'modifier', 'hitBonus', 'saveDC'].includes(name)) {
+      parsedValue = parseInt(value) || 0;
+    } else {
+      parsedValue = value;
+    }
+    
+    setAttackTemplate(prev => ({ ...prev, [name]: parsedValue }));
+  };
 
   // Toggle visibility of boss notes
   const toggleNotes = (bossId) => {
@@ -748,97 +874,337 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
 
       {expandedSections.groups && (
         <>
-          <div className="group-template">
-            <h4>Add New Enemy Group</h4>
-            <div className="group-template-fields">
-              <div className="group-field">
-                <label>Name:</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={groupTemplate.name}
-                  onChange={handleGroupTemplateChange}
-                />
-              </div>
-              <div className="group-field">
-                <label>Max HP:</label>
-                <input
-                  type="number"
-                  name="maxHp"
-                  value={groupTemplate.maxHp}
-                  onChange={handleGroupTemplateChange}
-                  min="0"
-                />
-              </div>
-              <div className="group-field">
-                <label>AC:</label>
-                <input
-                  type="number"
-                  name="ac"
-                  value={groupTemplate.ac}
-                  onChange={handleGroupTemplateChange}
-                  min="0"
-                />
-              </div>
-              <div className="group-field">
-                <label>Count:</label>
-                <input
-                  type="number"
-                  name="count"
-                  value={groupTemplate.count}
-                  onChange={handleGroupTemplateChange}
-                  min="1"
-                />
-              </div>
-              <div className="template-field">
-                <label>Initiative:</label>
-                <input
-                  type="number"
-                  name="initiative"
-                  value={groupTemplate.initiative || 0}
-                  onChange={handleGroupTemplateChange}
-                  min="0"
-                  placeholder="Initiative"
-                />
-              </div>
-            </div>
-            
-            <div className="saving-throws-container">
-              <div className="saving-throws-header" onClick={toggleGroupTemplateSavingThrows}>
-                <h5>Saving Throws {groupTemplate.showSavingThrows ? '▼' : '►'}</h5>
+          <div className="entity-type-toggle">
+            <button 
+              className={`entity-toggle-button ${addEntityType === 'group' ? 'active' : ''}`}
+              onClick={() => setAddEntityType('group')}
+            >
+              Add Enemy Group
+            </button>
+            <button 
+              className={`entity-toggle-button ${addEntityType === 'boss' ? 'active' : ''}`}
+              onClick={() => setAddEntityType('boss')}
+            >
+              Add Boss
+            </button>
+          </div>
+
+          {addEntityType === 'group' ? (
+            <div className="group-template">
+              <h4>Add New Enemy Group</h4>
+              <div className="group-template-fields">
+                <div className="group-field">
+                  <label>Name:</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={groupTemplate.name}
+                    onChange={handleGroupTemplateChange}
+                  />
+                </div>
+                <div className="group-field">
+                  <label>Max HP:</label>
+                  <input
+                    type="number"
+                    name="maxHp"
+                    value={groupTemplate.maxHp}
+                    onChange={handleGroupTemplateChange}
+                    min="0"
+                  />
+                </div>
+                <div className="group-field">
+                  <label>AC:</label>
+                  <input
+                    type="number"
+                    name="ac"
+                    value={groupTemplate.ac}
+                    onChange={handleGroupTemplateChange}
+                    min="0"
+                  />
+                </div>
+                <div className="group-field">
+                  <label>Count:</label>
+                  <input
+                    type="number"
+                    name="count"
+                    value={groupTemplate.count}
+                    onChange={handleGroupTemplateChange}
+                    min="1"
+                  />
+                </div>
+                <div className="template-field">
+                  <label>Initiative:</label>
+                  <input
+                    type="number"
+                    name="initiative"
+                    value={groupTemplate.initiative || 0}
+                    onChange={handleGroupTemplateChange}
+                    min="0"
+                    placeholder="Initiative"
+                  />
+                </div>
               </div>
               
-              {groupTemplate.showSavingThrows && renderSavingThrows(groupTemplate.savingThrows)}
-            </div>
-            
-            <div className="group-template-actions">
-              <button
-                className="add-group-button"
-                onClick={handleAddGroup}
-                disabled={!groupTemplate.name || groupTemplate.count <= 0 || groupTemplate.maxHp <= 0}
-              >
-                Add Group
-              </button>
+              <div className="saving-throws-container">
+                <div className="saving-throws-header" onClick={toggleGroupTemplateSavingThrows}>
+                  <h5>Saving Throws {groupTemplate.showSavingThrows ? '▼' : '►'}</h5>
+                </div>
+                
+                {groupTemplate.showSavingThrows && renderSavingThrows(groupTemplate.savingThrows)}
+              </div>
               
-              <div className="multiple-groups-input">
-                <input
-                  type="number"
-                  value={groupCount}
-                  onChange={(e) => setGroupCount(parseInt(e.target.value) || 1)}
-                  min="1"
-                  max="20"
-                  className="group-count-input"
-                />
+              <div className="group-template-actions">
                 <button
-                  className="add-multiple-button"
-                  onClick={handleAddMultipleGroups}
+                  className="add-group-button"
+                  onClick={handleAddGroup}
                   disabled={!groupTemplate.name || groupTemplate.count <= 0 || groupTemplate.maxHp <= 0}
                 >
-                  Add {groupCount} Groups
+                  Add Group
                 </button>
+                
+                <div className="multiple-groups-input">
+                  <input
+                    type="number"
+                    value={groupCount}
+                    onChange={(e) => setGroupCount(parseInt(e.target.value) || 1)}
+                    min="1"
+                    max="20"
+                    className="group-count-input"
+                  />
+                  <button
+                    className="add-multiple-button"
+                    onClick={handleAddMultipleGroups}
+                    disabled={!groupTemplate.name || groupTemplate.count <= 0 || groupTemplate.maxHp <= 0}
+                  >
+                    Add {groupCount} Groups
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="add-boss-section">
+              <h4>Add New Boss</h4>
+              <div className="boss-template-fields">
+                <div className="boss-field">
+                  <label>Name:</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={bossTemplate.name}
+                    onChange={handleBossTemplateChange}
+                    placeholder="Boss Name"
+                  />
+                </div>
+                <div className="boss-field">
+                  <label>Max HP:</label>
+                  <input
+                    type="number"
+                    name="maxHp"
+                    value={bossTemplate.maxHp}
+                    onChange={handleBossTemplateChange}
+                    min="1"
+                  />
+                </div>
+                <div className="boss-field">
+                  <label>AC:</label>
+                  <input
+                    type="number"
+                    name="ac"
+                    value={bossTemplate.ac}
+                    onChange={handleBossTemplateChange}
+                    min="1"
+                  />
+                </div>
+                <div className="boss-field">
+                  <label>Initiative:</label>
+                  <input
+                    type="number"
+                    name="initiative"
+                    value={bossTemplate.initiative}
+                    onChange={handleBossTemplateChange}
+                    min="0"
+                  />
+                </div>
+                <div className="boss-field wide">
+                  <label>Notes:</label>
+                  <textarea
+                    name="notes"
+                    value={bossTemplate.notes}
+                    onChange={handleBossTemplateChange}
+                    placeholder="Boss notes, abilities, etc."
+                  />
+                </div>
+              </div>
+              
+              {/* Saving Throws Toggle */}
+              <div className="saving-throws-container">
+                <div 
+                  className="saving-throws-header" 
+                  onClick={() => toggleBossTemplateSavingThrows()}
+                >
+                  <h5>Saving Throws {bossTemplate.showSavingThrows ? '▼' : '►'}</h5>
+                </div>
+                
+                {bossTemplate.showSavingThrows && renderSavingThrows(bossTemplate.savingThrows, handleBossTemplateSavingThrowChange)}
+              </div>
+
+              <div className="add-attack-section">
+                <h5>Add Attack</h5>
+                <div className="attack-template-fields">
+                  <div className="attack-field">
+                    <label>Name:</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={attackTemplate.name}
+                      onChange={handleAttackTemplateChange}
+                      placeholder="Attack Name"
+                    />
+                  </div>
+                  <div className="attack-field">
+                    <label>Type:</label>
+                    <select
+                      name="type"
+                      value={attackTemplate.type}
+                      onChange={handleAttackTemplateChange}
+                    >
+                      <option value="melee">Melee</option>
+                      <option value="ranged">Ranged</option>
+                      <option value="spell">Spell</option>
+                    </select>
+                  </div>
+                  <div className="attack-field">
+                    <label>Hit Bonus:</label>
+                    <input
+                      type="number"
+                      name="hitBonus"
+                      value={attackTemplate.hitBonus}
+                      onChange={handleAttackTemplateChange}
+                    />
+                  </div>
+                  <div className="attack-field dice-field">
+                    <label>Damage:</label>
+                    <div className="dice-inputs">
+                      <input
+                        type="number"
+                        name="numDice"
+                        value={attackTemplate.numDice}
+                        onChange={handleAttackTemplateChange}
+                        min="1"
+                        className="num-dice"
+                      />
+                      <span>d</span>
+                      <input
+                        type="number"
+                        name="diceType"
+                        value={attackTemplate.diceType}
+                        onChange={handleAttackTemplateChange}
+                        min="1"
+                        className="dice-type"
+                      />
+                      <span>+</span>
+                      <input
+                        type="number"
+                        name="modifier"
+                        value={attackTemplate.modifier}
+                        onChange={handleAttackTemplateChange}
+                        className="modifier"
+                      />
+                    </div>
+                  </div>
+                  <div className="attack-field">
+                    <label>AoE:</label>
+                    <input
+                      type="checkbox"
+                      name="isAoE"
+                      checked={attackTemplate.isAoE}
+                      onChange={handleAttackTemplateChange}
+                    />
+                  </div>
+                  
+                  {attackTemplate.isAoE && (
+                    <>
+                      <div className="attack-field">
+                        <label>Save Type:</label>
+                        <select
+                          name="saveType"
+                          value={attackTemplate.saveType}
+                          onChange={handleAttackTemplateChange}
+                        >
+                          <option value="str">STR</option>
+                          <option value="dex">DEX</option>
+                          <option value="con">CON</option>
+                          <option value="int">INT</option>
+                          <option value="wis">WIS</option>
+                          <option value="cha">CHA</option>
+                        </select>
+                      </div>
+                      <div className="attack-field">
+                        <label>Save DC:</label>
+                        <input
+                          type="number"
+                          name="saveDC"
+                          value={attackTemplate.saveDC}
+                          onChange={handleAttackTemplateChange}
+                          min="1"
+                        />
+                      </div>
+                      <div className="attack-field">
+                        <label>Half on Save:</label>
+                        <input
+                          type="checkbox"
+                          name="halfOnSave"
+                          checked={attackTemplate.halfOnSave}
+                          onChange={handleAttackTemplateChange}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                <button 
+                  className="add-attack-button"
+                  onClick={handleAddAttack}
+                  disabled={!attackTemplate.name}
+                >
+                  Add Attack
+                </button>
+              </div>
+
+              {bossTemplate.attacks.length > 0 && (
+                <div className="template-attacks-list">
+                  <h5>Attacks:</h5>
+                  <ul>
+                    {bossTemplate.attacks.map(attack => (
+                      <li key={attack.id} className="template-attack-item">
+                        <span className="attack-name">{attack.name}</span>
+                        <span className="attack-details">
+                          {attack.isAoE ? 'AoE - ' : ''}
+                          {attack.numDice}d{attack.diceType}+{attack.modifier}
+                          {!attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
+                          {attack.isAoE && ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
+                        </span>
+                        <button 
+                          className="remove-attack-button"
+                          onClick={() => handleRemoveAttack(attack.id)}
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              <button 
+                className="add-boss-button"
+                onClick={handleAddBoss}
+                disabled={!bossTemplate.name || bossTemplate.maxHp <= 0 || bossTemplate.ac <= 0}
+              >
+                Add Boss
+              </button>
+            </div>
+          )}
 
           {/* Global Attack System */}
           {enemyGroups && enemyGroups.length > 0 && characters && characters.length > 0 && (
@@ -991,6 +1357,14 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
             {bosses && bosses.length > 0 && (
               <>
                 <h4>Bosses</h4>
+                <div className="boss-controls">
+                  <button className="reset-boss-health" onClick={resetBossesHealth}>
+                    Reset Boss Health
+                  </button>
+                  <button className="clear-all-bosses" onClick={clearAllBosses}>
+                    Clear All Bosses
+                  </button>
+                </div>
                 <div className="bosses-list">
                   {bosses.map(boss => {
                     const healthPercentage = calculateHealthPercentage(boss.currentHp, boss.maxHp);

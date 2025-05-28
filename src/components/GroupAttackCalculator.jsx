@@ -1,7 +1,6 @@
 import '../styles/GroupAttackCalculator.css';
 
 import AttackResults from './AttackResults';
-import BossTracker from './BossTracker';
 import CharacterSection from './CharacterSection';
 import DamageApplication from './DamageApplication';
 import GroupsSection from './GroupsSection';
@@ -56,10 +55,7 @@ const GroupAttackCalculator = () => {
       {/* Character Section */}
       <CharacterSection />
       
-      {/* Boss Tracker */}
-      <BossTracker />
-      
-      {/* Groups Section */}
+      {/* Groups Section - Now includes boss management */}
       <GroupsSection />
       
       {/* Damage Application */}
