@@ -1018,4 +1018,35 @@
   margin-bottom: 8px;
   white-space: pre-line;
   font-size: 0.9rem;
+}
+
+/* Selection flash animation */
+.select-flash {
+  animation: flash-border 0.5s ease;
+}
+
+@keyframes flash-border {
+  0%, 100% { border-color: #cbd5e0; }
+  50% { border-color: #e53e3e; box-shadow: 0 0 0 2px rgba(229, 62, 62, 0.3); }
+}
+
+/* Roll button feedback */
+.roll-attack-button:active:not(:disabled) {
+  transform: scale(0.95);
+  background-color: #2a46c8;
+}
+
+/* Roll button processing state */
+.roll-attack-button.processing {
+  background-color: #2a46c8;
+  opacity: 0.7;
+  position: relative;
+  pointer-events: none;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 0.9; }
+  100% { opacity: 0.7; }
 } 

@@ -115,6 +115,9 @@ const GroupsSection = () => {
   const [bossTargets, setBossTargets] = useState({});
   const [pendingAttacks, setPendingAttacks] = useState({});
 
+  // Add a new state to track pending processing
+  const [attackProcessing, setAttackProcessing] = useState(false);
+
   // Refs for the sections and entities
   const sectionRef = useRef(null);
   const bossRefs = useRef({});
@@ -344,12 +347,35 @@ ${attack.halfOnSave ? `On success: ${Math.floor(totalDamage/2)} damage (half dam
   };
 
   // Roll an attack against a targeted player
-  const handleRollAttackAgainstPlayer = (boss, attack, targetId) => {
-    if (!targetId) return;
+  const handleRollAttackAgainstPlayer = (boss, attack, targetId, event) => {
+    // Make sure event propagation doesn't interfere with the button click
+    event?.stopPropagation();
+    
+    // Set processing state to show visual feedback
+    setAttackProcessing(true);
+    
+    // Add visible feedback if no target is selected
+    if (!targetId) {
+      // Flash the select box to draw attention
+      const selectElement = document.querySelector(`select[value="${targetId}"]`);
+      if (selectElement) {
+        selectElement.classList.add('select-flash');
+        setTimeout(() => selectElement.classList.remove('select-flash'), 500);
+      }
+      alert('Please select a target character first');
+      setAttackProcessing(false);
+      return;
+    }
     
     // Find the target character
     const targetCharacter = characters.find(c => c.id === targetId);
-    if (!targetCharacter) return;
+    if (!targetCharacter) {
+      alert('Target character not found. Please select a different target.');
+      setAttackProcessing(false);
+      return;
+    }
+    
+    console.log(`Rolling attack: ${attack.name} against ${targetCharacter.name}`);
     
     let criticalHit = false;
     let criticalMiss = false;
@@ -428,9 +454,10 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
       }
     }
     
-    // Create attack result object
+    // Create attack result object with a unique ID
+    const uniqueId = Date.now().toString() + '-' + Math.floor(Math.random() * 1000);
     const attackResult = {
-      id: Date.now().toString(),
+      id: uniqueId,
       attackName: attack.name,
       message: resultMessage,
       damage: totalDamage,
@@ -453,16 +480,28 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     
     // Store in pending attacks if it hit and caused damage, or if it's a save-based attack
     if ((hits && totalDamage > 0) || hitStatus === 'save-pending' || hitStatus === 'auto-save-pending') {
-      setPendingAttacks(prev => ({
-        ...prev,
-        [attackResult.id]: {
-          ...attackResult,
-          modifier: 'full'  // Default to full damage
-        }
-      }));
+      console.log(`Adding to pending attacks: ${attack.name} against ${targetCharacter.name} (ID: ${uniqueId})`);
+      
+      // Force update in next microtask to ensure React processes the state update
+      setTimeout(() => {
+        setPendingAttacks(prev => {
+          const newPending = {
+            ...prev,
+            [uniqueId]: {
+              ...attackResult,
+              modifier: 'full'  // Default to full damage
+            }
+          };
+          console.log(`Updated pending attacks, count: ${Object.keys(newPending).length}`);
+          setAttackProcessing(false);
+          return newPending;
+        });
+      }, 0);
     } else {
       // If it's a miss or no damage, just add the result
+      console.log(`Adding direct attack result (miss or no damage): ${attack.name}`);
       addBossAttackResult(boss.id, attackResult);
+      setAttackProcessing(false);
     }
   };
 
@@ -1925,11 +1964,16 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                               ))}
                                             </select>
                                             <button 
-                                              className="roll-attack-button"
-                                              onClick={() => handleRollAttackAgainstPlayer(boss, attack, bossTargets[boss.id])}
-                                              disabled={!bossTargets[boss.id]}
+                                              className={`roll-attack-button ${attackProcessing ? 'processing' : ''}`}
+                                              onClick={(e) => {
+                                                // Stop event from bubbling to parent containers
+                                                e.stopPropagation();
+                                                e.preventDefault();
+                                                handleRollAttackAgainstPlayer(boss, attack, bossTargets[boss.id], e);
+                                              }}
+                                              disabled={!bossTargets[boss.id] || attackProcessing}
                                             >
-                                              Roll
+                                              {attackProcessing ? 'Rolling...' : 'Roll'}
                                             </button>
                                           </div>
                                         )}
