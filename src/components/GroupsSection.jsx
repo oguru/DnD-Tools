@@ -83,6 +83,7 @@ const GroupsSection = () => {
     diceType: 6,
     modifier: 3,
     hitBonus: 5,
+    attackMethod: 'attackRoll', // 'attackRoll', 'save', or 'auto'
     saveType: 'dex',
     saveDC: 13,
     halfOnSave: true,
@@ -260,18 +261,35 @@ const GroupsSection = () => {
       return;
     }
 
-    // Roll to hit
-    const rollResult = rollD20();
-    const criticalHit = rollResult === 20;
-    const criticalMiss = rollResult === 1;
-    const totalHit = rollResult + attack.hitBonus;
+    // Set default hit status
+    let criticalHit = false;
+    let criticalMiss = false;
+    let rollResult = 0;
+    let totalHit = 0;
+    
+    // Handle different attack methods
+    if (attack.attackMethod === 'attackRoll') {
+      // Roll to hit
+      rollResult = rollD20();
+      criticalHit = rollResult === 20;
+      criticalMiss = rollResult === 1;
+      totalHit = rollResult + attack.hitBonus;
+    } else if (attack.attackMethod === 'save') {
+      // For saving throws, we just prepare the attack result
+      // Actual saves will be rolled when applied to a target
+      resultMessage = `${attack.saveType.toUpperCase()} save DC ${attack.saveDC} required.
+On failure: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})
+${attack.halfOnSave ? `On success: ${Math.floor(totalDamage/2)} damage (half damage)` : 'On success: No damage'}`;
+    } else if (attack.attackMethod === 'auto') {
+      // Auto hit, no roll needed
+    }
     
     // Roll damage
     let damageRoll = rollDice(attack.numDice, attack.diceType);
+    let critDamageRoll = 0;
     let totalDamage = damageRoll + attack.modifier;
     
     // Double damage dice on critical hit
-    let critDamageRoll = 0;
     if (criticalHit) {
       critDamageRoll = rollDice(attack.numDice, attack.diceType);
       totalDamage = damageRoll + critDamageRoll + attack.modifier;
@@ -279,13 +297,28 @@ const GroupsSection = () => {
     
     // Generate result message
     let resultMessage;
-    if (criticalMiss) {
-      resultMessage = `Critical Miss!`;
-    } else if (criticalHit) {
-      resultMessage = `Critical Hit! ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${criticalHit ? damageRoll : 0} + ${attack.modifier})`;
-    } else {
-      resultMessage = `Attack roll: ${totalHit} (${rollResult} + ${attack.hitBonus})
+    
+    if (attack.attackMethod === 'attackRoll') {
+      if (criticalMiss) {
+        resultMessage = `Critical Miss!`;
+      } else if (criticalHit) {
+        resultMessage = `Critical Hit! ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${criticalHit ? damageRoll : 0} + ${attack.modifier})`;
+      } else {
+        resultMessage = `Attack roll: ${totalHit} (${rollResult} + ${attack.hitBonus})
 Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
+      }
+    } else if (attack.attackMethod === 'save') {
+      resultMessage = `${attack.saveType.toUpperCase()} save DC ${attack.saveDC} required.
+On failure: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})
+${attack.halfOnSave ? `On success: ${Math.floor(totalDamage/2)} damage (half damage)` : 'On success: No damage'}`;
+    } else { // auto hit
+      if (attack.saveType && attack.saveDC) {
+        resultMessage = `Automatic hit! ${attack.saveType.toUpperCase()} save DC ${attack.saveDC} required.
+On failure: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})
+${attack.halfOnSave ? `On success: ${Math.floor(totalDamage/2)} damage (half damage)` : 'On success: No damage'}`;
+      } else {
+        resultMessage = `Automatic hit! ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
+      }
     }
     
     // Add attack result
@@ -298,9 +331,11 @@ Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} 
       criticalHit,
       criticalMiss,
       isAoE: false,
+      attackMethod: attack.attackMethod,
       saveType: attack.saveType,
       saveDC: attack.saveDC,
-      halfOnSave: attack.halfOnSave
+      halfOnSave: attack.halfOnSave,
+      damageType: attack.damageType || 'slashing'
     });
 
     // Set the boss as the target and scroll to damage section
@@ -316,42 +351,81 @@ Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} 
     const targetCharacter = characters.find(c => c.id === targetId);
     if (!targetCharacter) return;
     
-    // Roll to hit
-    const rollResult = rollD20();
-    const criticalHit = rollResult === 20;
-    const criticalMiss = rollResult === 1;
-    const totalHit = rollResult + attack.hitBonus;
+    let criticalHit = false;
+    let criticalMiss = false;
+    let rollResult = 0;
+    let totalHit = 0;
+    let hits = false;
+    let hitStatus = 'miss';
+    let saveRoll = 0;
+    let savePassed = false;
     
-    // Determine if the attack hits
-    const hits = criticalHit || (!criticalMiss && totalHit >= targetCharacter.ac);
+    // Handle different attack methods
+    if (attack.attackMethod === 'attackRoll') {
+      // Roll to hit
+      rollResult = rollD20();
+      criticalHit = rollResult === 20;
+      criticalMiss = rollResult === 1;
+      totalHit = rollResult + attack.hitBonus;
+      
+      // Determine if the attack hits
+      hits = criticalHit || (!criticalMiss && totalHit >= targetCharacter.ac);
+      hitStatus = criticalHit ? 'critical' : (hits ? 'hit' : 'miss');
+    } else if (attack.attackMethod === 'save') {
+      // For save-based attacks, we'll let the DM input the save result
+      // For now, just set it as a pending save that requires input
+      hits = true; // Assume hit initially, will be adjusted based on save
+      hitStatus = 'save-pending';
+    } else if (attack.attackMethod === 'auto') {
+      // Auto hit, no roll needed
+      hits = true;
+      hitStatus = 'auto';
+      
+      // Check if there's a saving throw component
+      if (attack.isAoE || (attack.saveType && attack.saveDC)) {
+        // For auto with save, also mark as pending save
+        hitStatus = 'auto-save-pending';
+      }
+    }
     
     // Roll damage
     let damageRoll = rollDice(attack.numDice, attack.diceType);
+    let critDamageRoll = 0;
     let totalDamage = damageRoll + attack.modifier;
     
-    // Double damage dice on critical hit
-    let critDamageRoll = 0;
-    if (criticalHit) {
+    // Adjust damage based on attack method and results
+    if (attack.attackMethod === 'attackRoll' && criticalHit) {
+      // Double damage dice on critical hit
       critDamageRoll = rollDice(attack.numDice, attack.diceType);
       totalDamage = damageRoll + critDamageRoll + attack.modifier;
     }
     
     // Generate result message
     let resultMessage;
-    let hitStatus;
     
-    if (criticalMiss) {
-      resultMessage = `Critical Miss against ${targetCharacter.name} (AC ${targetCharacter.ac})!`;
-      hitStatus = 'miss';
-    } else if (criticalHit) {
-      resultMessage = `Critical Hit against ${targetCharacter.name}! ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${critDamageRoll} + ${attack.modifier})`;
-      hitStatus = 'critical';
-    } else if (hits) {
-      resultMessage = `Hit ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})! Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
-      hitStatus = 'hit';
-    } else {
-      resultMessage = `Miss against ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})`;
-      hitStatus = 'miss';
+    if (attack.attackMethod === 'attackRoll') {
+      if (criticalMiss) {
+        resultMessage = `Critical Miss against ${targetCharacter.name} (AC ${targetCharacter.ac})!`;
+      } else if (criticalHit) {
+        resultMessage = `Critical Hit against ${targetCharacter.name}! ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${critDamageRoll} + ${attack.modifier})`;
+      } else if (hits) {
+        resultMessage = `Hit ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})! Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
+      } else {
+        resultMessage = `Miss against ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})`;
+      }
+    } else if (attack.attackMethod === 'save') {
+      resultMessage = `${targetCharacter.name} needs to make a ${attack.saveType.toUpperCase()} save (DC ${attack.saveDC}). 
+Potential damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})
+${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successful save'}`;
+    } else { // auto hit
+      if (attack.saveType && attack.saveDC) {
+        resultMessage = `Automatic hit on ${targetCharacter.name}! 
+${targetCharacter.name} needs to make a ${attack.saveType.toUpperCase()} save (DC ${attack.saveDC}).
+Potential damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})
+${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successful save'}`;
+      } else {
+        resultMessage = `Automatic hit on ${targetCharacter.name}! ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
+      }
     }
     
     // Create attack result object
@@ -364,14 +438,21 @@ Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} 
       criticalHit,
       criticalMiss,
       isAoE: false,
+      attackMethod: attack.attackMethod,
+      saveRoll,
+      savePassed,
+      saveType: attack.saveType,
+      saveDC: attack.saveDC,
+      halfOnSave: attack.halfOnSave,
       targetId: targetId,
       targetName: targetCharacter.name,
       hitStatus,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      damageType: attack.damageType || 'slashing'
     };
     
-    // Store in pending attacks if it hit
-    if (hits) {
+    // Store in pending attacks if it hit and caused damage, or if it's a save-based attack
+    if ((hits && totalDamage > 0) || hitStatus === 'save-pending' || hitStatus === 'auto-save-pending') {
       setPendingAttacks(prev => ({
         ...prev,
         [attackResult.id]: {
@@ -380,7 +461,7 @@ Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} 
         }
       }));
     } else {
-      // If it's a miss, just add the result
+      // If it's a miss or no damage, just add the result
       addBossAttackResult(boss.id, attackResult);
     }
   };
@@ -390,34 +471,59 @@ Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} 
     const pendingAttack = pendingAttacks[attackResultId];
     if (!pendingAttack) return;
     
-    // Calculate damage based on modifier
+    // Get the original damage
     let finalDamage = pendingAttack.damage;
     let modifierText = '';
+    let saveResultText = '';
     
-    if (modifier === 'half') {
-      finalDamage = Math.floor(finalDamage / 2);
-      modifierText = ' (half damage)';
-    } else if (modifier === 'quarter') {
-      finalDamage = Math.floor(finalDamage / 4);
-      modifierText = ' (quarter damage)';
-    } else if (modifier === 'none') {
-      finalDamage = 0;
-      modifierText = ' (no damage)';
+    // Apply damage modifier based on attack type and save status
+    if (pendingAttack.hitStatus === 'save-pending' || pendingAttack.hitStatus === 'auto-save-pending') {
+      // For saving throw attacks, modifier represents save result
+      if (modifier === 'full') {
+        // Failed save - full damage
+        saveResultText = ` (Failed ${pendingAttack.saveType.toUpperCase()} save)`;
+      } else if (modifier === 'half') {
+        // Passed save, half damage
+        finalDamage = Math.floor(finalDamage / 2);
+        saveResultText = ` (Passed ${pendingAttack.saveType.toUpperCase()} save, half damage)`;
+      } else if (modifier === 'none') {
+        // Passed save, no damage
+        finalDamage = 0;
+        saveResultText = ` (Passed ${pendingAttack.saveType.toUpperCase()} save, no damage)`;
+      }
+    } else {
+      // Normal damage modifiers for non-save attacks
+      if (modifier === 'half') {
+        finalDamage = Math.floor(finalDamage / 2);
+        modifierText = ' (half damage)';
+      } else if (modifier === 'quarter') {
+        finalDamage = Math.floor(finalDamage / 4);
+        modifierText = ' (quarter damage)';
+      } else if (modifier === 'none') {
+        finalDamage = 0;
+        modifierText = ' (no damage)';
+      }
     }
     
     // Update result message with modifier info
-    const updatedMessage = pendingAttack.message + modifierText;
+    const updatedMessage = pendingAttack.message + saveResultText + modifierText;
     
     // Add the attack result to the boss's history
     addBossAttackResult(bossId, {
       ...pendingAttack,
       message: updatedMessage,
-      appliedDamage: finalDamage
+      appliedDamage: finalDamage,
+      savePassed: modifier === 'half' || modifier === 'none'
     });
     
     // Apply damage to character if not "none"
-    if (modifier !== 'none' && finalDamage > 0) {
-      applyDamageToCharacter(pendingAttack.targetId, finalDamage, pendingAttack.hitStatus, modifierText);
+    if (finalDamage > 0) {
+      // Use the appropriate damage type info
+      const damageTypeText = pendingAttack.damageType ? 
+        ` ${pendingAttack.damageType}${saveResultText || modifierText}` : 
+        saveResultText || modifierText;
+      
+      applyDamageToCharacter(pendingAttack.targetId, finalDamage, pendingAttack.hitStatus, damageTypeText);
     }
     
     // Remove from pending attacks
@@ -1227,6 +1333,12 @@ Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} 
                       placeholder="Attack Name"
                     />
                   </div>
+                  <div className="attack-method-info">
+                    <p className="attack-info-note">
+                      <strong>Attack Methods:</strong> 
+                      <span className="attack-method-description">Attack Roll (needs to-hit bonus), Saving Throw (needs DC), or Automatic Hit</span>
+                    </p>
+                  </div>
                   <div className="attack-field">
                     <label>Type:</label>
                     <select
@@ -1240,14 +1352,85 @@ Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} 
                     </select>
                   </div>
                   <div className="attack-field">
-                    <label>Hit Bonus:</label>
+                    <label>Attack Method:</label>
+                    <select
+                      name="attackMethod"
+                      value={attackTemplate.attackMethod}
+                      onChange={handleAttackTemplateChange}
+                    >
+                      <option value="attackRoll">Attack Roll</option>
+                      <option value="save">Saving Throw</option>
+                      <option value="auto">Automatic Hit</option>
+                    </select>
+                  </div>
+                  {attackTemplate.attackMethod === 'attackRoll' && (
+                    <div className="attack-field">
+                      <label>Hit Bonus:</label>
+                      <input
+                        type="number"
+                        name="hitBonus"
+                        value={attackTemplate.hitBonus}
+                        onChange={handleAttackTemplateChange}
+                      />
+                    </div>
+                  )}
+                  <div className="attack-field">
+                    <label>AoE:</label>
                     <input
-                      type="number"
-                      name="hitBonus"
-                      value={attackTemplate.hitBonus}
+                      type="checkbox"
+                      name="isAoE"
+                      checked={attackTemplate.isAoE}
                       onChange={handleAttackTemplateChange}
                     />
                   </div>
+                  {(attackTemplate.attackMethod === 'save' || attackTemplate.isAoE || attackTemplate.attackMethod === 'auto') && (
+                    <>
+                      <div className="attack-field">
+                        <label>Save Type:</label>
+                        <select
+                          name="saveType"
+                          value={attackTemplate.saveType}
+                          onChange={handleAttackTemplateChange}
+                        >
+                          <option value="str">STR</option>
+                          <option value="dex">DEX</option>
+                          <option value="con">CON</option>
+                          <option value="int">INT</option>
+                          <option value="wis">WIS</option>
+                          <option value="cha">CHA</option>
+                        </select>
+                      </div>
+                      <div className="attack-field">
+                        <label>Save DC:</label>
+                        <input
+                          type="number"
+                          name="saveDC"
+                          value={attackTemplate.saveDC}
+                          onChange={handleAttackTemplateChange}
+                          min="1"
+                        />
+                      </div>
+                      <div className="attack-field">
+                        <label>On Save:</label>
+                        <select
+                          name="halfOnSave"
+                          value={attackTemplate.halfOnSave ? "half" : "none"}
+                          onChange={(e) => {
+                            handleAttackTemplateChange({
+                              target: {
+                                name: "halfOnSave",
+                                value: e.target.value === "half",
+                                type: "select"
+                              }
+                            });
+                          }}
+                        >
+                          <option value="half">Half Damage</option>
+                          <option value="none">No Damage</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
                   <div className="attack-field dice-field">
                     <label>Damage:</label>
                     <div className="dice-inputs">
@@ -1300,54 +1483,6 @@ Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} 
                       <option value="thunder">Thunder</option>
                     </select>
                   </div>
-                  <div className="attack-field">
-                    <label>AoE:</label>
-                    <input
-                      type="checkbox"
-                      name="isAoE"
-                      checked={attackTemplate.isAoE}
-                      onChange={handleAttackTemplateChange}
-                    />
-                  </div>
-                  
-                  {attackTemplate.isAoE && (
-                    <>
-                      <div className="attack-field">
-                        <label>Save Type:</label>
-                        <select
-                          name="saveType"
-                          value={attackTemplate.saveType}
-                          onChange={handleAttackTemplateChange}
-                        >
-                          <option value="str">STR</option>
-                          <option value="dex">DEX</option>
-                          <option value="con">CON</option>
-                          <option value="int">INT</option>
-                          <option value="wis">WIS</option>
-                          <option value="cha">CHA</option>
-                        </select>
-                      </div>
-                      <div className="attack-field">
-                        <label>Save DC:</label>
-                        <input
-                          type="number"
-                          name="saveDC"
-                          value={attackTemplate.saveDC}
-                          onChange={handleAttackTemplateChange}
-                          min="1"
-                        />
-                      </div>
-                      <div className="attack-field">
-                        <label>Half on Save:</label>
-                        <input
-                          type="checkbox"
-                          name="halfOnSave"
-                          checked={attackTemplate.halfOnSave}
-                          onChange={handleAttackTemplateChange}
-                        />
-                      </div>
-                    </>
-                  )}
                 </div>
                 
                 <button 
@@ -1369,8 +1504,12 @@ Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} 
                         <span className="attack-details">
                           {attack.isAoE ? 'AoE - ' : ''}
                           {attack.numDice}d{attack.diceType}+{attack.modifier} {attack.damageType || 'slashing'}
-                          {!attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
-                          {attack.isAoE && ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
+                          {attack.attackMethod === 'attackRoll' && !attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
+                          {(attack.attackMethod === 'save' || attack.isAoE || 
+                            (attack.attackMethod === 'auto' && attack.saveType && attack.saveDC)) && 
+                            ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
+                          {attack.attackMethod === 'auto' && !attack.isAoE && 
+                            !(attack.saveType && attack.saveDC) && ' (auto hit)'}
                         </span>
                         <button 
                           className="remove-attack-button"
@@ -1754,8 +1893,12 @@ Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} 
                                         <span className="attack-details">
                                           {attack.isAoE ? 'AoE - ' : ''}
                                           {attack.numDice}d{attack.diceType}+{attack.modifier} {attack.damageType || 'slashing'}
-                                          {!attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
-                                          {attack.isAoE && ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
+                                          {attack.attackMethod === 'attackRoll' && !attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
+                                          {(attack.attackMethod === 'save' || attack.isAoE || 
+                                            (attack.attackMethod === 'auto' && attack.saveType && attack.saveDC)) && 
+                                            ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
+                                          {attack.attackMethod === 'auto' && !attack.isAoE && 
+                                            !(attack.saveType && attack.saveDC) && ' (auto hit)'}
                                         </span>
                                       </div>
                                       
@@ -1804,30 +1947,59 @@ Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} 
                                               {attackResult.message}
                                             </div>
                                             <div className="damage-modifier-controls">
-                                              <button 
-                                                className="damage-button full-damage"
-                                                onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
-                                              >
-                                                Full
-                                              </button>
-                                              <button 
-                                                className="damage-button half-damage"
-                                                onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
-                                              >
-                                                Half
-                                              </button>
-                                              <button 
-                                                className="damage-button quarter-damage"
-                                                onClick={() => handleApplyDamage(boss.id, attackResult.id, 'quarter')}
-                                              >
-                                                Quarter
-                                              </button>
-                                              <button 
-                                                className="damage-button no-damage"
-                                                onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
-                                              >
-                                                None
-                                              </button>
+                                              {attackResult.hitStatus === 'save-pending' || attackResult.hitStatus === 'auto-save-pending' ? (
+                                                <>
+                                                  <span className="save-result-label">Apply based on save result:</span>
+                                                  <button 
+                                                    className="damage-button full-damage"
+                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
+                                                    title="Apply full damage (failed save)"
+                                                  >
+                                                    Failed Save (Full)
+                                                  </button>
+                                                  <button 
+                                                    className="damage-button half-damage"
+                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
+                                                    title="Apply half damage (passed save with half damage)"
+                                                  >
+                                                    Passed Save (Half)
+                                                  </button>
+                                                  <button 
+                                                    className="damage-button no-damage"
+                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
+                                                    title="Apply no damage (passed save with no damage)"
+                                                  >
+                                                    Passed Save (None)
+                                                  </button>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <button 
+                                                    className="damage-button full-damage"
+                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
+                                                  >
+                                                    Full
+                                                  </button>
+                                                  <button 
+                                                    className="damage-button half-damage"
+                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
+                                                  >
+                                                    Half
+                                                  </button>
+                                                  <button 
+                                                    className="damage-button quarter-damage"
+                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'quarter')}
+                                                  >
+                                                    Quarter
+                                                  </button>
+                                                  <button 
+                                                    className="damage-button no-damage"
+                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
+                                                  >
+                                                    None
+                                                  </button>
+                                                </>
+                                              )}
                                             </div>
                                           </div>
                                         ))}
