@@ -205,16 +205,30 @@ const TurnOrder = () => {
                 className={`turn-order-item ${index === currentTurnIndex ? 'current' : ''} ${entity.type}`}
               >
                 <span className="turn-number">{index + 1}</span>
+                
                 <div className="entity-info">
-                  <span className="entity-name">{entity.name}</span>
-                  <span className="entity-type">
-                    {entity.type === 'groupCollection' 
-                      ? `${entity.ids?.length || 0} groups` 
-                      : entity.type}
-                  </span>
+                  <div className="entity-name-row">
+                    <span className="entity-name">{entity.name}</span>
+                    <span className="entity-type">
+                      {entity.type === 'groupCollection' 
+                        ? `${entity.ids?.length || 0} groups` 
+                        : entity.type}
+                    </span>
+                  </div>
+                  
+                  {entity.type === 'groupCollection' && entity.groups && (
+                    <div className="group-members">
+                      {entity.groups.map((group) => (
+                        <div key={group.id} className="group-member-hp" title={`${group.count}/${group.originalCount} creatures - HP: ${group.currentHp}/${group.maxHp}`}>
+                          <span>{group.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+                
                 <span className="initiative-value">{entity.initiative}</span>
-                {renderHpInfo(entity)}
+                
                 <div className="turn-order-actions">
                   <button
                     className="move-up-button"
@@ -233,6 +247,50 @@ const TurnOrder = () => {
                     ↓
                   </button>
                 </div>
+                
+                <div className="hp-text">
+                  {entity.type === 'character' || entity.type === 'boss' 
+                    ? `${entity.currentHp}/${entity.maxHp} HP`
+                    : entity.type === 'group' 
+                      ? `${entity.count}/${entity.originalCount} (${entity.count * entity.currentHp}/${entity.originalCount * entity.maxHp} HP)`
+                      : entity.type === 'groupCollection' && entity.groups
+                        ? `${entity.totalCount}/${entity.totalOriginalCount} (${
+                            entity.groups.reduce((sum, g) => sum + g.count * g.currentHp, 0)
+                          }/${
+                            entity.groups.reduce((sum, g) => sum + g.originalCount * g.maxHp, 0)
+                          } HP)`
+                        : ''}
+                </div>
+                
+                {(entity.type === 'character' || entity.type === 'boss' || entity.type === 'group' || entity.type === 'groupCollection') && (
+                  <div className="mini-health-bar-container">
+                    <div 
+                      className="mini-health-bar"
+                      style={{
+                        width: entity.type === 'character' || entity.type === 'boss' 
+                          ? `${calculateHealthPercentage(entity.currentHp, entity.maxHp)}%`
+                          : entity.type === 'group'
+                            ? `${calculateHealthPercentage(entity.count * entity.currentHp, entity.originalCount * entity.maxHp)}%`
+                            : entity.type === 'groupCollection' && entity.groups
+                              ? `${calculateHealthPercentage(
+                                  entity.groups.reduce((sum, g) => sum + g.count * g.currentHp, 0),
+                                  entity.groups.reduce((sum, g) => sum + g.originalCount * g.maxHp, 0)
+                                )}%`
+                              : '0%',
+                        backgroundColor: entity.type === 'character' || entity.type === 'boss'
+                          ? getHealthColor(calculateHealthPercentage(entity.currentHp, entity.maxHp))
+                          : entity.type === 'group'
+                            ? getHealthColor(calculateHealthPercentage(entity.count * entity.currentHp, entity.originalCount * entity.maxHp))
+                            : entity.type === 'groupCollection' && entity.groups
+                              ? getHealthColor(calculateHealthPercentage(
+                                  entity.groups.reduce((sum, g) => sum + g.count * g.currentHp, 0),
+                                  entity.groups.reduce((sum, g) => sum + g.originalCount * g.maxHp, 0)
+                                ))
+                              : '#e53e3e'
+                      }}
+                    ></div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
