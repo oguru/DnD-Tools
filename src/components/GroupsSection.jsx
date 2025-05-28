@@ -87,6 +87,7 @@ const GroupsSection = () => {
     saveDC: 13,
     halfOnSave: true,
     isAoE: false,
+    damageType: 'slashing' // Default damage type
   });
 
   // State for number of groups to add
@@ -281,10 +282,10 @@ const GroupsSection = () => {
     if (criticalMiss) {
       resultMessage = `Critical Miss!`;
     } else if (criticalHit) {
-      resultMessage = `Critical Hit! ${totalDamage} damage (${damageRoll} + ${criticalHit ? damageRoll : 0} + ${attack.modifier})`;
+      resultMessage = `Critical Hit! ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${criticalHit ? damageRoll : 0} + ${attack.modifier})`;
     } else {
       resultMessage = `Attack roll: ${totalHit} (${rollResult} + ${attack.hitBonus})
-Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
+Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
     }
     
     // Add attack result
@@ -343,10 +344,10 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
       resultMessage = `Critical Miss against ${targetCharacter.name} (AC ${targetCharacter.ac})!`;
       hitStatus = 'miss';
     } else if (criticalHit) {
-      resultMessage = `Critical Hit against ${targetCharacter.name}! ${totalDamage} damage (${damageRoll} + ${critDamageRoll} + ${attack.modifier})`;
+      resultMessage = `Critical Hit against ${targetCharacter.name}! ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${critDamageRoll} + ${attack.modifier})`;
       hitStatus = 'critical';
     } else if (hits) {
-      resultMessage = `Hit ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})! Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
+      resultMessage = `Hit ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})! Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
       hitStatus = 'hit';
     } else {
       resultMessage = `Miss against ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})`;
@@ -542,16 +543,16 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
       return;
     }
     
-    // Roll attack for each creature in the group
-    const results = [];
-    let totalDamage = 0;
-    
     // Use attack bonus from group, with fallback to default +3
     const attackBonus = group.attackBonus || 3;
     
     // Get damage details from group, with fallback to defaults
-    const damageDetails = group.damage || { numDice: 1, diceType: 8, modifier: 2 };
-    const { numDice, diceType, modifier } = damageDetails;
+    const damageDetails = group.damage || { numDice: 1, diceType: 8, modifier: 2, damageType: 'slashing' };
+    const { numDice, diceType, modifier, damageType } = damageDetails;
+    
+    // Roll attack for each creature in the group
+    const results = [];
+    let totalDamage = 0;
     
     for (let i = 0; i < group.count; i++) {
       // Roll to hit
@@ -591,7 +592,8 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
         totalDamage,
         targetName: targetCharacter.name,
         targetAc: targetCharacter.ac,
-        targetId: targetCharacterId
+        targetId: targetCharacterId,
+        damageType: damageType || 'slashing'
       }
     }));
   };
@@ -602,6 +604,9 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
     
     const attackResult = attackResults[groupId];
     if (!attackResult) return;
+    
+    // Get the damage type from the attack result
+    const damageType = attackResult.damageType || 'slashing';
     
     // Calculate the final damage based on the modifier
     let finalDamage = attackResult.totalDamage;
@@ -616,7 +621,7 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
       attackResult.targetId, 
       finalDamage, 
       attackResult.results.some(r => r.isNatural20) ? 'critical' : 'hit',
-      damageModifier !== 'full' ? `(${damageModifier} damage)` : ''
+      damageModifier !== 'full' ? ` (${damageModifier} ${damageType} damage)` : ` (${damageType})`
     );
     
     // Clear the attack results for this group
@@ -1081,6 +1086,28 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                       />
                     </div>
                   </div>
+                  <div className="attack-field">
+                    <label>Damage Type:</label>
+                    <select
+                      name="damage.damageType"
+                      value={groupTemplate.damage?.damageType || 'slashing'}
+                      onChange={handleGroupTemplateChange}
+                    >
+                      <option value="slashing">Slashing</option>
+                      <option value="piercing">Piercing</option>
+                      <option value="bludgeoning">Bludgeoning</option>
+                      <option value="acid">Acid</option>
+                      <option value="cold">Cold</option>
+                      <option value="fire">Fire</option>
+                      <option value="force">Force</option>
+                      <option value="lightning">Lightning</option>
+                      <option value="necrotic">Necrotic</option>
+                      <option value="poison">Poison</option>
+                      <option value="psychic">Psychic</option>
+                      <option value="radiant">Radiant</option>
+                      <option value="thunder">Thunder</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               
@@ -1252,6 +1279,28 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                     </div>
                   </div>
                   <div className="attack-field">
+                    <label>Damage Type:</label>
+                    <select
+                      name="damageType"
+                      value={attackTemplate.damageType}
+                      onChange={handleAttackTemplateChange}
+                    >
+                      <option value="slashing">Slashing</option>
+                      <option value="piercing">Piercing</option>
+                      <option value="bludgeoning">Bludgeoning</option>
+                      <option value="acid">Acid</option>
+                      <option value="cold">Cold</option>
+                      <option value="fire">Fire</option>
+                      <option value="force">Force</option>
+                      <option value="lightning">Lightning</option>
+                      <option value="necrotic">Necrotic</option>
+                      <option value="poison">Poison</option>
+                      <option value="psychic">Psychic</option>
+                      <option value="radiant">Radiant</option>
+                      <option value="thunder">Thunder</option>
+                    </select>
+                  </div>
+                  <div className="attack-field">
                     <label>AoE:</label>
                     <input
                       type="checkbox"
@@ -1319,7 +1368,7 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                         <span className="attack-name">{attack.name}</span>
                         <span className="attack-details">
                           {attack.isAoE ? 'AoE - ' : ''}
-                          {attack.numDice}d{attack.diceType}+{attack.modifier}
+                          {attack.numDice}d{attack.diceType}+{attack.modifier} {attack.damageType || 'slashing'}
                           {!attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
                           {attack.isAoE && ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
                         </span>
@@ -1439,13 +1488,13 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                                   return (
                                     <>
                                       <span className={modifier !== 'full' || adjustment !== 0 ? "modified-damage" : ""}>
-                                        {finalDamage}
+                                        {finalDamage} {result.damageType || 'slashing'}
                                       </span>
                                       
                                       {/* Show original damage if different from modified */}
                                       {(modifier !== 'full' || adjustment !== 0) && (
                                         <span className="original-damage">
-                                          ({baseDamage})
+                                          ({baseDamage} {result.damageType || 'slashing'})
                                         </span>
                                       )}
                                       
@@ -1704,7 +1753,7 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                                         <span className="attack-name">{attack.name}</span>
                                         <span className="attack-details">
                                           {attack.isAoE ? 'AoE - ' : ''}
-                                          {attack.numDice}d{attack.diceType}+{attack.modifier}
+                                          {attack.numDice}d{attack.diceType}+{attack.modifier} {attack.damageType || 'slashing'}
                                           {!attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
                                           {attack.isAoE && ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
                                         </span>
@@ -1881,8 +1930,8 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                             <span>Damage:</span>
                             <span>
                               {group.damage 
-                                ? `${group.damage.numDice}d${group.damage.diceType}+${group.damage.modifier}` 
-                                : '1d8+2'}
+                                ? `${group.damage.numDice}d${group.damage.diceType}+${group.damage.modifier} ${group.damage.damageType || 'slashing'}` 
+                                : '1d8+2 slashing'}
                             </span>
                           </div>
                         </div>
@@ -1957,7 +2006,7 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                             <h6>Attack Results vs {attackResult.targetName} (AC: {attackResult.targetAc})</h6>
                             <div className="attack-summary">
                               <div>Hits: {attackResult.results.filter(r => r.hits).length} / {group.count}</div>
-                              <div>Total Damage: {attackResult.totalDamage}</div>
+                              <div>Total Damage: {attackResult.totalDamage} {attackResult.damageType || 'slashing'}</div>
                             </div>
                             <div className="attack-rolls">
                               {attackResult.results.map((result, index) => (

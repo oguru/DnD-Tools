@@ -86,7 +86,8 @@ const useDnDStore = create((set, get) => {
       damage: {      // Damage configuration
         numDice: 1,
         diceType: 8,
-        modifier: 2
+        modifier: 2,
+        damageType: 'slashing' // Default damage type
       }
     },
     
@@ -1674,7 +1675,8 @@ const useDnDStore = create((set, get) => {
             totalDamage,
             targetName: targetCharacter.name || 'Unknown',
             targetAc,
-            targetId: targetCharacterId
+            targetId: targetCharacterId,
+            damageType: damageDetails.damageType || 'slashing'
           };
           
           // Add to the all results array
@@ -1683,6 +1685,7 @@ const useDnDStore = create((set, get) => {
             sourceGroupId: group.id,
             groupName: group.name || 'Group',
             damage: totalDamage,
+            damageType: damageDetails.damageType || 'slashing',
             hitStatus: groupResults.some(r => r.isNatural20) ? 'critical' : 'hit',
             attackRolls: groupResults,
             hitCount: groupResults.filter(r => r.hits).length
