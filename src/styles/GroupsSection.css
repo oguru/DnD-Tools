@@ -595,7 +595,7 @@
 
 .character-damage-header {
   display: grid;
-  grid-template-columns: 1fr 0.7fr 0.7fr 1fr 0.7fr 0.9fr;
+  grid-template-columns: 1fr 0.7fr 0.7fr 1fr 1fr 0.9fr 1fr;
   gap: 0.5rem;
   background-color: #edf2f7;
   padding: 0.75rem 0.5rem;
@@ -605,7 +605,7 @@
 
 .character-damage-row {
   display: grid;
-  grid-template-columns: 1fr 0.7fr 0.7fr 1fr 0.7fr 0.9fr;
+  grid-template-columns: 1fr 0.7fr 0.7fr 1fr 1fr 0.9fr 1fr;
   gap: 0.5rem;
   padding: 0.75rem 0.5rem;
   border-top: 1px solid #e2e8f0;
@@ -635,7 +635,7 @@
 @media (max-width: 768px) {
   .character-damage-header,
   .character-damage-row {
-    grid-template-columns: 1fr 0.6fr 0.6fr 1fr 0.6fr 0.8fr;
+    grid-template-columns: 1fr 0.6fr 0.6fr 1fr 1fr 0.8fr 1fr;
     font-size: 0.9rem;
   }
   
@@ -766,9 +766,15 @@
 }
 
 .original-damage {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #718096;
-  margin-left: 5px;
+  margin-left: 4px;
+}
+
+.ac-adjustment {
+  font-size: 0.85rem;
+  color: #805ad5;
+  margin-left: 4px;
 }
 
 /* Individual Creature HP Display */
@@ -874,4 +880,27 @@
   background-color: #3182ce;
   color: white;
   border-color: #2c5282;
+}
+
+/* Damage display styles */
+.character-damage-row .modified-damage {
+  font-weight: bold;
+  color: #e53e3e; /* Red color for modified damage */
+}
+
+.character-damage-row .original-damage {
+  font-size: 0.85rem;
+  color: #718096;
+  margin-left: 4px;
+}
+
+.character-damage-row .damage-adjustment {
+  font-size: 0.85rem;
+  color: #4299e1; /* Blue color for manual adjustments */
+}
+
+.character-damage-row .ac-adjustment {
+  font-size: 0.85rem;
+  color: #805ad5; /* Purple color for AC adjustments */
+  margin-left: 4px;
 } 

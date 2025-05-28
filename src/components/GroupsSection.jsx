@@ -718,89 +718,125 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
     }
   };
   
-  // Handle changing damage modifier for a character-group pair
+  // Handle damage modifier change
   const handleDamageModifierChange = (characterId, groupId, value) => {
-    setDamageModifiers(prev => ({
-      ...prev,
-      [characterId]: {
-        ...(prev[characterId] || {}),
-        [groupId]: value
-      }
-    }));
+    console.log(`Changing damage modifier for character ${characterId}, group ${groupId} to ${value}`);
+    
+    setDamageModifiers(prev => {
+      // Ensure we have an object for this character
+      const characterModifiers = prev[characterId] || {};
+      
+      return {
+        ...prev,
+        [characterId]: {
+          ...characterModifiers,
+          [groupId]: value
+        }
+      };
+    });
   };
   
   // Handle adjusting damage amount for a character-group pair
   const handleAdjustDamage = (characterId, groupId, amount) => {
-    // Update global attack results with adjusted damage
-    setGlobalAttackResults(prev => {
-      if (!prev || !prev.allResults) return prev;
-      
-      const newAllResults = prev.allResults.map(result => {
-        if (result.characterId === characterId && result.sourceGroupId === groupId) {
-          // Use current damage (which may already be adjusted by AC override)
-          const currentDamage = result.damage;
-          
-          // Track the adjustment separately for display purposes
-          const currentAdjustment = damageAdjustments[characterId]?.[groupId] || 0;
-          const newAdjustment = currentAdjustment + amount;
-          
-          setDamageAdjustments(prev => ({
-            ...prev,
-            [characterId]: {
-              ...(prev[characterId] || {}),
-              [groupId]: newAdjustment
-            }
-          }));
-          
-          // Calculate new damage - ensure it doesn't go below 0
-          // Store originalDamage if not already stored (before any manual adjustments)
-          const originalDamage = result.originalDamage !== undefined ? result.originalDamage : result.damage;
-          
-          return {
-            ...result,
-            damage: Math.max(0, currentDamage + amount),
-            originalDamage,
-            manualAdjustment: (result.manualAdjustment || 0) + amount
-          };
-        }
-        return result;
-      });
-      
-      return {
-        ...prev,
-        allResults: newAllResults
-      };
-    });
+    // Track the adjustment separately for display purposes
+    const currentAdjustment = damageAdjustments[characterId]?.[groupId] || 0;
+    const newAdjustment = currentAdjustment + amount;
+    
+    // Get the current result
+    const result = globalAttackResults?.allResults?.find(
+      r => r.characterId === characterId && r.sourceGroupId === groupId
+    );
+    
+    if (!result) return;
+    
+    // Calculate the current modified damage
+    const modifier = damageModifiers[characterId]?.[groupId] || 'full';
+    let modifiedDamage = result.damage;
+    
+    if (modifier === 'half') {
+      modifiedDamage = Math.floor(modifiedDamage / 2);
+    } else if (modifier === 'quarter') {
+      modifiedDamage = Math.floor(modifiedDamage / 4);
+    } else if (modifier === 'none') {
+      modifiedDamage = 0;
+    }
+    
+    // Ensure we don't create a negative adjustment that would make final damage below 0
+    const cappedAdjustment = Math.max(newAdjustment, -modifiedDamage);
+    
+    // Update the tracked adjustments
+    setDamageAdjustments(prev => ({
+      ...prev,
+      [characterId]: {
+        ...(prev[characterId] || {}),
+        [groupId]: cappedAdjustment
+      }
+    }));
   };
   
   // Apply all rolled damage to characters
   const handleApplyAllDamage = () => {
     if (!globalAttackResults || !globalAttackResults.allResults) return;
     
-    // Prepare damage details with modifiers - use the current damage value 
-    // which already includes AC override and manual adjustments
-    const damageDetails = globalAttackResults.allResults.map(result => ({
-      ...result,
-      modifier: damageModifiers[result.characterId]?.[result.sourceGroupId] || 'full',
-      acOverride: characterAcOverrides[result.characterId] || null,
-      // The damage field already includes both AC override and manual adjustments
-      // Pass hitCount and adjustedHitCount for logging
-      hitCount: result.hitCount,
-      adjustedHitCount: result.adjustedHitCount,
-      manualAdjustment: result.manualAdjustment
-    }));
+    // Prepare damage details with modifiers and adjustments
+    const damageDetails = globalAttackResults.allResults.map(result => {
+      // Get the current damage modifier for this character/group combination
+      const modifier = damageModifiers[result.characterId]?.[result.sourceGroupId] || 'full';
+      
+      // Get manual adjustment if any
+      const adjustment = damageAdjustments[result.characterId]?.[result.sourceGroupId] || 0;
+      
+      // Get original damage before any adjustments
+      const originalDamage = result.originalDamage !== undefined ? result.originalDamage : result.damage;
+      
+      // Get base damage (after AC adjustments)
+      const baseDamage = result.damage;
+      
+      // Calculate modified damage based on selected modifier
+      let modifiedDamage = baseDamage;
+      if (modifier === 'half') {
+        modifiedDamage = Math.floor(baseDamage / 2);
+      } else if (modifier === 'quarter') {
+        modifiedDamage = Math.floor(baseDamage / 4);
+      } else if (modifier === 'none') {
+        modifiedDamage = 0;
+      }
+      
+      // Apply manual adjustments to the modified damage
+      const finalDamage = Math.max(0, modifiedDamage + adjustment);
+      
+      // Create detail object with all required information
+      return {
+        ...result,
+        // Set the modifier to 'full' to prevent double-application in the store
+        // but keep the original modifier for display purposes
+        originalModifier: modifier,
+        modifier: 'full',  // This prevents the store from re-applying the modifier
+        acOverride: characterAcOverrides[result.characterId] || null,
+        hitCount: result.hitCount,
+        adjustedHitCount: result.adjustedHitCount,
+        manualAdjustment: adjustment,
+        // Pass the final calculated damage that includes both modifier and adjustments
+        damage: finalDamage,
+        originalDamage,
+        // Add a flag to indicate that damage has been pre-calculated
+        damagePreCalculated: true
+      };
+    });
     
     // Debug logging
     console.log('Applying damage with details:', damageDetails.map(detail => ({
       character: characters.find(c => c.id === detail.characterId)?.name,
       group: detail.groupName,
       originalDamage: detail.originalDamage,
-      adjustedDamage: detail.damage,
+      baseDamage: globalAttackResults.allResults.find(r => 
+        r.characterId === detail.characterId && r.sourceGroupId === detail.sourceGroupId
+      )?.damage,
+      finalDamage: detail.damage,
+      originalModifier: detail.originalModifier,
       modifier: detail.modifier,
-      acOverride: detail.acOverride,
-      hitCount: detail.hitCount,
-      adjustedHitCount: detail.adjustedHitCount,
-      manualAdjustment: detail.manualAdjustment
+      adjustment: detail.manualAdjustment,
+      acOverride: detail.acOverride
     })));
     
     // Apply the damage
@@ -1275,29 +1311,60 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                               </div>
                               <div>{result.groupName}</div>
                               <div>
-                                {damageAdjustments[character.id]?.[result.sourceGroupId] ? 
-                                  <>
-                                    <span className="adjusted-damage">{result.damage}</span>
-                                    <span className="original-damage">
-                                      ({(result.originalDamage || result.damage)}
-                                      {damageAdjustments[character.id][result.sourceGroupId] > 0 ? 
-                                        ` +${damageAdjustments[character.id][result.sourceGroupId]}` :
-                                        ` ${damageAdjustments[character.id][result.sourceGroupId]}`}
-                                      )
-                                    </span>
-                                  </> :
-                                  <>
-                                    <span className={characterAcOverrides[character.id] && result.originalDamage !== result.damage ? "adjusted-damage" : ""}>{result.damage}</span>
-                                    {characterAcOverrides[character.id] && result.originalDamage && result.originalDamage !== result.damage && (
-                                      <span className="original-damage">
-                                        ({result.originalDamage})
-                                        {result.hitCount && result.adjustedHitCount !== undefined && (
-                                          <> Hits: {result.adjustedHitCount}/{result.hitCount}</>
-                                        )}
+                                {(() => {
+                                  // Get the base damage (after AC adjustments)
+                                  const baseDamage = result.damage;
+                                  
+                                  // Get the modifier and calculate the modified damage
+                                  const modifier = damageModifiers[character.id]?.[result.sourceGroupId] || 'full';
+                                  
+                                  // Calculate the modified damage based on the selected modifier
+                                  let modifiedDamage = baseDamage;
+                                  if (modifier === 'half') {
+                                    modifiedDamage = Math.floor(baseDamage / 2);
+                                  } else if (modifier === 'quarter') {
+                                    modifiedDamage = Math.floor(baseDamage / 4);
+                                  } else if (modifier === 'none') {
+                                    modifiedDamage = 0;
+                                  }
+                                  
+                                  // Apply manual adjustments to the MODIFIED damage, not the base damage
+                                  const adjustment = damageAdjustments[character.id]?.[result.sourceGroupId] || 0;
+                                  const finalDamage = Math.max(0, modifiedDamage + adjustment);
+                                  
+                                  // Display the modified damage
+                                  return (
+                                    <>
+                                      <span className={modifier !== 'full' || adjustment !== 0 ? "modified-damage" : ""}>
+                                        {finalDamage}
                                       </span>
-                                    )}
-                                  </>
-                                }
+                                      
+                                      {/* Show original damage if different from modified */}
+                                      {(modifier !== 'full' || adjustment !== 0) && (
+                                        <span className="original-damage">
+                                          ({baseDamage})
+                                        </span>
+                                      )}
+                                      
+                                      {/* Show manual adjustments if any */}
+                                      {adjustment !== 0 && (
+                                        <span className="damage-adjustment">
+                                          {adjustment > 0 ? 
+                                            ` +${adjustment}` :
+                                            ` ${adjustment}`}
+                                        </span>
+                                      )}
+                                      
+                                      {/* Show AC override effects if any */}
+                                      {characterAcOverrides[character.id] && result.originalDamage && result.originalDamage !== baseDamage && (
+                                        <span className="ac-adjustment">
+                                          (AC: {result.hitCount && result.adjustedHitCount !== undefined && 
+                                            `${result.adjustedHitCount}/${result.hitCount} hits`})
+                                        </span>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                               </div>
                               <div className="damage-adjustment">
                                 <button

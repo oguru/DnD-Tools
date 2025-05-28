@@ -1359,7 +1359,8 @@ const useDnDStore = create((set, get) => {
             acOverride: charDamage.acOverride,
             characterAC: char.ac,
             adjustedHitCount: charDamage.adjustedHitCount,
-            modifier: charDamage.modifier
+            modifier: charDamage.modifier,
+            damagePreCalculated: charDamage.damagePreCalculated
           });
           
           // Check if we need to recalculate hits based on AC override
@@ -1390,22 +1391,26 @@ const useDnDStore = create((set, get) => {
             }
           }
           
-          // Apply damage modifier
-          const preModifierDamage = finalDamage;
-          if (charDamage.modifier === 'half') {
-            finalDamage = Math.floor(finalDamage / 2);
-          } else if (charDamage.modifier === 'quarter') {
-            finalDamage = Math.floor(finalDamage / 4);
-          } else if (charDamage.modifier === 'none') {
-            finalDamage = 0;
-          }
-          
-          if (preModifierDamage !== finalDamage) {
-            console.log(`Damage modifier applied: ${charDamage.modifier}`, {
-              character: char.name,
-              before: preModifierDamage,
-              after: finalDamage
-            });
+          // Apply damage modifier ONLY if damage hasn't been pre-calculated
+          if (!charDamage.damagePreCalculated) {
+            const preModifierDamage = finalDamage;
+            if (charDamage.modifier === 'half') {
+              finalDamage = Math.floor(finalDamage / 2);
+            } else if (charDamage.modifier === 'quarter') {
+              finalDamage = Math.floor(finalDamage / 4);
+            } else if (charDamage.modifier === 'none') {
+              finalDamage = 0;
+            }
+            
+            if (preModifierDamage !== finalDamage) {
+              console.log(`Damage modifier applied: ${charDamage.modifier}`, {
+                character: char.name,
+                before: preModifierDamage,
+                after: finalDamage
+              });
+            }
+          } else {
+            console.log(`Using pre-calculated damage for ${char.name}: ${finalDamage}`);
           }
           
           if (finalDamage <= 0) return char;
@@ -1448,15 +1453,15 @@ const useDnDStore = create((set, get) => {
               : ` (${detail.manualAdjustment} manual)`;
           }
           
-          if (detail.modifier === 'half') {
+          // Use originalModifier if available, otherwise use modifier
+          const displayModifier = detail.originalModifier || detail.modifier;
+          
+          if (displayModifier === 'half') {
             modifierText = ' (half damage)';
-            finalDamage = Math.floor(finalDamage / 2);
-          } else if (detail.modifier === 'quarter') {
+          } else if (displayModifier === 'quarter') {
             modifierText = ' (quarter damage)';
-            finalDamage = Math.floor(finalDamage / 4);
-          } else if (detail.modifier === 'none') {
+          } else if (displayModifier === 'none') {
             modifierText = ' (no damage)';
-            finalDamage = 0;
           }
           
           return {
