@@ -5,6 +5,7 @@ import BossTracker from './BossTracker';
 import CharacterSection from './CharacterSection';
 import DamageApplication from './DamageApplication';
 import GroupsSection from './GroupsSection';
+import TurnOrder from './TurnOrder';
 import useDnDStore from '../store/dndStore';
 
 const GroupAttackCalculator = () => {
@@ -48,6 +49,9 @@ const GroupAttackCalculator = () => {
           />
         </label>
       </div>
+      
+      {/* Turn Order */}
+      <TurnOrder />
       
       {/* Character Section */}
       <CharacterSection />

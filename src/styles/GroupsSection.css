@@ -809,4 +809,38 @@
   font-size: 0.7rem;
   color: #4a5568;
   font-weight: 600;
+}
+
+.initiative-input {
+  width: 40px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  border: 1px solid #cbd5e0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.initiative-input:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 1px rgba(66, 153, 225, 0.6);
+}
+
+/* Adjust entity-details if needed */
+.entity-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.entity-field {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.entity-field span:first-child {
+  font-weight: 600;
+  color: #4a5568;
 } 

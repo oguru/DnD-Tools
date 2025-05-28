@@ -175,6 +175,7 @@ const CharacterSection = () => {
               <div>HP</div>
               <div>Max HP</div>
               <div>AC</div>
+              <div>Initiative</div>
               <div>Health</div>
               <div>Actions</div>
             </div>
@@ -229,6 +230,16 @@ const CharacterSection = () => {
                       onChange={(e) => handleCharacterChange(character.id, 'ac', e.target.value)}
                       min="0"
                       placeholder="AC"
+                      className={isEmpty ? 'empty-field' : ''}
+                    />
+                  </div>
+                  <div className="character-field">
+                    <input
+                      type="number"
+                      value={character.initiative || ''}
+                      onChange={(e) => handleCharacterChange(character.id, 'initiative', e.target.value)}
+                      min="0"
+                      placeholder="Init"
                       className={isEmpty ? 'empty-field' : ''}
                     />
                   </div>

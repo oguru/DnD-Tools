@@ -31,7 +31,8 @@ const GroupsSection = () => {
     applyDamageToCharacter,
     rollDice,
     rollGroupsAttacks,
-    applyDamageToMultipleCharacters
+    applyDamageToMultipleCharacters,
+    updateEnemyGroup
   } = useDnDStore();
 
   // State for number of groups to add
@@ -523,6 +524,11 @@ const GroupsSection = () => {
     groupId => groupTargets[groupId] && characters.some(c => c.id === groupTargets[groupId])
   );
 
+  // Add this function to the component:
+  const handleUpdateGroupInitiative = (groupId, value) => {
+    updateEnemyGroup(groupId, 'initiative', value);
+  };
+
   return (
     <div className="groups-section">
       <div className="section-header">
@@ -577,6 +583,17 @@ const GroupsSection = () => {
                   value={groupTemplate.count}
                   onChange={handleGroupTemplateChange}
                   min="1"
+                />
+              </div>
+              <div className="template-field">
+                <label>Initiative:</label>
+                <input
+                  type="number"
+                  name="initiative"
+                  value={groupTemplate.initiative || 0}
+                  onChange={handleGroupTemplateChange}
+                  min="0"
+                  placeholder="Initiative"
                 />
               </div>
             </div>
@@ -786,12 +803,12 @@ const GroupsSection = () => {
                         <div className="entity-header">
                           <h5>{boss.name}</h5>
                         </div>
-                        <div className="entity-stats">
-                          <div className="entity-stat">
+                        <div className="entity-details">
+                          <div className="entity-field">
                             <span>HP:</span>
-                            <span>{boss.currentHp} / {boss.maxHp}</span>
+                            <span>{boss.currentHp}/{boss.maxHp}</span>
                           </div>
-                          <div className="entity-stat">
+                          <div className="entity-field">
                             <span>AC:</span>
                             <span>{boss.ac}</span>
                           </div>
@@ -879,20 +896,33 @@ const GroupsSection = () => {
                             </button>
                           </div>
                         </div>
-                        <div className="entity-stats">
-                          <div className="entity-stat">
+                        <div className="entity-details">
+                          <div className="entity-field">
+                            <span>HP:</span>
+                            <span>{group.currentHp}/{group.maxHp}</span>
+                          </div>
+                          <div className="entity-field">
                             <span>AC:</span>
                             <span>{group.ac}</span>
                           </div>
-                          <div className="entity-stat">
-                            <span>Count:</span>
-                            <span>{group.count}/{group.originalCount || group.count}</span>
-                          </div>
-                          <div className="entity-stat">
-                            <span>Total HP:</span>
-                            <span>
-                              {calculateGroupTotalCurrentHP(group)} / {(group.originalCount || group.count) * group.maxHp}
-                            </span>
+                          <div className="entity-field">
+                            <span>Init:</span>
+                            <input
+                              type="number"
+                              value={group.initiative || 0}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 0;
+                                // Use your existing method to update a group
+                                // This might need to be adjusted based on your actual API
+                                // For example:
+                                // updateGroup(group.id, 'initiative', value);
+                                // or:
+                                handleUpdateGroupInitiative(group.id, value);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              min="0"
+                              className="initiative-input"
+                            />
                           </div>
                         </div>
                         

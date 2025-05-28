@@ -5,6 +5,7 @@ const useDnDStore = create((set, get) => {
   const savedCharacters = localStorage.getItem('dnd-characters');
   const savedBosses = localStorage.getItem('dnd-bosses');
   const savedEnemyGroups = localStorage.getItem('dnd-enemy-groups');
+  const savedTurnOrder = localStorage.getItem('dnd-turn-order');
 
   // Function to ensure each group has a creatures array
   const migrateGroupData = (groups) => {
@@ -48,6 +49,10 @@ const useDnDStore = create((set, get) => {
     enemyGroups: migratedGroups,
     attackResults: [],
     
+    // Turn order tracking
+    turnOrder: savedTurnOrder ? JSON.parse(savedTurnOrder) : [],
+    currentTurnIndex: 0,
+    
     targetEntity: null, // { type: 'group'|'boss'|'character', id: 'some-id' }
     
     expandedSections: {
@@ -56,6 +61,7 @@ const useDnDStore = create((set, get) => {
       groups: true,
       damage: true,
       results: true,
+      turnOrder: true,
     },
     
     // Templates
@@ -65,6 +71,7 @@ const useDnDStore = create((set, get) => {
       currentHp: 10,
       ac: 12,
       count: 4,
+      initiative: 0,
       showSavingThrows: false,
       savingThrows: {
         str: 0,
@@ -82,6 +89,7 @@ const useDnDStore = create((set, get) => {
       maxHp: 100,
       currentHp: 100,
       ac: 15,
+      initiative: 0,
       notes: '',
       attacks: [],
       showSavingThrows: false,
@@ -107,6 +115,7 @@ const useDnDStore = create((set, get) => {
         maxHp: character.maxHp || 0,
         currentHp: character.currentHp || 0,
         ac: character.ac || 0,
+        initiative: character.initiative || 0,
         inAoe: false
       };
       
@@ -347,6 +356,7 @@ const useDnDStore = create((set, get) => {
         ac: groupTemplate.ac,
         count: groupTemplate.count,
         originalCount: groupTemplate.count, // Track original count
+        initiative: groupTemplate.initiative || 0,
         inAoe: false,
         showSavingThrows: false,
         savingThrows: { ...groupTemplate.savingThrows },
@@ -373,6 +383,7 @@ const useDnDStore = create((set, get) => {
           ac: groupTemplate.ac,
           count: groupTemplate.count,
           originalCount: groupTemplate.count, // Track original count
+          initiative: groupTemplate.initiative || 0,
           inAoe: false,
           showSavingThrows: false,
           savingThrows: { ...groupTemplate.savingThrows },
@@ -1260,6 +1271,9 @@ const useDnDStore = create((set, get) => {
         // Update state
         set({ characters, bosses, enemyGroups });
         
+        // Update turn order based on imported entities
+        get().updateTurnOrder();
+        
         return true;
       } catch (err) {
         console.error('Error importing state:', err);
@@ -1507,6 +1521,161 @@ const useDnDStore = create((set, get) => {
       });
       
       return { results, allResults };
+    },
+    
+    // Turn order functions
+    updateTurnOrder: () => {
+      set(state => {
+        const entities = [
+          ...state.characters.map(char => ({ 
+            id: char.id, 
+            name: char.name, 
+            type: 'character', 
+            initiative: char.initiative || 0 
+          })),
+          ...state.bosses.map(boss => ({ 
+            id: boss.id, 
+            name: boss.name, 
+            type: 'boss', 
+            initiative: boss.initiative || 0 
+          })),
+          ...state.enemyGroups.map(group => ({ 
+            id: group.id, 
+            name: group.name, 
+            type: 'group', 
+            initiative: group.initiative || 0 
+          }))
+        ];
+        
+        // Sort by initiative (highest first)
+        const sortedEntities = entities.sort((a, b) => b.initiative - a.initiative);
+        
+        localStorage.setItem('dnd-turn-order', JSON.stringify(sortedEntities));
+        return { 
+          turnOrder: sortedEntities,
+          currentTurnIndex: state.turnOrder.length > 0 ? Math.min(state.currentTurnIndex, sortedEntities.length - 1) : 0
+        };
+      });
+    },
+    
+    nextTurn: () => {
+      set(state => {
+        if (state.turnOrder.length === 0) return state;
+        
+        const nextIndex = (state.currentTurnIndex + 1) % state.turnOrder.length;
+        return { currentTurnIndex: nextIndex };
+      });
+    },
+    
+    previousTurn: () => {
+      set(state => {
+        if (state.turnOrder.length === 0) return state;
+        
+        const prevIndex = (state.currentTurnIndex - 1 + state.turnOrder.length) % state.turnOrder.length;
+        return { currentTurnIndex: prevIndex };
+      });
+    },
+    
+    moveTurnOrderUp: (index) => {
+      set(state => {
+        if (index <= 0 || index >= state.turnOrder.length) return state;
+        
+        const newTurnOrder = [...state.turnOrder];
+        const temp = newTurnOrder[index];
+        newTurnOrder[index] = newTurnOrder[index - 1];
+        newTurnOrder[index - 1] = temp;
+        
+        localStorage.setItem('dnd-turn-order', JSON.stringify(newTurnOrder));
+        
+        // Adjust currentTurnIndex if needed
+        let newCurrentTurnIndex = state.currentTurnIndex;
+        if (state.currentTurnIndex === index) {
+          newCurrentTurnIndex = index - 1;
+        } else if (state.currentTurnIndex === index - 1) {
+          newCurrentTurnIndex = index;
+        }
+        
+        return { 
+          turnOrder: newTurnOrder,
+          currentTurnIndex: newCurrentTurnIndex
+        };
+      });
+    },
+    
+    moveTurnOrderDown: (index) => {
+      set(state => {
+        if (index < 0 || index >= state.turnOrder.length - 1) return state;
+        
+        const newTurnOrder = [...state.turnOrder];
+        const temp = newTurnOrder[index];
+        newTurnOrder[index] = newTurnOrder[index + 1];
+        newTurnOrder[index + 1] = temp;
+        
+        localStorage.setItem('dnd-turn-order', JSON.stringify(newTurnOrder));
+        
+        // Adjust currentTurnIndex if needed
+        let newCurrentTurnIndex = state.currentTurnIndex;
+        if (state.currentTurnIndex === index) {
+          newCurrentTurnIndex = index + 1;
+        } else if (state.currentTurnIndex === index + 1) {
+          newCurrentTurnIndex = index;
+        }
+        
+        return { 
+          turnOrder: newTurnOrder,
+          currentTurnIndex: newCurrentTurnIndex
+        };
+      });
+    },
+    
+    rollInitiative: () => {
+      set(state => {
+        // Roll initiative for characters
+        const updatedCharacters = state.characters.map(char => {
+          // Simple d20 roll for now
+          const initiativeRoll = Math.floor(Math.random() * 20) + 1;
+          return { ...char, initiative: initiativeRoll };
+        });
+        
+        // Roll for bosses
+        const updatedBosses = state.bosses.map(boss => {
+          const initiativeRoll = Math.floor(Math.random() * 20) + 1;
+          return { ...boss, initiative: initiativeRoll };
+        });
+        
+        // Roll for groups (all with same value for now)
+        const groupInitiativeRoll = Math.floor(Math.random() * 20) + 1;
+        const updatedGroups = state.enemyGroups.map(group => {
+          return { ...group, initiative: groupInitiativeRoll };
+        });
+        
+        // Save to localStorage
+        localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
+        localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+        localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
+        
+        return { 
+          characters: updatedCharacters,
+          bosses: updatedBosses,
+          enemyGroups: updatedGroups
+        };
+      });
+      
+      // Update turn order with new initiative values
+      get().updateTurnOrder();
+    },
+    
+    updateEnemyGroup: (id, field, value) => {
+      set(state => {
+        const updatedGroups = state.enemyGroups.map(group => {
+          if (group.id === id) {
+            return { ...group, [field]: value };
+          }
+          return group;
+        });
+        localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
+        return { enemyGroups: updatedGroups };
+      });
     }
   };
 });

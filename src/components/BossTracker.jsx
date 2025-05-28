@@ -48,7 +48,8 @@ const BossTracker = () => {
       int: 0,
       cha: 0
     },
-    showSavingThrows: false
+    showSavingThrows: false,
+    initiative: 0
   });
 
   // Attack/spell template for bosses
@@ -78,7 +79,7 @@ const BossTracker = () => {
   // Handle changes to the boss template
   const handleBossTemplateChange = (e) => {
     const { name, value } = e.target;
-    const parsedValue = ['maxHp', 'currentHp', 'ac'].includes(name) 
+    const parsedValue = ['maxHp', 'currentHp', 'ac', 'initiative'].includes(name) 
       ? parseInt(value) || 0
       : value;
     setBossTemplate(prev => ({ ...prev, [name]: parsedValue }));
@@ -333,6 +334,16 @@ Half damage on save: ${attack.halfOnSave ? "Yes" : "No"}`;
                   value={bossTemplate.ac}
                   onChange={handleBossTemplateChange}
                   min="1"
+                />
+              </div>
+              <div className="boss-field">
+                <label>Initiative:</label>
+                <input
+                  type="number"
+                  name="initiative"
+                  value={bossTemplate.initiative}
+                  onChange={handleBossTemplateChange}
+                  min="0"
                 />
               </div>
               <div className="boss-field wide">
@@ -591,6 +602,18 @@ Half damage on save: ${attack.halfOnSave ? "Yes" : "No"}`;
                           onChange={(e) => {
                             const value = parseInt(e.target.value) || 0;
                             updateBoss(boss.id, 'ac', Math.max(0, value));
+                          }}
+                          min="0"
+                        />
+                      </div>
+                      <div className="boss-stat">
+                        <span>Init:</span>
+                        <input
+                          type="number"
+                          value={boss.initiative || 0}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 0;
+                            updateBoss(boss.id, 'initiative', Math.max(0, value));
                           }}
                           min="0"
                         />
