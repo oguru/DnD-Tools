@@ -837,8 +837,11 @@ const GroupsSection = () => {
                   {enemyGroups.map(group => {
                     // Calculate health percentage based on total remaining HP vs total max HP
                     const totalCurrentHP = calculateGroupTotalCurrentHP(group);
-                    const totalMaxHP = group.count * group.maxHp;
-                    const healthPercentage = calculateHealthPercentage(totalCurrentHP, totalMaxHP);
+                    // Calculate original max HP based on original count (stored in maxCount if available, or use current count)
+                    const originalCount = group.originalCount || group.count;
+                    const totalOriginalMaxHP = originalCount * group.maxHp;
+                    // Calculate health percentage as current total HP vs original total max HP
+                    const healthPercentage = calculateHealthPercentage(totalCurrentHP, totalOriginalMaxHP);
                     const healthColor = getHealthColor(healthPercentage);
                     const isTargeted = targetEntity && 
                                       targetEntity.type === 'group' && 
@@ -852,7 +855,7 @@ const GroupsSection = () => {
                         onClick={() => handleSetGroupAsTarget(group)}
                       >
                         <div className="entity-header">
-                          <h5>{group.name} (x{group.count})</h5>
+                          <h5>{group.name} ({group.count}/{group.originalCount || group.count})</h5>
                           <div className="entity-actions-top">
                             <button 
                               className="duplicate-entity-button"
@@ -883,12 +886,12 @@ const GroupsSection = () => {
                           </div>
                           <div className="entity-stat">
                             <span>Count:</span>
-                            <span>{group.count}</span>
+                            <span>{group.count}/{group.originalCount || group.count}</span>
                           </div>
                           <div className="entity-stat">
                             <span>Total HP:</span>
                             <span>
-                              {calculateGroupTotalCurrentHP(group)} / {group.count * group.maxHp}
+                              {calculateGroupTotalCurrentHP(group)} / {(group.originalCount || group.count) * group.maxHp}
                             </span>
                           </div>
                         </div>

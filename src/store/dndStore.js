@@ -11,6 +11,9 @@ const useDnDStore = create((set, get) => {
     if (!Array.isArray(groups)) return [];
     
     return groups.map(group => {
+      // Add originalCount if not present
+      const originalCount = group.originalCount || group.count;
+      
       if (!group.creatures || !Array.isArray(group.creatures)) {
         // Create creatures array based on count and currentHp
         const creatures = Array(group.count || 0).fill().map(() => ({
@@ -19,10 +22,14 @@ const useDnDStore = create((set, get) => {
         
         return {
           ...group,
-          creatures
+          creatures,
+          originalCount
         };
       }
-      return group;
+      return {
+        ...group,
+        originalCount
+      };
     });
   };
   
@@ -339,6 +346,7 @@ const useDnDStore = create((set, get) => {
         currentHp: groupTemplate.maxHp,
         ac: groupTemplate.ac,
         count: groupTemplate.count,
+        originalCount: groupTemplate.count, // Track original count
         inAoe: false,
         showSavingThrows: false,
         savingThrows: { ...groupTemplate.savingThrows },
@@ -364,9 +372,13 @@ const useDnDStore = create((set, get) => {
           currentHp: groupTemplate.maxHp,
           ac: groupTemplate.ac,
           count: groupTemplate.count,
+          originalCount: groupTemplate.count, // Track original count
           inAoe: false,
           showSavingThrows: false,
-          savingThrows: { ...groupTemplate.savingThrows }
+          savingThrows: { ...groupTemplate.savingThrows },
+          creatures: Array(groupTemplate.count).fill().map(() => ({
+            hp: groupTemplate.maxHp
+          }))
         });
       }
       
@@ -396,6 +408,7 @@ const useDnDStore = create((set, get) => {
         ...group,
         id: Date.now().toString(),
         name: `${group.name} (Copy)`,
+        originalCount: group.count, // Use current count as original for the copy
         creatures: group.creatures ? [...group.creatures] : Array(group.count).fill().map(() => ({
           hp: group.maxHp
         }))
