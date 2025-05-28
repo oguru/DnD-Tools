@@ -488,6 +488,7 @@ const useDnDStore = create((set, get) => {
         
         let updatedGroup = { ...group };
         let killCount = 0;
+        let remainingDamage = damage;
         
         // Ensure creatures array exists
         if (!updatedGroup.creatures || !Array.isArray(updatedGroup.creatures)) {
@@ -500,24 +501,37 @@ const useDnDStore = create((set, get) => {
         // Sort creatures by HP (ascending) to damage lowest HP first
         updatedGroup.creatures.sort((a, b) => a.hp - b.hp);
         
-        // Apply damage to the creature with lowest HP
-        if (updatedGroup.creatures.length > 0) {
-          const lowestHpCreature = updatedGroup.creatures[0];
+        // Apply damage to creatures until all damage is used up or all creatures are dead
+        const survivingCreatures = [];
+        let creaturesLeftToProcess = [...updatedGroup.creatures];
+        
+        // Process creatures one by one, carrying over excess damage
+        while (remainingDamage > 0 && creaturesLeftToProcess.length > 0) {
+          const currentCreature = creaturesLeftToProcess.shift();
           
-          // If damage would kill the creature
-          if (damage >= lowestHpCreature.hp) {
-            killCount = 1;
-            updatedGroup.creatures.shift(); // Remove the killed creature
-            updatedGroup.count = updatedGroup.creatures.length;
+          // If remaining damage is enough to kill the creature
+          if (remainingDamage >= currentCreature.hp) {
+            killCount++;
+            // Subtract creature's HP from remaining damage (the excess flows to the next creature)
+            remainingDamage -= currentCreature.hp;
           } else {
-            // Just reduce HP
-            lowestHpCreature.hp -= damage;
+            // Creature survives with reduced HP
+            currentCreature.hp -= remainingDamage;
+            survivingCreatures.push(currentCreature);
+            remainingDamage = 0; // All damage has been applied
           }
-          
-          // Update currentHp to represent the lowest HP in the group
-          if (updatedGroup.creatures.length > 0) {
-            updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
-          }
+        }
+        
+        // Add any unprocessed creatures to surviving creatures
+        survivingCreatures.push(...creaturesLeftToProcess);
+        
+        // Update the group with the surviving creatures
+        updatedGroup.creatures = survivingCreatures;
+        updatedGroup.count = survivingCreatures.length;
+        
+        // Update currentHp to represent the lowest HP in the group
+        if (updatedGroup.creatures.length > 0) {
+          updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
         }
         
         // Create the updated groups array
