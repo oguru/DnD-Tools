@@ -9,14 +9,12 @@ const BOSS_STORAGE_KEY = 'group-attack-calculator-bosses';
 const BossTracker = () => {
   const {
     bosses,
-    characters,
     addBoss,
     removeBoss,
     updateBossHp,
     updateBoss,
     resetBossesHealth,
     clearAllBosses,
-    toggleBossAoeTarget,
     addBossAttackResult,
     calculateHealthPercentage,
     getHealthColor,
@@ -27,9 +25,13 @@ const BossTracker = () => {
     toggleBossSavingThrows,
     updateBossSavingThrow,
     toggleBossTemplateSavingThrows,
-    setTargetEntity,
     targetEntity,
-    scrollToDamageSection
+    scrollToDamageSection,
+    setBossTarget,
+    setBossAoeTarget,
+    prepareBossAoeAttack,
+    characters,
+    applyDamageToCharacter
   } = useDnDStore();
   
   // Boss template
@@ -70,6 +72,12 @@ const BossTracker = () => {
   // State for showing/hiding notes and attacks
   const [showNotes, setShowNotes] = useState({});
   const [showAttacks, setShowAttacks] = useState({});
+
+  // Add state for storing player targets for each boss
+  const [bossTargets, setBossTargets] = useState({});
+
+  // Add state for attack results with pending damage
+  const [pendingAttacks, setPendingAttacks] = useState({});
 
   // Save bosses to localStorage whenever they change
   useEffect(() => {
@@ -181,23 +189,141 @@ const BossTracker = () => {
     }));
   };
 
-  // Set a boss as the target
-  const handleSetBossAsTarget = (boss) => {
-    const isTargeted = targetEntity && 
-                      targetEntity.type === 'boss' && 
-                      targetEntity.id === boss.id;
-                      
-    if (isTargeted) {
-      // If already targeted, just scroll to damage section
-      scrollToDamageSection();
-    } else {
-      // Target this boss and scroll
-      setTargetEntity({ type: 'boss', id: boss.id });
+  // Add function to handle boss target selection
+  const handleBossTargetChange = (bossId, targetId) => {
+    setBossTargets(prev => ({
+      ...prev,
+      [bossId]: targetId
+    }));
+  };
+
+  // Add function to roll an attack against a targeted player
+  const handleRollAttackAgainstPlayer = (boss, attack, targetId) => {
+    if (!targetId) return;
+    
+    // Find the target character
+    const targetCharacter = characters.find(c => c.id === targetId);
+    if (!targetCharacter) return;
+    
+    // Roll to hit
+    const rollResult = rollD20();
+    const criticalHit = rollResult === 20;
+    const criticalMiss = rollResult === 1;
+    const totalHit = rollResult + attack.hitBonus;
+    
+    // Determine if the attack hits
+    const hits = criticalHit || (!criticalMiss && totalHit >= targetCharacter.ac);
+    
+    // Roll damage
+    let damageRoll = rollDice(attack.numDice, attack.diceType);
+    let totalDamage = damageRoll + attack.modifier;
+    
+    // Double damage dice on critical hit
+    if (criticalHit) {
+      const critDamageRoll = rollDice(attack.numDice, attack.diceType);
+      totalDamage += critDamageRoll;
     }
+    
+    // Generate result message
+    let resultMessage;
+    let hitStatus;
+    
+    if (criticalMiss) {
+      resultMessage = `Critical Miss against ${targetCharacter.name} (AC ${targetCharacter.ac})!`;
+      hitStatus = 'miss';
+    } else if (criticalHit) {
+      resultMessage = `Critical Hit against ${targetCharacter.name}! ${totalDamage} damage (${damageRoll} + ${damageRoll} + ${attack.modifier})`;
+      hitStatus = 'critical';
+    } else if (hits) {
+      resultMessage = `Hit ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})! Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
+      hitStatus = 'hit';
+    } else {
+      resultMessage = `Miss against ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})`;
+      hitStatus = 'miss';
+    }
+
+    // Create attack result object
+    const attackResult = {
+      id: Date.now().toString(),
+      attackName: attack.name,
+      message: resultMessage,
+      damage: totalDamage,
+      rollToHit: totalHit,
+      criticalHit,
+      criticalMiss,
+      isAoE: false,
+      targetId: targetId,
+      targetName: targetCharacter.name,
+      hitStatus,
+      timestamp: Date.now()
+    };
+    
+    // Store in pending attacks if it hit
+    if (hits) {
+      setPendingAttacks(prev => ({
+        ...prev,
+        [attackResult.id]: {
+          ...attackResult,
+          modifier: 'full'  // Default to full damage
+        }
+      }));
+    } else {
+      // If it's a miss, just add the result
+      addBossAttackResult(boss.id, attackResult);
+    }
+  };
+
+  // Handle applying damage with modifier
+  const handleApplyDamage = (bossId, attackResultId, modifier) => {
+    const pendingAttack = pendingAttacks[attackResultId];
+    if (!pendingAttack) return;
+    
+    // Calculate damage based on modifier
+    let finalDamage = pendingAttack.damage;
+    let modifierText = '';
+    
+    if (modifier === 'half') {
+      finalDamage = Math.floor(finalDamage / 2);
+      modifierText = ' (half damage)';
+    } else if (modifier === 'quarter') {
+      finalDamage = Math.floor(finalDamage / 4);
+      modifierText = ' (quarter damage)';
+    } else if (modifier === 'none') {
+      finalDamage = 0;
+      modifierText = ' (no damage)';
+    }
+    
+    // Update result message with modifier info
+    const updatedMessage = pendingAttack.message + modifierText;
+    
+    // Add the attack result to the boss's history
+    addBossAttackResult(bossId, {
+      ...pendingAttack,
+      message: updatedMessage,
+      appliedDamage: finalDamage
+    });
+    
+    // Apply damage to character if not "none"
+    if (modifier !== 'none' && finalDamage > 0) {
+      applyDamageToCharacter(pendingAttack.targetId, finalDamage, pendingAttack.hitStatus, modifierText);
+    }
+    
+    // Remove from pending attacks
+    setPendingAttacks(prev => {
+      const newPending = { ...prev };
+      delete newPending[attackResultId];
+      return newPending;
+    });
   };
 
   // Roll attack for a boss
   const handleRollAttack = (boss, attack) => {
+    // For AOE attacks, populate the AOE section instead
+    if (attack.isAoE) {
+      prepareBossAoeAttack(boss.id, attack);
+      return;
+    }
+
     // Roll to hit
     const rollResult = rollD20();
     const criticalHit = rollResult === 20;
@@ -225,11 +351,6 @@ const BossTracker = () => {
 Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
     }
     
-    if (attack.isAoE) {
-      resultMessage += `\nSave DC: ${attack.saveDC} (${attack.saveType.toUpperCase()})
-Half damage on save: ${attack.halfOnSave ? "Yes" : "No"}`;
-    }
-    
     // Add attack result
     addBossAttackResult(boss.id, {
       id: Date.now().toString(),
@@ -239,11 +360,15 @@ Half damage on save: ${attack.halfOnSave ? "Yes" : "No"}`;
       rollToHit: totalHit,
       criticalHit,
       criticalMiss,
-      isAoE: attack.isAoE,
+      isAoE: false,
       saveType: attack.saveType,
       saveDC: attack.saveDC,
       halfOnSave: attack.halfOnSave
     });
+
+    // Set the boss as the target and scroll to damage section
+    setBossTarget(boss.id);
+    scrollToDamageSection();
   };
 
   // Render saving throws fields
@@ -642,17 +767,18 @@ Half damage on save: ${attack.halfOnSave ? "Yes" : "No"}`;
                       {boss.showSavingThrows && renderSavingThrows(boss.savingThrows, handleBossSavingThrowChange, boss.id)}
                     </div>
                     
+                    {/* Target buttons - updated to match the group UI */}
                     <div className="boss-targeting">
                       <button 
                         className={`target-button ${isTargeted ? 'active' : ''}`}
-                        onClick={() => handleSetBossAsTarget(boss)}
-                        title={isTargeted ? "Scroll to damage application" : "Set as target"}
+                        onClick={() => setBossTarget(boss.id)}
+                        title={isTargeted ? "Already targeted" : "Set as target for single attack"}
                       >
-                        {isTargeted ? "Scroll to Damage" : "Target"}
+                        Target
                       </button>
                       <button 
                         className={`aoe-button ${boss.inAoe ? 'active' : ''}`}
-                        onClick={() => toggleBossAoeTarget(boss.id)}
+                        onClick={() => setBossAoeTarget(boss.id, !boss.inAoe)}
                         title={boss.inAoe ? "Remove from AoE" : "Add to AoE"}
                       >
                         {boss.inAoe ? "In AoE" : "Add to AoE"}
@@ -697,12 +823,79 @@ Half damage on save: ${attack.halfOnSave ? "Yes" : "No"}`;
                                       {attack.isAoE && ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
                                     </span>
                                   </div>
-                                  <button 
-                                    className="roll-attack-button"
-                                    onClick={() => handleRollAttack(boss, attack)}
-                                  >
-                                    Roll
-                                  </button>
+                                  
+                                  <div className="attack-controls">
+                                    {attack.isAoE ? (
+                                      <button 
+                                        className="roll-attack-button aoe-attack"
+                                        onClick={() => handleRollAttack(boss, attack)}
+                                      >
+                                        Use AoE
+                                      </button>
+                                    ) : (
+                                      <div className="target-attack-container">
+                                        <select 
+                                          className="player-target-select"
+                                          value={bossTargets[boss.id] || ''}
+                                          onChange={(e) => handleBossTargetChange(boss.id, e.target.value)}
+                                        >
+                                          <option value="">Select Target</option>
+                                          {characters.map(character => (
+                                            <option key={character.id} value={character.id}>
+                                              {character.name} (AC: {character.ac})
+                                            </option>
+                                          ))}
+                                        </select>
+                                        <button 
+                                          className="roll-attack-button"
+                                          onClick={() => handleRollAttackAgainstPlayer(boss, attack, bossTargets[boss.id])}
+                                          disabled={!bossTargets[boss.id]}
+                                        >
+                                          Roll
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Display pending attack results with damage options */}
+                                  {Object.values(pendingAttacks)
+                                    .filter(pendingAttack => 
+                                      pendingAttack.targetId === bossTargets[boss.id] && 
+                                      pendingAttack.attackName === attack.name
+                                    )
+                                    .map(attackResult => (
+                                      <div key={attackResult.id} className="pending-attack-result">
+                                        <div className="attack-result-message">
+                                          {attackResult.message}
+                                        </div>
+                                        <div className="damage-modifier-controls">
+                                          <button 
+                                            className="damage-button full-damage"
+                                            onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
+                                          >
+                                            Full
+                                          </button>
+                                          <button 
+                                            className="damage-button half-damage"
+                                            onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
+                                          >
+                                            Half
+                                          </button>
+                                          <button 
+                                            className="damage-button quarter-damage"
+                                            onClick={() => handleApplyDamage(boss.id, attackResult.id, 'quarter')}
+                                          >
+                                            Quarter
+                                          </button>
+                                          <button 
+                                            className="damage-button no-damage"
+                                            onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
+                                          >
+                                            None
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
                                 </li>
                               ))}
                             </ul>

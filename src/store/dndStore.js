@@ -252,6 +252,10 @@ const useDnDStore = create((set, get) => {
           return boss;
         });
         localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+        
+        // Update turn order to reflect HP changes
+        setTimeout(() => get().updateTurnOrder(false), 0);
+        
         return { bosses: updatedBosses };
       });
     },
@@ -989,65 +993,42 @@ const useDnDStore = create((set, get) => {
       });
     },
     
-    applyDamageToAllBossesInAoe: (aoeParams, forceAll = false) => {
-      const { damage, saveType, saveDC, halfOnSave } = aoeParams;
+    applyDamageToAllBossesInAoe: (aoeParams, applyToAll = false) => {
+      // Just destructure damage for now
+      const { damage } = aoeParams;
       if (damage <= 0) return;
       
       set(state => {
-        // Find bosses marked for AoE or use all if forceAll is true
-        const aoeBosses = forceAll 
+        const aoeBosses = applyToAll 
           ? state.bosses 
           : state.bosses.filter(boss => boss.inAoe);
           
         if (aoeBosses.length === 0) return state;
         
         const updatedBosses = state.bosses.map(boss => {
-          // Skip if not in AoE and not forcing all
-          if (!forceAll && !boss.inAoe) return boss;
+          // Skip bosses not in AoE unless applyToAll is true
+          if (!applyToAll && !boss.inAoe) return boss;
           
-          // Calculate save bonus for this boss
-          const saveBonus = boss.savingThrows?.[saveType] || 0;
+          // Apply the damage
+          const newHp = Math.max(0, boss.currentHp - damage);
           
-          // Roll save
-          const saveRoll = Math.floor(Math.random() * 20) + 1 + saveBonus;
-          const saved = saveRoll >= saveDC;
-          
-          // Calculate damage based on save
-          let damageToApply = damage;
-          if (saved && halfOnSave) {
-            damageToApply = Math.floor(damage / 2);
-          } else if (saved && !halfOnSave) {
-            damageToApply = 0;
-          }
-          
-          // Apply damage
-          if (damageToApply > 0) {
-            const newHp = Math.max(0, boss.currentHp - damageToApply);
-            return { ...boss, currentHp: newHp };
-          }
-          
-          return boss;
+          return {
+            ...boss,
+            currentHp: newHp,
+            inAoe: false // Clear AOE flag after applying damage
+          };
         });
         
         localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
         
-        const bossNames = aoeBosses.map(b => b.name).join(', ');
-        const targetText = forceAll ? "all bosses" : bossNames;
+        // Update turn order to reflect the damage
+        setTimeout(() => get().updateTurnOrder(false), 0);
         
-        return { 
-          bosses: updatedBosses,
-          attackResults: [
-            ...state.attackResults,
-            {
-              id: Date.now().toString(),
-              damage,
-              message: `AoE: ${damage} ${saveType.toUpperCase()} save DC ${saveDC} to: ${targetText}`,
-              isAoE: true,
-              timestamp: Date.now()
-            }
-          ]
-        };
+        return { bosses: updatedBosses };
       });
+      
+      // Clear all AOE targets
+      get().clearAllAoeTargets();
     },
     
     applyDamageToCharacter: (characterId, damage, hitStatus, modifierText = '') => {
@@ -1902,7 +1883,118 @@ const useDnDStore = create((set, get) => {
         
         return { enemyGroups: updatedGroups };
       });
-    }
+    },
+    
+    // Add a function to set a single boss as target for attacks
+    setBossTarget: (bossId) => {
+      set(state => {
+        // First clear any previous AOE targets for bosses
+        const updatedBosses = state.bosses.map(boss => ({
+          ...boss,
+          isTargeted: boss.id === bossId
+        }));
+        
+        localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+        
+        return { 
+          bosses: updatedBosses,
+          targetEntity: { type: 'boss', id: bossId }
+        };
+      });
+    },
+    
+    // Add a function to set a boss as AOE target
+    setBossAoeTarget: (bossId, isTarget) => {
+      set(state => {
+        const updatedBosses = state.bosses.map(boss => {
+          if (boss.id === bossId) {
+            return { ...boss, inAoe: isTarget };
+          }
+          return boss;
+        });
+        
+        localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+        
+        return { bosses: updatedBosses };
+      });
+    },
+    
+    // Prepare an AOE attack for a boss that will populate the AOE section
+    prepareBossAoeAttack: (bossId, attack) => {
+      const boss = get().bosses.find(b => b.id === bossId);
+      if (!boss || !attack) return;
+      
+      // Roll the damage dice
+      const damageRoll = get().rollDice(attack.numDice, attack.diceType);
+      const totalDamage = damageRoll + attack.modifier;
+      
+      // Set this boss as the target entity
+      get().setTargetEntity({ type: 'boss', id: bossId });
+      
+      // Prepare the AOE fields
+      const aoeParams = {
+        damage: totalDamage.toString(), // Use the actual rolled damage
+        saveType: attack.saveType,
+        saveDC: attack.saveDC,
+        halfOnSave: attack.halfOnSave
+      };
+      
+      // Set the AOE parameters in the damage application component
+      get().prepareAoeDamage(aoeParams);
+      
+      // Scroll to damage section
+      get().scrollToDamageSection();
+      
+      // Add attack result
+      get().addBossAttackResult(bossId, {
+        id: Date.now().toString(),
+        attackName: attack.name,
+        message: `AOE Attack: ${attack.name} - ${totalDamage} damage (${damageRoll} + ${attack.modifier}) - DC ${attack.saveDC} ${attack.saveType.toUpperCase()} save, ${attack.halfOnSave ? "half" : "no"} damage on save`,
+        damage: totalDamage,
+        isAoE: true,
+        saveType: attack.saveType,
+        saveDC: attack.saveDC,
+        halfOnSave: attack.halfOnSave
+      });
+    },
+    
+    // Clear all AOE targets after applying AOE damage
+    clearAllAoeTargets: () => {
+      set(state => {
+        // Clear AOE flags from all entities
+        const updatedBosses = state.bosses.map(boss => ({
+          ...boss,
+          inAoe: false
+        }));
+        
+        const updatedGroups = state.enemyGroups.map(group => ({
+          ...group,
+          inAoe: false
+        }));
+        
+        const updatedCharacters = state.characters.map(char => ({
+          ...char,
+          inAoe: false
+        }));
+        
+        // Update localStorage
+        localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+        localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
+        localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
+        
+        return { 
+          bosses: updatedBosses,
+          enemyGroups: updatedGroups,
+          characters: updatedCharacters
+        };
+      });
+    },
+    
+    // Add parameters for AOE damage application
+    prepareAoeDamage: (params) => {
+      // This will be used by the damage application component
+      set({ aoeDamageParams: params });
+    },
   };
 });
 

@@ -493,11 +493,8 @@
 }
 
 .attack-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  margin-top: 8px;
+  width: 100%;
 }
 
 .attack-advantage-toggle {
@@ -1007,11 +1004,14 @@
 
 .boss-card.targeted {
   border: 2px solid #4299e1;
+  box-shadow: 0 0 10px rgba(56, 161, 105, 0.3);
   background-color: #ebf8ff;
+
 }
 
 .boss-card.in-aoe {
-  border: 2px solid #f6ad55;
+  border: 2px solid #e53e3e;
+  box-shadow: 0 0 10px rgba(229, 62, 62, 0.3);
   background-color: #fffaf0;
 }
 
@@ -1117,25 +1117,28 @@
 
 .boss-targeting {
   display: flex;
+  justify-content: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin: 0.75rem 0;
 }
 
 .target-button,
 .aoe-button {
-  flex: 1;
-  background-color: #4299e1;
-  color: white;
-  border: none;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e0;
   border-radius: 4px;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  flex: 1;
+  max-width: 150px;
 }
 
-.target-button:hover {
-  background-color: #3182ce;
+.target-button:hover,
+.aoe-button:hover {
+  background-color: #e2e8f0;
 }
 
 .target-button.active {
@@ -1148,10 +1151,16 @@
 
 .aoe-button:hover {
   background-color: #dd6b20;
+
+  border-color: #38a169;
+  font-weight: 600;
 }
 
 .aoe-button.active {
   background-color: #c05621;
+
+  border-color: #e53e3e;
+  font-weight: 600;
 }
 
 .notes-header,
@@ -1286,4 +1295,136 @@
   .saving-throws-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Style for AoE attack buttons */
+.roll-attack-button.aoe-attack {
+  background-color: #fed7d7;
+  color: #c53030;
+  border-color: #fc8181;
+}
+
+.roll-attack-button.aoe-attack:hover {
+  background-color: #feb2b2;
+}
+
+/* Target selection for boss attacks */
+.target-attack-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.player-target-select {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  background-color: white;
+  color: #4a5568;
+}
+
+.player-target-select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+}
+
+.roll-attack-button:disabled {
+  background-color: #cbd5e0;
+  cursor: not-allowed;
+}
+
+/* Improve boss attack layout */
+.boss-attack-item {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.attack-info {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 6px;
+}
+
+.attack-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #4a5568;
+}
+
+.attack-details {
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+/* Pending attack results and damage modifier controls */
+.pending-attack-result {
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.attack-result-message {
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: #2d3748;
+}
+
+.damage-modifier-controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.damage-button {
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.damage-button.full-damage {
+  background-color: #fed7d7;
+  color: #e53e3e;
+}
+
+.damage-button.full-damage:hover {
+  background-color: #feb2b2;
+}
+
+.damage-button.half-damage {
+  background-color: #feebc8;
+  color: #dd6b20;
+}
+
+.damage-button.half-damage:hover {
+  background-color: #fbd38d;
+}
+
+.damage-button.quarter-damage {
+  background-color: #fefcbf;
+  color: #d69e2e;
+}
+
+.damage-button.quarter-damage:hover {
+  background-color: #faf089;
+}
+
+.damage-button.no-damage {
+  background-color: #e2e8f0;
+  color: #4a5568;
+}
+
+.damage-button.no-damage:hover {
+  background-color: #cbd5e0;
 } 

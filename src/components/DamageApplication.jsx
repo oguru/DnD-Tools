@@ -19,7 +19,9 @@ const DamageApplication = () => {
     applyDamageToAllCharactersInAoe,
     applyDamageToBoss,
     applyDamageToAllBossesInAoe,
-    setDamageApplicationRef
+    setDamageApplicationRef,
+    aoeDamageParams,
+    clearAllAoeTargets
   } = useDnDStore();
 
   // Local state for single target damage
@@ -82,6 +84,33 @@ const DamageApplication = () => {
       setManualDamageAdjustments({});
     }
   }, [showAoeSaves, characters, aoeState.applyToAll]);
+
+  // Add useEffect to handle AOE parameters when they are set
+  useEffect(() => {
+    if (aoeDamageParams) {
+      // Set the AOE state from the parameters
+      setAoeState(prev => ({
+        ...prev,
+        damageAmount: aoeDamageParams.damage || '',
+        saveType: aoeDamageParams.saveType || 'dex',
+        saveDC: aoeDamageParams.saveDC || 15,
+        halfOnSave: aoeDamageParams.halfOnSave !== undefined ? aoeDamageParams.halfOnSave : true,
+        // Set applyToAll to false by default when using a boss AOE attack
+        applyToAll: false
+      }));
+      
+      // Auto-scroll to the AOE section
+      if (sectionRef.current) {
+        sectionRef.current.scrollIntoView({ behavior: 'smooth' });
+        
+        // Focus on the damage input to make it clear where we are
+        setTimeout(() => {
+          const damageInput = sectionRef.current.querySelector('input[name="damageAmount"]');
+          if (damageInput) damageInput.focus();
+        }, 500);
+      }
+    }
+  }, [aoeDamageParams]);
 
   // Get the currently targeted entity details
   const getTargetDetails = () => {
@@ -323,6 +352,9 @@ const DamageApplication = () => {
     // Apply to characters with custom parameters
     applyDamageToAllCharactersInAoe(aoeParams, aoeState.applyToAll);
     
+    // Clear all AOE targets
+    clearAllAoeTargets();
+    
     // Reset state
     setShowAoeSaves(false);
     setAoeState(prev => ({
@@ -359,6 +391,9 @@ const DamageApplication = () => {
       [name]: type === 'checkbox' ? checked : value
     }));
   };
+
+  // Add a variable to check if AOE damage is coming from a boss attack
+  const isAoeFromBossAttack = !!aoeDamageParams;
 
   return (
     <div className="damage-application" ref={sectionRef}>
@@ -487,7 +522,7 @@ const DamageApplication = () => {
             </div>
             
             {/* AoE Damage */}
-            <div className="damage-section aoe-section">
+            <div className={`damage-section aoe-section ${isAoeFromBossAttack ? 'aoe-from-boss' : ''}`}>
               <h4>Area Effect Damage</h4>
               
               {!showAoeSaves ? (
@@ -711,6 +746,16 @@ const DamageApplication = () => {
               </div>
             </div>
           </div>
+
+          {/* Add AOE attack details if populated from a boss */}
+          {aoeDamageParams && (
+            <div className="aoe-source-info">
+              <p>
+                <strong>AOE Attack:</strong> {aoeDamageParams.saveType?.toUpperCase()} Save DC {aoeDamageParams.saveDC} 
+                {aoeDamageParams.halfOnSave !== undefined && ` (${aoeDamageParams.halfOnSave ? 'Half' : 'No'} damage on save)`}
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>
