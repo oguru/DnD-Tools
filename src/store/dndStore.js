@@ -105,6 +105,10 @@ const useDnDStore = create((set, get) => {
     
     // References for scrolling
     damageApplicationRef: null,
+    charactersSectionRef: null,
+    bossesSectionRef: null,
+    groupsSectionRef: null,
+    entityRefs: {}, // For individual entities (groups, bosses, characters)
     
     // Actions
     // Character actions
@@ -1202,6 +1206,92 @@ const useDnDStore = create((set, get) => {
     // Scrolling
     setDamageApplicationRef: (ref) => {
       set({ damageApplicationRef: ref });
+    },
+    
+    setCharactersSectionRef: (ref) => {
+      set({ charactersSectionRef: ref });
+    },
+    
+    setBossesSectionRef: (ref) => {
+      set({ bossesSectionRef: ref });
+    },
+    
+    setGroupsSectionRef: (ref) => {
+      set({ groupsSectionRef: ref });
+    },
+    
+    // Register a ref for an individual entity
+    registerEntityRef: (type, id, ref) => {
+      set(state => ({
+        entityRefs: {
+          ...state.entityRefs,
+          [`${type}-${id}`]: ref
+        }
+      }));
+    },
+    
+    scrollToEntity: (entity) => {
+      if (!entity || !entity.type) return;
+      
+      const { 
+        charactersSectionRef, 
+        bossesSectionRef, 
+        groupsSectionRef,
+        expandedSections,
+        entityRefs
+      } = get();
+      
+      // First make sure the appropriate section is expanded
+      let sectionRef = null;
+      let sectionName = '';
+      
+      if (entity.type === 'character') {
+        sectionRef = charactersSectionRef;
+        sectionName = 'characters';
+      } else if (entity.type === 'boss') {
+        sectionRef = bossesSectionRef;
+        sectionName = 'groups'; // Bosses are in the groups section
+      } else if (entity.type === 'group' || entity.type === 'groupCollection') {
+        sectionRef = groupsSectionRef;
+        sectionName = 'groups';
+      }
+      
+      // Expand section if it's not already expanded
+      if (sectionRef && sectionName && !expandedSections[sectionName]) {
+        set(state => ({
+          expandedSections: {
+            ...state.expandedSections,
+            [sectionName]: true
+          }
+        }));
+      }
+      
+      // If it's a group collection, get the first group ID
+      let targetId = entity.id;
+      if (entity.type === 'groupCollection' && entity.ids && entity.ids.length > 0) {
+        entity.type = 'group'; // Convert to group type for scrolling
+        targetId = entity.ids[0]; // Use first group in collection
+      }
+      
+      // After a short delay to ensure section is expanded
+      setTimeout(() => {
+        // Try to find the specific entity ref first
+        const entityRef = entityRefs[`${entity.type}-${targetId}`];
+        
+        if (entityRef && entityRef.current) {
+          // Scroll to the specific entity
+          entityRef.current.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+          });
+        } else if (sectionRef && sectionRef.current) {
+          // Fall back to scrolling to the section
+          sectionRef.current.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }, 100);
     },
     
     scrollToDamageSection: () => {

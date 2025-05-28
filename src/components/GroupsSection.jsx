@@ -1,8 +1,9 @@
 import '../styles/GroupsSection.css';
 import '../styles/BossTracker.css';
 
+import { useEffect, useRef, useState } from 'react';
+
 import useDnDStore from '../store/dndStore';
-import { useState } from 'react';
 
 const GroupsSection = () => {
   const {
@@ -45,7 +46,9 @@ const GroupsSection = () => {
     addBoss,
     resetBossesHealth,
     clearAllBosses,
-    toggleBossTemplateSavingThrows
+    toggleBossTemplateSavingThrows,
+    setGroupsSectionRef,
+    registerEntityRef
   } = useDnDStore();
 
   // Toggle between adding a group or a boss
@@ -109,6 +112,36 @@ const GroupsSection = () => {
   // State for boss targets and pending attacks
   const [bossTargets, setBossTargets] = useState({});
   const [pendingAttacks, setPendingAttacks] = useState({});
+
+  // Refs for the sections and entities
+  const sectionRef = useRef(null);
+  const bossRefs = useRef({});
+  const groupRefs = useRef({});
+  
+  // Register the section ref
+  useEffect(() => {
+    if (sectionRef.current) {
+      setGroupsSectionRef(sectionRef);
+    }
+  }, [setGroupsSectionRef]);
+  
+  // Register refs for individual bosses
+  useEffect(() => {
+    bosses.forEach(boss => {
+      if (boss.id && bossRefs.current[boss.id]) {
+        registerEntityRef('boss', boss.id, bossRefs.current[boss.id]);
+      }
+    });
+  }, [bosses, registerEntityRef]);
+  
+  // Register refs for individual groups
+  useEffect(() => {
+    enemyGroups.forEach(group => {
+      if (group.id && groupRefs.current[group.id]) {
+        registerEntityRef('group', group.id, groupRefs.current[group.id]);
+      }
+    });
+  }, [enemyGroups, registerEntityRef]);
 
   // Handle changes to the boss template
   const handleBossTemplateChange = (e) => {
@@ -897,7 +930,7 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
   };
 
   return (
-    <div className="groups-section">
+    <div className="groups-section" ref={sectionRef}>
       <div className="section-header">
         <h3>Enemy Groups & Bosses</h3>
         <button
@@ -1444,6 +1477,9 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                       <div 
                         key={boss.id} 
                         className={`boss-card ${isTargeted ? 'targeted' : ''} ${boss.inAoe ? 'in-aoe' : ''}`}
+                        ref={el => {
+                          bossRefs.current[boss.id] = { current: el };
+                        }}
                       >
                         <div className="boss-header">
                           <h4>{boss.name}</h4>
@@ -1714,6 +1750,9 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                         key={group.id} 
                         className={`entity-card ${isTargeted ? 'targeted' : ''} ${group.inAoe ? 'in-aoe' : ''}`}
                         onClick={() => handleSetGroupAsTarget(group)}
+                        ref={el => {
+                          groupRefs.current[group.id] = { current: el };
+                        }}
                       >
                         <div className="entity-header">
                           <h5>{group.name} ({group.count}/{group.originalCount || group.count})</h5>

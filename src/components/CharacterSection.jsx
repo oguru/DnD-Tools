@@ -1,6 +1,6 @@
 import '../styles/CharacterSection.css';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import useDnDStore from '../store/dndStore';
 
@@ -18,11 +18,35 @@ const CharacterSection = () => {
     setTargetEntity,
     targetEntity,
     scrollToDamageSection,
-    toggleCharacterAoeTarget
+    toggleCharacterAoeTarget,
+    setCharactersSectionRef,
+    registerEntityRef
   } = useDnDStore();
 
   // Local state to track if we want to show empty slot
   const [showEmptySlot, setShowEmptySlot] = useState(true);
+  
+  // Ref for the character section
+  const sectionRef = useRef(null);
+  
+  // Refs for individual characters
+  const characterRefs = useRef({});
+
+  // Register section ref with store
+  useEffect(() => {
+    if (sectionRef.current) {
+      setCharactersSectionRef(sectionRef);
+    }
+  }, [setCharactersSectionRef]);
+  
+  // Register refs for individual characters
+  useEffect(() => {
+    characters.forEach(character => {
+      if (character.id && characterRefs.current[character.id] && !character.id.startsWith("empty-")) {
+        registerEntityRef('character', character.id, characterRefs.current[character.id]);
+      }
+    });
+  }, [characters, registerEntityRef]);
 
   // On mount or when characters change, check if we should show empty slot
   useEffect(() => {
@@ -145,7 +169,7 @@ const CharacterSection = () => {
   };
 
   return (
-    <div className="character-section">
+    <div className="character-section" ref={sectionRef}>
       <div className="section-header">
         <h3>Player Characters</h3>
         <div className="character-buttons">
@@ -192,6 +216,11 @@ const CharacterSection = () => {
                 <div 
                   key={character.id} 
                   className={`character-row ${isEmpty ? 'empty-character' : ''} ${isTargeted ? 'targeted' : ''} ${character.inAoe ? 'in-aoe' : ''}`}
+                  ref={el => {
+                    if (!isEmpty) {
+                      characterRefs.current[character.id] = { current: el };
+                    }
+                  }}
                 >
                   <div className="character-field">
                     <input

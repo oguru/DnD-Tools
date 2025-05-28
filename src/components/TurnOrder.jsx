@@ -16,13 +16,24 @@ const TurnOrder = () => {
     updateTurnOrder,
     rollInitiative,
     calculateHealthPercentage,
-    getHealthColor
+    getHealthColor,
+    scrollToEntity
   } = useDnDStore();
 
   // Update turn order when component mounts
   useEffect(() => {
     updateTurnOrder();
   }, [updateTurnOrder]);
+
+  // Handler for clicking on an entity in the initiative order
+  const handleEntityClick = (entity, e) => {
+    // Prevent click if the event came from a button inside the row
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      return;
+    }
+    
+    scrollToEntity(entity);
+  };
 
   // Helper function to render HP information
   const renderHpInfo = (entity) => {
@@ -203,6 +214,7 @@ const TurnOrder = () => {
               <div 
                 key={entity.type === 'groupCollection' ? `collection-${entity.baseNamePattern}` : `${entity.type}-${entity.id}`}
                 className={`turn-order-item ${index === currentTurnIndex ? 'current' : ''} ${entity.type}`}
+                onClick={(e) => handleEntityClick(entity, e)}
               >
                 <span className="turn-number">{index + 1}</span>
                 
@@ -232,7 +244,10 @@ const TurnOrder = () => {
                 <div className="turn-order-actions">
                   <button
                     className="move-up-button"
-                    onClick={() => moveTurnOrderUp(index)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveTurnOrderUp(index);
+                    }}
                     disabled={index === 0}
                     title="Move up in initiative order"
                   >
@@ -240,7 +255,10 @@ const TurnOrder = () => {
                   </button>
                   <button
                     className="move-down-button"
-                    onClick={() => moveTurnOrderDown(index)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveTurnOrderDown(index);
+                    }}
                     disabled={index === turnOrder.length - 1}
                     title="Move down in initiative order"
                   >

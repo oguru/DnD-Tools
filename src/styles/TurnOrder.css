@@ -157,22 +157,30 @@
 
 .turn-order-item {
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) 4rem 5rem;
-  grid-template-rows: auto auto auto;
-  gap: 0 0.5rem;
+  grid-template-columns: 2rem 1fr 3rem 3rem;
   align-items: center;
-  padding: 0.75rem 0.5rem;
-  border-radius: 4px;
-  background-color: #edf2f7;
-  transition: background-color 0.2s;
+  padding: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #f8fafc;
   position: relative;
-  overflow: visible;
-  margin-left: 12px;
-  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .turn-order-item:hover {
-  background-color: #e2e8f0;
+  background-color: #edf2f7;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.turn-order-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 3px;
+  background-color: transparent;
 }
 
 .turn-order-item.current {
