@@ -903,4 +903,75 @@
   font-size: 0.85rem;
   color: #805ad5; /* Purple color for AC adjustments */
   margin-left: 4px;
+}
+
+.group-damage-config {
+  background-color: #f0fff4;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px dashed #68d391;
+}
+
+.group-damage-config h5 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: #276749;
+  font-size: 0.95rem;
+}
+
+.attack-config-fields {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 0.75rem;
+}
+
+.attack-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.attack-field label {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  color: #4a5568;
+}
+
+.attack-field input,
+.attack-field select {
+  padding: 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.dice-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.dice-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dice-inputs span {
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.dice-inputs .num-dice,
+.dice-inputs .dice-type {
+  width: 3.5rem;
+}
+
+.dice-inputs .modifier {
+  width: 3.5rem;
+}
+
+@media (max-width: 768px) {
+  .attack-config-fields {
+    grid-template-columns: 1fr;
+  }
 } 

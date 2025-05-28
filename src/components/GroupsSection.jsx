@@ -270,9 +270,10 @@ const GroupsSection = () => {
     let totalDamage = damageRoll + attack.modifier;
     
     // Double damage dice on critical hit
+    let critDamageRoll = 0;
     if (criticalHit) {
-      const critDamageRoll = rollDice(attack.numDice, attack.diceType);
-      totalDamage += critDamageRoll;
+      critDamageRoll = rollDice(attack.numDice, attack.diceType);
+      totalDamage = damageRoll + critDamageRoll + attack.modifier;
     }
     
     // Generate result message
@@ -280,7 +281,7 @@ const GroupsSection = () => {
     if (criticalMiss) {
       resultMessage = `Critical Miss!`;
     } else if (criticalHit) {
-      resultMessage = `Critical Hit! ${totalDamage} damage (${damageRoll} + ${damageRoll} + ${attack.modifier})`;
+      resultMessage = `Critical Hit! ${totalDamage} damage (${damageRoll} + ${criticalHit ? damageRoll : 0} + ${attack.modifier})`;
     } else {
       resultMessage = `Attack roll: ${totalHit} (${rollResult} + ${attack.hitBonus})
 Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
@@ -328,9 +329,10 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
     let totalDamage = damageRoll + attack.modifier;
     
     // Double damage dice on critical hit
+    let critDamageRoll = 0;
     if (criticalHit) {
-      const critDamageRoll = rollDice(attack.numDice, attack.diceType);
-      totalDamage += critDamageRoll;
+      critDamageRoll = rollDice(attack.numDice, attack.diceType);
+      totalDamage = damageRoll + critDamageRoll + attack.modifier;
     }
     
     // Generate result message
@@ -341,7 +343,7 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
       resultMessage = `Critical Miss against ${targetCharacter.name} (AC ${targetCharacter.ac})!`;
       hitStatus = 'miss';
     } else if (criticalHit) {
-      resultMessage = `Critical Hit against ${targetCharacter.name}! ${totalDamage} damage (${damageRoll} + ${damageRoll} + ${attack.modifier})`;
+      resultMessage = `Critical Hit against ${targetCharacter.name}! ${totalDamage} damage (${damageRoll} + ${critDamageRoll} + ${attack.modifier})`;
       hitStatus = 'critical';
     } else if (hits) {
       resultMessage = `Hit ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})! Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
@@ -428,7 +430,23 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
   // Handle changes to the group template
   const handleGroupTemplateChange = (e) => {
     const { name, value } = e.target;
-    const parsedValue = name === 'maxHp' || name === 'currentHp' || name === 'ac' || name === 'count'
+    
+    // Handle nested fields like damage.numDice
+    if (name.includes('.')) {
+      const [, childField] = name.split('.');
+      
+      // Parse number fields
+      const parsedValue = ['numDice', 'diceType', 'modifier'].includes(childField)
+        ? parseInt(value) || 0
+        : value;
+      
+      // Use the existing updateGroupTemplate function which already handles nested fields
+      updateGroupTemplate(name, parsedValue);
+      return;
+    }
+    
+    // Handle non-nested fields
+    const parsedValue = name === 'maxHp' || name === 'currentHp' || name === 'ac' || name === 'count' || name === 'attackBonus'
       ? parseInt(value) || 0
       : value;
     
@@ -528,8 +546,12 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
     const results = [];
     let totalDamage = 0;
     
-    // Use an attack bonus of +3 by default
-    const attackBonus = 3;
+    // Use attack bonus from group, with fallback to default +3
+    const attackBonus = group.attackBonus || 3;
+    
+    // Get damage details from group, with fallback to defaults
+    const damageDetails = group.damage || { numDice: 1, diceType: 8, modifier: 2 };
+    const { numDice, diceType, modifier } = damageDetails;
     
     for (let i = 0; i < group.count; i++) {
       // Roll to hit
@@ -542,9 +564,11 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
       // Roll damage if hit
       let damage = 0;
       if (hits) {
-        // Roll 1d8+2 for damage
-        const damageRoll = rollDice(1, 8) + 2;
-        damage = isNatural20 ? damageRoll * 2 : damageRoll; // Double damage on crit
+        // Roll the configured damage dice
+        const diceDamage = rollDice(numDice, diceType);
+        // For critical hits, double the dice damage only, not the modifier
+        const criticalDiceDamage = isNatural20 ? rollDice(numDice, diceType) : 0;
+        damage = diceDamage + criticalDiceDamage + modifier;
         totalDamage += damage;
       }
       
@@ -1011,6 +1035,52 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                     min="0"
                     placeholder="Initiative"
                   />
+                </div>
+              </div>
+              
+              <div className="group-damage-config">
+                <h5>Attack Configuration</h5>
+                <div className="attack-config-fields">
+                  <div className="attack-field">
+                    <label>Attack Bonus:</label>
+                    <input
+                      type="number"
+                      name="attackBonus"
+                      value={groupTemplate.attackBonus || 3}
+                      onChange={handleGroupTemplateChange}
+                      min="0"
+                    />
+                  </div>
+                  <div className="attack-field dice-field">
+                    <label>Damage:</label>
+                    <div className="dice-inputs">
+                      <input
+                        type="number"
+                        name="damage.numDice"
+                        value={groupTemplate.damage?.numDice || 1}
+                        onChange={handleGroupTemplateChange}
+                        min="1"
+                        className="num-dice"
+                      />
+                      <span>d</span>
+                      <input
+                        type="number"
+                        name="damage.diceType"
+                        value={groupTemplate.damage?.diceType || 8}
+                        onChange={handleGroupTemplateChange}
+                        min="1"
+                        className="dice-type"
+                      />
+                      <span>+</span>
+                      <input
+                        type="number"
+                        name="damage.modifier"
+                        value={groupTemplate.damage?.modifier || 2}
+                        onChange={handleGroupTemplateChange}
+                        className="modifier"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
               
@@ -1806,6 +1876,14 @@ Damage: ${totalDamage} (${damageRoll} + ${attack.modifier})`;
                               min="0"
                               className="initiative-input"
                             />
+                          </div>
+                          <div className="entity-field">
+                            <span>Damage:</span>
+                            <span>
+                              {group.damage 
+                                ? `${group.damage.numDice}d${group.damage.diceType}+${group.damage.modifier}` 
+                                : '1d8+2'}
+                            </span>
                           </div>
                         </div>
                         

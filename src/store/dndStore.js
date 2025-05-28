@@ -81,7 +81,13 @@ const useDnDStore = create((set, get) => {
         wis: 0,
         cha: 0
       },
-      creatures: [] // Will hold individual creature HPs
+      creatures: [], // Will hold individual creature HPs
+      attackBonus: 3, // Attack bonus for the group
+      damage: {      // Damage configuration
+        numDice: 1,
+        diceType: 8,
+        modifier: 2
+      }
     },
     
     bossTemplate: {
@@ -394,7 +400,9 @@ const useDnDStore = create((set, get) => {
         inAoe: false,
         showSavingThrows: false,
         savingThrows: { ...groupTemplate.savingThrows },
-        creatures: creatures
+        creatures: creatures,
+        attackBonus: groupTemplate.attackBonus || 3,
+        damage: { ...groupTemplate.damage }
       };
       
       set(state => {
@@ -426,7 +434,9 @@ const useDnDStore = create((set, get) => {
           savingThrows: { ...groupTemplate.savingThrows },
           creatures: Array(groupTemplate.count).fill().map(() => ({
             hp: groupTemplate.maxHp
-          }))
+          })),
+          attackBonus: groupTemplate.attackBonus || 3,
+          damage: { ...groupTemplate.damage }
         });
       }
       
@@ -466,7 +476,13 @@ const useDnDStore = create((set, get) => {
         originalCount: group.count, // Use current count as original for the copy
         creatures: group.creatures ? [...group.creatures] : Array(group.count).fill().map(() => ({
           hp: group.maxHp
-        }))
+        })),
+        attackBonus: group.attackBonus || 3,
+        damage: group.damage || {
+          numDice: 1,
+          diceType: 8,
+          modifier: 2
+        }
       };
       
       set(state => {
@@ -1579,7 +1595,7 @@ const useDnDStore = create((set, get) => {
     },
     
     // Roll attacks for all groups against their assigned targets
-    rollGroupsAttacks: (groupTargets, characterAcOverrides = {}, attackBonus = 3) => {
+    rollGroupsAttacks: (groupTargets, characterAcOverrides = {}) => {
       const results = {};
       let allResults = [];
       
@@ -1609,6 +1625,13 @@ const useDnDStore = create((set, get) => {
         const targetAc = characterAcOverrides && characterAcOverrides[targetCharacterId] ? 
           characterAcOverrides[targetCharacterId] : targetCharacter.ac;
         
+        // Get attack bonus from group (with fallback to default 3)
+        const attackBonus = group.attackBonus || 3;
+        
+        // Get damage details (with fallbacks to defaults)
+        const damageDetails = group.damage || { numDice: 1, diceType: 8, modifier: 2 };
+        const { numDice, diceType, modifier } = damageDetails;
+        
         const groupResults = [];
         let totalDamage = 0;
         
@@ -1625,9 +1648,11 @@ const useDnDStore = create((set, get) => {
           // Roll damage if hit
           let damage = 0;
           if (hits) {
-            // Roll 1d8+2 for damage
-            const damageRoll = get().rollDice(1, 8) + 2;
-            damage = isNatural20 ? damageRoll * 2 : damageRoll; // Double damage on crit
+            // Roll the configured damage dice
+            const diceDamage = get().rollDice(numDice, diceType);
+            // For critical hits, double the dice damage only, not the modifier
+            const criticalDiceDamage = isNatural20 ? get().rollDice(numDice, diceType) : 0;
+            damage = diceDamage + criticalDiceDamage + modifier;
             totalDamage += damage;
           }
           

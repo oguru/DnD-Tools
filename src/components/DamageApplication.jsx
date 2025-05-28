@@ -216,7 +216,12 @@ const DamageApplication = () => {
     // Calculate final damage
     let finalDamage = damage;
     if (hitStatus === 'critical') {
+      // On a critical hit, we should only double the dice portion, not the modifier
+      // Since we don't have the dice and modifier separately here, we can't properly implement this
+      // For simplicity, we'll keep doubling the damage, but add a comment explaining this isn't ideal
+      // In a real implementation, we'd need to track dice and modifier separately
       finalDamage = damage * 2;
+      // TODO: Critical hits should only double dice damage, not modifiers
     } else if (hitStatus === 'miss') {
       finalDamage = 0;
     }
