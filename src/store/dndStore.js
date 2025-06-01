@@ -1383,7 +1383,7 @@ const useDnDStore = create((set, get) => {
       return total;
     },
     
-    // Import/Export
+    // Export/Import
     exportState: () => {
       const { characters, bosses, enemyGroups } = get();
       const exportData = JSON.stringify({ characters, bosses, enemyGroups });
@@ -1396,6 +1396,71 @@ const useDnDStore = create((set, get) => {
       const a = document.createElement('a');
       a.href = url;
       a.download = 'dnd-calculator-state.json';
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      return true;
+    },
+    
+    // Enhanced exportState with selection options
+    exportStateSelective: (options = {}) => {
+      const { characters, bosses, enemyGroups } = get();
+      
+      // Filter data based on options
+      const exportData = {};
+      
+      // Add characters based on selection
+      if (options.includeCharacters) {
+        if (options.selectedCharacters && options.selectedCharacters.length > 0) {
+          // Export only selected characters
+          exportData.characters = characters.filter(char => 
+            options.selectedCharacters.includes(char.id)
+          );
+        } else {
+          // Export all characters
+          exportData.characters = characters;
+        }
+      }
+      
+      // Add bosses based on selection
+      if (options.includeBosses) {
+        if (options.selectedBosses && options.selectedBosses.length > 0) {
+          // Export only selected bosses
+          exportData.bosses = bosses.filter(boss => 
+            options.selectedBosses.includes(boss.id)
+          );
+        } else {
+          // Export all bosses
+          exportData.bosses = bosses;
+        }
+      }
+      
+      // Add enemy groups based on selection
+      if (options.includeGroups) {
+        if (options.selectedGroups && options.selectedGroups.length > 0) {
+          // Export only selected groups
+          exportData.enemyGroups = enemyGroups.filter(group => 
+            options.selectedGroups.includes(group.id)
+          );
+        } else {
+          // Export all groups
+          exportData.enemyGroups = enemyGroups;
+        }
+      }
+      
+      // Create a blob with the data
+      const jsonData = JSON.stringify(exportData);
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create a temporary link element and trigger the download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dnd-calculator-export.json';
       document.body.appendChild(a);
       a.click();
       
@@ -1424,6 +1489,102 @@ const useDnDStore = create((set, get) => {
         
         // Update state
         set({ characters, bosses, enemyGroups });
+        
+        // Update turn order based on imported entities
+        get().updateTurnOrder();
+        
+        return true;
+      } catch (err) {
+        console.error('Error importing state:', err);
+        return false;
+      }
+    },
+    
+    // Enhanced importState with selection and merge options
+    importStateSelective: (stateJson, options = {}) => {
+      try {
+        const importedState = JSON.parse(stateJson);
+        
+        // Validate minimal structure
+        if (!importedState) throw new Error('Invalid state data');
+        
+        // Current state
+        const currentState = get();
+        let newCharacters = [...currentState.characters];
+        let newBosses = [...currentState.bosses];
+        let newEnemyGroups = [...currentState.enemyGroups];
+        
+        // Process characters if included in import
+        if (options.includeCharacters && Array.isArray(importedState.characters)) {
+          // Generate new IDs for imported characters to avoid conflicts if merging
+          const importedCharacters = importedState.characters.map(char => ({
+            ...char,
+            id: options.mergeCharacters ? `char-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` : char.id
+          }));
+          
+          if (options.mergeCharacters) {
+            // Merge with existing characters
+            newCharacters = [...newCharacters, ...importedCharacters];
+          } else {
+            // Replace existing characters
+            newCharacters = importedCharacters;
+          }
+        } else if (options.clearMissingCharacters) {
+          // Clear characters if they aren't in the file and clearMissingCharacters is true
+          newCharacters = [];
+        }
+        
+        // Process bosses if included in import
+        if (options.includeBosses && Array.isArray(importedState.bosses)) {
+          // Generate new IDs for imported bosses to avoid conflicts if merging
+          const importedBosses = importedState.bosses.map(boss => ({
+            ...boss,
+            id: options.mergeBosses ? `boss-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` : boss.id
+          }));
+          
+          if (options.mergeBosses) {
+            // Merge with existing bosses
+            newBosses = [...newBosses, ...importedBosses];
+          } else {
+            // Replace existing bosses
+            newBosses = importedBosses;
+          }
+        } else if (options.clearMissingBosses) {
+          // Clear bosses if they aren't in the file and clearMissingBosses is true
+          newBosses = [];
+        }
+        
+        // Process enemy groups if included in import
+        if (options.includeGroups && Array.isArray(importedState.enemyGroups)) {
+          // Generate new IDs for imported groups to avoid conflicts if merging
+          const importedGroups = importedState.enemyGroups.map(group => ({
+            ...group,
+            id: options.mergeGroups ? `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` : group.id
+          }));
+          
+          if (options.mergeGroups) {
+            // Merge with existing groups
+            newEnemyGroups = [...newEnemyGroups, ...importedGroups];
+          } else {
+            // Replace existing groups
+            newEnemyGroups = importedGroups;
+          }
+        } else if (options.clearMissingGroups) {
+          // Clear groups if they aren't in the file and clearMissingGroups is true
+          newEnemyGroups = [];
+        }
+        
+        // Save to localStorage
+        localStorage.setItem('dnd-characters', JSON.stringify(newCharacters));
+        localStorage.setItem('dnd-bosses', JSON.stringify(newBosses));
+        localStorage.setItem('dnd-enemy-groups', JSON.stringify(newEnemyGroups));
+        
+        // Update state
+        set({ 
+          characters: newCharacters, 
+          bosses: newBosses, 
+          enemyGroups: newEnemyGroups 
+        });
         
         // Update turn order based on imported entities
         get().updateTurnOrder();

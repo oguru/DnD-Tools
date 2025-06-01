@@ -2,6 +2,7 @@ import '../styles/CharacterSection.css';
 
 import { useEffect, useRef, useState } from 'react';
 
+import ImportExportModal from './ImportExportModal';
 import useDnDStore from '../store/dndStore';
 
 const CharacterSection = () => {
@@ -25,6 +26,9 @@ const CharacterSection = () => {
 
   // Local state to track if we want to show empty slot
   const [showEmptySlot, setShowEmptySlot] = useState(true);
+  
+  // State for import/export modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Ref for the character section
   const sectionRef = useRef(null);
@@ -64,6 +68,11 @@ const CharacterSection = () => {
       setShowEmptySlot(false);
     }
   }, [characters]);
+
+  // Toggle import/export modal
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen);
+  };
 
   // Handle changes to character fields
   const handleCharacterChange = (charId, field, value) => {
@@ -173,6 +182,13 @@ const CharacterSection = () => {
       <div className="section-header">
         <h3>Player Characters</h3>
         <div className="character-buttons">
+          <button
+            className="import-export-button"
+            onClick={toggleModal}
+            title="Import/Export Data"
+          >
+            Import/Export
+          </button>
           <button
             className="toggle-section-button"
             onClick={() => toggleSection('characters')}
@@ -334,6 +350,13 @@ const CharacterSection = () => {
           )}
         </>
       )}
+      
+      {/* Import/Export Modal */}
+      <ImportExportModal 
+        isOpen={isModalOpen} 
+        onClose={toggleModal}
+        initialMode="export"
+      />
     </div>
   );
 };

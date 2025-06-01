@@ -3,6 +3,7 @@ import '../styles/BossTracker.css';
 
 import { useEffect, useRef, useState } from 'react';
 
+import ImportExportModal from './ImportExportModal';
 import useDnDStore from '../store/dndStore';
 
 const GroupsSection = () => {
@@ -53,6 +54,9 @@ const GroupsSection = () => {
 
   // Toggle between adding a group or a boss
   const [addEntityType, setAddEntityType] = useState('group'); // 'group' or 'boss'
+  
+  // State for import/export modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Boss template state
   const [bossTemplate, setBossTemplate] = useState({
@@ -1117,16 +1121,30 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     updateBossSavingThrow(bossId, ability, parseInt(value) || 0);
   };
 
+  // Toggle import/export modal
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen);
+  };
+
   return (
     <div className="groups-section" ref={sectionRef}>
       <div className="section-header">
         <h3>Enemy Groups & Bosses</h3>
-        <button
-          className="toggle-section-button"
-          onClick={() => toggleSection('groups')}
-        >
-          {expandedSections.groups ? 'Hide Groups' : 'Show Groups'}
-        </button>
+        <div className="groups-buttons">
+          <button
+            className="import-export-button"
+            onClick={toggleModal}
+            title="Import/Export Data"
+          >
+            Import/Export
+          </button>
+          <button
+            className="toggle-section-button"
+            onClick={() => toggleSection('groups')}
+          >
+            {expandedSections.groups ? 'Hide Groups' : 'Show Groups'}
+          </button>
+        </div>
       </div>
 
       {expandedSections.groups && (
@@ -2339,6 +2357,13 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
           </div>
         </>
       )}
+
+      {/* Import/Export Modal */}
+      <ImportExportModal 
+        isOpen={isModalOpen} 
+        onClose={toggleModal}
+        initialMode="export"
+      />
     </div>
   );
 };

@@ -1049,4 +1049,23 @@
   0% { opacity: 0.7; }
   50% { opacity: 0.9; }
   100% { opacity: 0.7; }
+}
+
+.groups-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.import-export-button {
+  background-color: #805ad5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.import-export-button:hover {
+  background-color: #6b46c1;
 } 
