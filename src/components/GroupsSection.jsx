@@ -168,6 +168,20 @@ const GroupsSection = () => {
     }));
   };
 
+  // Create a wrapper for the renderSavingThrows function to handle the different parameter pattern
+  const handleBossTemplateSavingThrowWrapper = (_, ability, value) => {
+    handleBossTemplateSavingThrowChange(ability, value);
+  };
+
+  // Add this new function to toggle saving throws in both local state and store
+  const handleToggleBossTemplateSavingThrows = () => {
+    setBossTemplate(prev => ({
+      ...prev,
+      showSavingThrows: !prev.showSavingThrows
+    }));
+    toggleBossTemplateSavingThrows();
+  };
+
   // Add a new boss
   const handleAddBoss = () => {
     if (!bossTemplate.name || bossTemplate.maxHp <= 0 || bossTemplate.ac <= 0) {
@@ -1351,12 +1365,12 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
               <div className="saving-throws-container">
                 <div 
                   className="saving-throws-header" 
-                  onClick={() => toggleBossTemplateSavingThrows()}
+                  onClick={handleToggleBossTemplateSavingThrows}
                 >
                   <h5>Saving Throws {bossTemplate.showSavingThrows ? '▼' : '►'}</h5>
                 </div>
                 
-                {bossTemplate.showSavingThrows && renderSavingThrows(bossTemplate.savingThrows, handleBossTemplateSavingThrowChange)}
+                {bossTemplate.showSavingThrows && renderSavingThrows(bossTemplate.savingThrows, handleBossTemplateSavingThrowWrapper)}
               </div>
 
               <div className="add-attack-section">
