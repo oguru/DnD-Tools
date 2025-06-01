@@ -36,10 +36,10 @@ const GroupAttackCalculator = () => {
       
       <div className="import-export-buttons">
         <button className="export-button" onClick={exportState}>
-          Export State
+          Export All
         </button>
         <label className="import-button">
-          Import State
+          Import All
           <input
             type="file"
             accept=".json"
