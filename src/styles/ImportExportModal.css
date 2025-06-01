@@ -250,13 +250,17 @@
 }
 
 .file-contents-summary li {
-  list-style: none;
-  margin-bottom: 0.25rem;
-  border: 1px solid green;
-  background-color: rgb(239, 248, 239);
-  padding: 2px 10px;
-  max-width: 150px;
-  border-radius: 5rem;
+    list-style: none;
+    margin-bottom: 0.25rem;
+    border: 1px solid green;
+    background-color: rgb(239, 248, 239);
+    padding: 2px 10px;
+    max-width: 150px;
+    border-radius: 5rem;
+    cursor: pointer;
+}
+.file-contents-summary li.disabled {
+    opacity: 0.5;
 }
 
 .entity-checkbox.disabled {

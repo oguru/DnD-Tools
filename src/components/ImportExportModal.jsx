@@ -449,9 +449,23 @@ const ImportExportModal = ({ isOpen, onClose, initialMode = 'export' }) => {
                   <div className="file-contents-summary">
                     <h5>File contains:</h5>
                     <ul>
-                        {hasCharactersInFile && <li>Characters</li>}
-                        {hasBossesInFile && <li>Bosses</li>}
-                        {hasGroupsInFile && <li>Groups</li>}
+                        {hasCharactersInFile && (
+                            <li className={!includeCharacters && "disabled"} 
+                                onClick={() => setIncludeCharacters(!includeCharacters)}
+                            >Characters</li>
+                        )}
+                        {hasBossesInFile && (
+                            <li 
+                                className={!includeBosses && "disabled"} 
+                                onClick={() => setIncludeBosses(!includeBosses)}
+                            >Bosses</li>
+                        )}
+                        {hasGroupsInFile && (
+                            <li
+                                className={!includeGroups && "disabled"} 
+                                onClick={() => setIncludeGroups(!includeGroups)}
+                            >Groups</li>
+                        )}
                     </ul>
                   </div>
                 )}
