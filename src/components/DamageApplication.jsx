@@ -13,15 +13,11 @@ const DamageApplication = () => {
     expandedSections,
     toggleSection,
     applyDamageToGroup,
-    applyDamageToAllGroups,
-    applyDamageToAllGroupsInAoe,
     applyDamageToCharacter,
-    applyDamageToAllCharactersInAoe,
     applyDamageToBoss,
-    applyDamageToAllBossesInAoe,
+    applyAoeDamageToAll,
     setDamageApplicationRef,
     aoeDamageParams,
-    clearAllAoeTargets,
     updateEnemyGroup,
     updateBoss,
     updateCharacter
@@ -245,17 +241,24 @@ const DamageApplication = () => {
     }));
   };
   
-  // Prepare AoE damage data - shows save UI
+  // Prepare AOE damage inputs from the boss attack or user input
   const prepareAoeDamage = () => {
-    // Parse damage amount
-    const damage = parseInt(aoeState.damageAmount);
-    if (isNaN(damage) || damage <= 0) {
-      alert('Please enter a valid damage amount');
-      return;
+    // If AOE damage is from a boss attack, populate the form
+    if (aoeDamageParams) {
+      setAoeState(prev => ({
+        ...prev,
+        damageAmount: aoeDamageParams.damage || '',
+        saveType: aoeDamageParams.saveType || 'dex',
+        saveDC: aoeDamageParams.saveDC || 15,
+        halfOnSave: aoeDamageParams.halfOnSave !== undefined ? aoeDamageParams.halfOnSave : true
+      }));
     }
     
-    // Show the AoE saves UI
+    // Show the AOE saves UI
     setShowAoeSaves(true);
+    
+    // Auto-roll saves for all characters
+    autoRollAllSaves();
   };
   
   // Auto-roll saves for a character
@@ -332,21 +335,20 @@ const DamageApplication = () => {
   
   // Apply the AoE damage with manual saves
   const handleApplyAoeDamageWithSaves = () => {
-    // Parse damage amount
-    const damage = parseInt(aoeState.damageAmount);
-    if (isNaN(damage) || damage <= 0) {
-      alert('Please enter a valid damage amount');
-      return;
-    }
-    
-    // Create custom damage parameters for each character
+    // Collect data from character save states
     const characterDamageParams = {};
     
-    Object.keys(characterSaves).forEach(characterId => {
-      const saveInfo = characterSaves[characterId];
-      const modifier = damageModifiers[characterId];
+    Object.entries(characterSaves).forEach(([characterId, saveInfo]) => {
+      // Parse damage from state
+      const damage = parseInt(aoeState.damageAmount);
+      
+      // Get modifier (half, quarter, none)
+      const modifier = damageModifiers[characterId] || 'none';
+      
+      // Get manual adjustment amount
       const adjustment = manualDamageAdjustments[characterId] || 0;
       
+      // Calculate damage with modifier applied
       let damageToApply = damage;
       
       // Apply modifier
@@ -371,28 +373,17 @@ const DamageApplication = () => {
     
     // Apply AoE damage with custom parameters
     const aoeParams = {
-      damage,
+      damage: parseInt(aoeState.damageAmount),
       saveType: aoeState.saveType,
       saveDC: aoeState.saveDC,
       halfOnSave: aoeState.halfOnSave,
       percentAffected: aoeState.percentAffected,
-      characterDamageParams
+      characterDamageParams,
+      applyToAll: aoeState.applyToAll
     };
     
-    // Apply to monsters/bosses as normal
-    if (aoeState.applyToAll) {
-      applyDamageToAllGroups(aoeParams);
-      applyDamageToAllBossesInAoe(aoeParams, true);
-    } else {
-      applyDamageToAllGroupsInAoe(aoeParams);
-      applyDamageToAllBossesInAoe(aoeParams);
-    }
-    
-    // Apply to characters with custom parameters
-    applyDamageToAllCharactersInAoe(aoeParams, aoeState.applyToAll);
-    
-    // Clear all AOE targets
-    clearAllAoeTargets();
+    // Apply AOE damage to all entities in one go
+    applyAoeDamageToAll(aoeParams);
     
     // Reset state
     setShowAoeSaves(false);
@@ -610,6 +601,35 @@ const DamageApplication = () => {
     }));
   };
 
+  // Apply AOE damage without showing manual saves UI
+  const handleApplyAoeDamage = () => {
+    // Parse damage amount
+    const damage = parseInt(aoeState.damageAmount);
+    if (isNaN(damage) || damage <= 0) {
+      alert('Please enter a valid damage amount');
+      return;
+    }
+    
+    // Apply AoE damage with standard parameters
+    const aoeParams = {
+      damage,
+      saveType: aoeState.saveType,
+      saveDC: aoeState.saveDC,
+      halfOnSave: aoeState.halfOnSave,
+      percentAffected: aoeState.percentAffected,
+      applyToAll: aoeState.applyToAll
+    };
+    
+    // Apply AOE damage to all entities
+    applyAoeDamageToAll(aoeParams);
+    
+    // Reset damage amount field
+    setAoeState(prev => ({
+      ...prev,
+      damageAmount: ''
+    }));
+  };
+
   return (
     <div className="damage-application" ref={sectionRef}>
       <div className="section-header">
@@ -822,13 +842,22 @@ const DamageApplication = () => {
                     />
                   </div>
                   
-                  <button
-                    className="apply-damage-button"
-                    onClick={prepareAoeDamage}
-                    disabled={!aoeState.damageAmount}
-                  >
-                    Next: Configure Saves
-                  </button>
+                  <div className="button-row">
+                    <button
+                      className="apply-damage-button"
+                      onClick={prepareAoeDamage}
+                      disabled={!aoeState.damageAmount}
+                    >
+                      Next: Configure Saves
+                    </button>
+                    <button
+                      className="apply-damage-button quick-apply"
+                      onClick={handleApplyAoeDamage}
+                      disabled={!aoeState.damageAmount}
+                    >
+                      Apply Directly
+                    </button>
+                  </div>
                 </div>
               ) : (
                 // AoE Saves Configuration UI

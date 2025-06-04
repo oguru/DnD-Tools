@@ -1609,4 +1609,22 @@
   font-size: 0.85rem;
   color: #718096;
   font-weight: normal;
+}
+
+.button-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.quick-apply {
+  background-color: #805ad5;
+}
+
+.quick-apply:hover {
+  background-color: #6b46c1;
+}
+
+.quick-apply:disabled {
+  background-color: #d6bcfa;
 } 

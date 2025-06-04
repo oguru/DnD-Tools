@@ -57,8 +57,11 @@ const AttackResults = () => {
     formattedMessage = formattedMessage.replace(/(\d+)( dmg)/g, 
       '<span class="damage-number">$1</span>$2');
     
-    // Add line breaks between targets for AoE attacks for better readability
+    // Add line breaks for better readability in AOE attacks
     if (formattedMessage.includes('AoE') || formattedMessage.includes('AOE')) {
+      // Convert actual newlines to <br>
+      formattedMessage = formattedMessage.replace(/\n/g, '<br />');
+      
       // Add line breaks after semicolons (separates individual results)
       formattedMessage = formattedMessage.replace(/; /g, ';<br />');
       
