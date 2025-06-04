@@ -839,7 +839,7 @@ const useDnDStore = create((set, get) => {
     },
     
     applyDamageToAllGroupsInAoe: (aoeParams) => {
-      const { damage, saveType, saveDC, halfOnSave, percentAffected = 100 } = aoeParams;
+      const { damage, saveType, saveDC, halfOnSave, percentAffected = 100, entityDamageModifiers = {} } = aoeParams;
       if (damage <= 0) return;
       
       set(state => {
@@ -861,20 +861,52 @@ const useDnDStore = create((set, get) => {
           
           console.log(`Processing AoE damage for group: ${group.name}`);
           
-          // Calculate save bonus for this group
-          const saveBonus = group.savingThrows?.[saveType] || 0;
+          // Check if we have custom save/damage info for this group
+          const entityKey = `group-${group.id}`;
+          const customEntityInfo = entityDamageModifiers[entityKey];
           
-          // Roll save
-          const saveRoll = Math.floor(Math.random() * 20) + 1 + saveBonus;
-          const saved = saveRoll >= saveDC;
-          console.log(`${group.name} save roll: ${saveRoll} vs DC ${saveDC} - ${saved ? 'Saved' : 'Failed'}`);
-          
-          // Calculate damage based on save
+          // Default values
+          let saved = false;
           let damageToApply = damage;
-          if (saved && halfOnSave) {
-            damageToApply = Math.floor(damage / 2);
-          } else if (saved && !halfOnSave) {
-            damageToApply = 0;
+          let saveRoll = null;
+          let totalRoll = null;
+          
+          if (customEntityInfo) {
+            // Use custom save result and damage modifier
+            saved = customEntityInfo.succeeded;
+            saveRoll = customEntityInfo.roll;
+            totalRoll = customEntityInfo.totalRoll;
+            
+            // Apply damage modifier
+            if (customEntityInfo.modifier === 'half') {
+              damageToApply = Math.floor(damage / 2);
+            } else if (customEntityInfo.modifier === 'quarter') {
+              damageToApply = Math.floor(damage / 4);
+            } else if (customEntityInfo.modifier === 'none') {
+              damageToApply = 0;
+            }
+            
+            // Apply manual adjustment
+            if (customEntityInfo.adjustment) {
+              damageToApply = Math.max(0, damageToApply + customEntityInfo.adjustment);
+            }
+          } else {
+            // Standard calculation
+            // Calculate save bonus for this group
+            const saveBonus = group.savingThrows?.[saveType] || 0;
+            
+            // Roll save
+            saveRoll = Math.floor(Math.random() * 20) + 1;
+            totalRoll = saveRoll + saveBonus;
+            saved = totalRoll >= saveDC;
+            console.log(`${group.name} save roll: ${totalRoll} vs DC ${saveDC} - ${saved ? 'Saved' : 'Failed'}`);
+            
+            // Calculate damage based on save
+            if (saved && halfOnSave) {
+              damageToApply = Math.floor(damage / 2);
+            } else if (saved && !halfOnSave) {
+              damageToApply = 0;
+            }
           }
           
           // Calculate number of affected creatures (rounded up)
@@ -887,7 +919,9 @@ const useDnDStore = create((set, get) => {
               name: group.name,
               saved: saved,
               damageToApply: 0,
-              killCount: 0
+              killCount: 0,
+              saveRoll: saveRoll,
+              totalRoll: totalRoll
             });
             return group;
           }
@@ -937,7 +971,9 @@ const useDnDStore = create((set, get) => {
             name: group.name,
             saved: saved,
             damageToApply,
-            killCount
+            killCount,
+            saveRoll: saveRoll,
+            totalRoll: totalRoll
           });
           
           return updatedGroup;
@@ -1016,7 +1052,7 @@ const useDnDStore = create((set, get) => {
     
     applyDamageToAllBossesInAoe: (aoeParams, applyToAll = false) => {
       // Just destructure damage for now
-      const { damage } = aoeParams;
+      const { damage, saveType, saveDC, halfOnSave, entityDamageModifiers = {} } = aoeParams;
       if (damage <= 0) return;
       
       set(state => {
@@ -1026,12 +1062,77 @@ const useDnDStore = create((set, get) => {
           
         if (aoeBosses.length === 0) return state;
         
+        const bossResults = [];
+        
         const updatedBosses = state.bosses.map(boss => {
           // Skip bosses not in AoE unless applyToAll is true
           if (!applyToAll && !boss.inAoe) return boss;
           
-          // Apply the damage
-          const newHp = Math.max(0, boss.currentHp - damage);
+          // Check if we have custom save/damage info for this boss
+          const entityKey = `boss-${boss.id}`;
+          const customEntityInfo = entityDamageModifiers[entityKey];
+          
+          // Default values
+          let saved = false;
+          let damageToApply = damage;
+          let saveRoll = null;
+          let totalRoll = null;
+          
+          if (customEntityInfo) {
+            // Use custom save result and damage modifier
+            saved = customEntityInfo.succeeded;
+            saveRoll = customEntityInfo.roll;
+            totalRoll = customEntityInfo.totalRoll;
+            
+            // Apply damage modifier
+            if (customEntityInfo.modifier === 'half') {
+              damageToApply = Math.floor(damage / 2);
+            } else if (customEntityInfo.modifier === 'quarter') {
+              damageToApply = Math.floor(damage / 4);
+            } else if (customEntityInfo.modifier === 'none') {
+              damageToApply = 0;
+            }
+            
+            // Apply manual adjustment
+            if (customEntityInfo.adjustment) {
+              damageToApply = Math.max(0, damageToApply + customEntityInfo.adjustment);
+            }
+          } else if (saveType && saveDC) {
+            // Standard calculation with saving throw
+            const saveBonus = boss.savingThrows?.[saveType] || 0;
+            
+            // Roll save
+            saveRoll = Math.floor(Math.random() * 20) + 1;
+            totalRoll = saveRoll + saveBonus;
+            saved = totalRoll >= saveDC;
+            
+            // Calculate damage based on save
+            if (saved && halfOnSave) {
+              damageToApply = Math.floor(damage / 2);
+            } else if (saved && !halfOnSave) {
+              damageToApply = 0;
+            }
+          }
+          
+          // Store result for this boss
+          bossResults.push({
+            name: boss.name,
+            saved: saved,
+            damageToApply,
+            saveRoll: saveRoll,
+            totalRoll: totalRoll
+          });
+          
+          // Apply the damage if any
+          if (damageToApply <= 0) {
+            return {
+              ...boss,
+              inAoe: false // Clear AOE flag after applying damage
+            };
+          }
+          
+          // Calculate new HP, ensuring it doesn't go below 0
+          const newHp = Math.max(0, boss.currentHp - damageToApply);
           
           return {
             ...boss,
@@ -1042,14 +1143,37 @@ const useDnDStore = create((set, get) => {
         
         localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
         
-        // Update turn order to reflect the damage
-        setTimeout(() => get().updateTurnOrder(false), 0);
+        // Create detailed message including each boss's result
+        const bossMessages = bossResults.map(result => {
+          let saveText = '';
+          if (result.saveRoll !== null) {
+            saveText = result.totalRoll !== result.saveRoll 
+              ? ` (${result.totalRoll}: ${result.saveRoll}+${result.totalRoll - result.saveRoll})`
+              : ` (${result.saveRoll})`;
+          }
+          
+          return `${result.name}: ${result.saved ? (halfOnSave ? "Save" + saveText + " (½ dmg)" : "Save" + saveText + " (no dmg)") : "Failed" + saveText}, ${result.damageToApply > 0 ? `${result.damageToApply} damage` : "no damage"}`;
+        }).join('; ');
         
-        return { bosses: updatedBosses };
+        // Add to attack results
+        const resultMessage = `AoE: ${damage} ${saveType ? `${saveType.toUpperCase()} save DC ${saveDC}` : 'damage'} to bosses - ${bossMessages}`;
+        
+        return { 
+          bosses: updatedBosses,
+          attackResults: [
+            ...state.attackResults,
+            {
+              id: Date.now().toString(),
+              damage,
+              message: resultMessage,
+              isAoE: true,
+              timestamp: Date.now()
+            }
+          ]
+        };
       });
       
-      // Clear all AOE targets
-      get().clearAllAoeTargets();
+      // Don't clear AOE targets here as it's now handled in the component
     },
     
     applyDamageToCharacter: (characterId, damage, hitStatus, modifierText = '') => {

@@ -36,9 +36,10 @@
 }
 
 .damage-sections {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
+  width: 100%;
 }
 
 .damage-section {
@@ -47,6 +48,8 @@
   border: 1px solid #e2e8f0;
   box-shadow: 0 0 10px rgba(49, 130, 206, 0.2);
   padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .damage-section h4 {
@@ -228,10 +231,42 @@
   font-size: 0.9rem;
 }
 
-/* Responsive adjustments */
+/* Ensure tables and complex elements handle overflow properly */
+.character-saves-table,
+.entity-saves-table,
+.aoe-saves-container,
+.transfer-targets-list {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 15px;
+}
+
+/* Character-saves-table and entity-saves-table need table rows to maintain a minimum width */
+.character-saves-header,
+.character-saves-row,
+.entity-saves-header,
+.entity-saves-row {
+  min-width: 850px;
+  display: grid;
+}
+
+/* Tables with fixed layouts need to be wrapped in a container */
+.table-responsive-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Make inputs and controls more responsive */
 @media (max-width: 768px) {
-  .damage-sections {
-    grid-template-columns: 1fr;
+  .damage-application {
+    padding: 0.75rem;
+  }
+  
+  .damage-section {
+    padding: 0.75rem;
   }
   
   .control-row {
@@ -242,22 +277,41 @@
   .checkbox-row {
     flex-wrap: wrap;
   }
+  
+  /* Ensure all inputs fit within their containers */
+  .control-field input,
+  .control-field select,
+  .save-field input,
+  .save-field select {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Improve readability on smaller screens */
+  .target-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 480px) {
   .damage-application {
-    padding: 0.75rem;
+    padding: 0.5rem;
+  }
+  
+  .damage-section {
+    padding: 0.5rem;
   }
   
   .section-header {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
     gap: 0.5rem;
   }
   
-  .target-info {
-    flex-direction: column;
-    align-items: flex-start;
+  .section-header button {
+    width: 100%;
   }
 }
 
@@ -655,25 +709,29 @@
   border: 1px solid #e2e8f0;
   border-radius: 4px;
   overflow: hidden;
+  overflow-x: auto;
 }
 
 .character-saves-header {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 0.8fr 1.5fr 1.2fr;
+  grid-template-columns: 1.5fr 1fr 1fr 0.8fr 1.2fr 1.5fr 0.8fr;
   gap: 0.5rem;
   background-color: #edf2f7;
-  padding: 0.75rem 0.5rem;
+  padding: 0.5rem;
   font-weight: 600;
   color: #4a5568;
+  min-width: 700px;
+  align-items: center;
 }
 
 .character-saves-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 0.8fr 1.5fr 1.2fr;
+  grid-template-columns: 1.5fr 1fr 1fr 0.8fr 1.2fr 1.5fr 0.8fr;
   gap: 0.5rem;
-  padding: 0.75rem 0.5rem;
+  padding: 0.5rem;
   border-top: 1px solid #e2e8f0;
   align-items: center;
+  min-width: 700px;
 }
 
 .character-saves-row:nth-child(even) {
@@ -684,6 +742,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 100px;
 }
 
 .save-roll-cell input {
@@ -735,6 +794,8 @@
 .damage-adjustment-controls {
   display: flex;
   gap: 0.25rem;
+  flex-wrap: nowrap;
+  min-width: 120px;
 }
 
 .damage-adjustment-controls button {
@@ -743,17 +804,21 @@
   padding: 0;
   border: 1px solid #cbd5e0;
   background-color: #f7fafc;
+  color: black;
   border-radius: 4px;
   font-size: 0.85rem;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .damage-adjustment-controls button:hover {
   background-color: #edf2f7;
 }
 
-.character-saves-row select {
+.character-saves-row select,
+.entity-saves-row select {
   width: 100%;
+  min-width: 120px;
   padding: 0.4rem;
   border: 1px solid #cbd5e0;
   border-radius: 4px;
@@ -785,54 +850,87 @@
   color: #718096;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .character-saves-header,
-  .character-saves-row {
-    grid-template-columns: 1fr 0.8fr 0.8fr 0.6fr 1fr 1fr;
-    font-size: 0.9rem;
-  }
+/* Character and entity save tables need special handling for responsive display */
+.character-saves-table,
+.entity-saves-table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+/* Apply consistent styling to headers and rows */
+.character-saves-header,
+.entity-saves-header {
+  background-color: #edf2f7;
+  font-weight: 600;
+  color: #4a5568;
+  border-bottom: 2px solid #cbd5e0;
+}
+
+/* Make rows more readable */
+.character-saves-row,
+.entity-saves-row {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.character-saves-row:nth-child(even),
+.entity-saves-row:nth-child(even) {
+  background-color: #f7fafc;
+}
+
+/* Better cell padding and text handling */
+.character-saves-header > div,
+.character-saves-row > div,
+.entity-saves-header > div,
+.entity-saves-row > div {
+  padding: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Make the damage application sections take up 100% width */
+.damage-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.damage-section {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 8px;
+}
+
+/* Allow tables to scroll horizontally but prevent page scrollbar */
+.table-responsive-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+/* Wrap tables and grids with fixed layouts */
+.aoe-saves-container .character-saves-table,
+.entity-saves-section .entity-saves-table {
+  overflow-x: auto;
+  max-width: 100%;
+  display: block;
+}
+
+.transfer-targets-list {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 
 @media (max-width: 576px) {
-  .character-saves-header {
-    display: none;
-  }
-  
-  .character-saves-row {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: repeat(3, auto);
-    gap: 0.5rem;
-    padding: 0.75rem;
-    border: 1px solid #e2e8f0;
-    margin-bottom: 0.5rem;
-  }
-  
-  .character-saves-row > div:nth-child(1) {
-    grid-column: 1 / 3;
-    grid-row: 1;
-    font-weight: 600;
-  }
-  
-  .character-saves-row > div:nth-child(2),
-  .character-saves-row > div:nth-child(3) {
-    grid-row: 2;
-  }
-  
-  .character-saves-row > div:nth-child(4) {
-    grid-column: 1 / 3;
-    grid-row: 3;
-  }
-  
-  .character-saves-row > div:nth-child(5),
-  .character-saves-row > div:nth-child(6) {
-    grid-row: 4;
-  }
-  
-  .aoe-saves-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+  .transfer-targets-list {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1180,4 +1278,326 @@
 
 .creature-hp-indicator.dead .creature-hp-text {
   color: #a0aec0;
+}
+
+/* Entity saves section */
+.entity-saves-section {
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.entity-saves-section h5 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  color: #4a5568;
+}
+
+.entity-saves-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-x: auto;
+}
+
+.entity-saves-header {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.8fr;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #4a5568;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e2e8f0;
+  min-width: 900px;
+}
+
+.entity-saves-row {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.8fr;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  align-items: center;
+  border-bottom: 1px solid #f7fafc;
+  min-width: 900px;
+}
+
+.entity-saves-row:nth-child(even) {
+  background-color: #f7fafc;
+}
+
+.entity-type {
+  text-transform: capitalize;
+  background-color: #e2e8f0;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.bonus-detail {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-left: 0.25rem;
+}
+
+/* Transfer damage button */
+.transfer-damage-button {
+  background-color: #6b46c1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.transfer-damage-button:hover {
+  background-color: #553c9a;
+}
+
+/* Section divider */
+.section-divider {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Damage transfer modal */
+.damage-transfer-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.damage-transfer-modal > div {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Replace with inline section styling */
+.damage-transfer-section {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  margin: 1rem 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.damage-transfer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: #f1f3f5;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.damage-transfer-header h4 {
+  margin: 0;
+  color: #2d3748;
+  font-size: 1rem;
+}
+
+.close-transfer-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #a0aec0;
+  padding: 0;
+  line-height: 1;
+}
+
+.close-transfer-button:hover {
+  color: #718096;
+}
+
+.damage-transfer-content {
+  padding: 1rem;
+  overflow-y: auto;
+  max-height: 50vh;
+}
+
+.transfer-targets-section h5 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.transfer-targets-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.transfer-target-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #f7fafc;
+}
+
+.transfer-target-item:hover {
+  background-color: #edf2f7;
+  border-color: #cbd5e0;
+}
+
+.transfer-target-item.selected {
+  border-color: #4299e1;
+  background-color: #ebf8ff;
+}
+
+.transfer-target-name {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.transfer-amount-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.transfer-amount-input label {
+  font-size: 0.8rem;
+  color: #4a5568;
+  min-width: 50px;
+}
+
+.transfer-amount-input input {
+  width: 60px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+}
+
+.transfer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.cancel-transfer-button {
+  background-color: #a0aec0;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.cancel-transfer-button:hover {
+  background-color: #718096;
+}
+
+.apply-transfer-button {
+  background-color: #6b46c1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.apply-transfer-button:hover {
+  background-color: #553c9a;
+}
+
+.apply-transfer-button:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+/* Ensure no horizontal scroll when printing */
+@media print {
+  body, html, .group-attack-calculator, .damage-application {
+    overflow-x: visible;
+  }
+}
+
+/* Ensure proper grid layout for tables */
+.character-saves-header,
+.character-saves-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 0.8fr 1.2fr 1.5fr 0.8fr;
+  min-width: 700px; /* Reduced minimum width */
+  align-items: center;
+}
+
+.entity-saves-header,
+.entity-saves-row {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr 0.8fr 1fr 0.8fr 0.8fr 0.8fr 1.2fr 1.2fr 0.8fr;
+  min-width: 800px; /* Reasonable minimum width */
+  align-items: center;
+}
+
+/* Make scrollable tables more user-friendly */
+@media (max-width: 768px) {
+  /* Add nice scrollbar styling */
+  .character-saves-table::-webkit-scrollbar,
+  .entity-saves-table::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .character-saves-table::-webkit-scrollbar-thumb,
+  .entity-saves-table::-webkit-scrollbar-thumb {
+    background-color: #cbd5e0;
+    border-radius: 4px;
+  }
+  
+  .character-saves-table::-webkit-scrollbar-track,
+  .entity-saves-table::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+  }
+  
+  /* Adjust button sizes for better usability */
+  .auto-roll-single,
+  .damage-adjustment-controls button {
+    min-width: 28px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 0.9rem;
+  }
+  
+  /* Better input handling */
+  .save-roll-cell input {
+    width: 45px;
+    min-width: 45px;
+  }
 } 

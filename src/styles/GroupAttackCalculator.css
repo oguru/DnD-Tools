@@ -1,3 +1,8 @@
+/* Ensure proper sizing on the page */
+body, html {
+  max-width: 100%;
+}
+
 /* Main container */
 .group-attack-calculator {
   max-width: 1200px;
@@ -1135,10 +1140,21 @@
   border-radius: 4px;
 }
 
-/* Responsive styles */
+/* Ensure scrollable tables */
+.characters-table,
+.attack-results-grid,
+.entity-saves-table,
+.character-saves-table {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* More responsive adjustments */
 @media (max-width: 768px) {
   .group-attack-calculator {
-    padding: 15px;
+    padding: 15px 10px;
   }
   
   .import-export-buttons {
@@ -1152,15 +1168,41 @@
     width: 100%;
     max-width: 200px;
   }
+  
+  .group-stats-grid,
+  .attack-stats-grid-small,
+  .template-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  /* Ensure buttons don't overflow */
+  .group-action-buttons {
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 576px) {
   .group-attack-calculator {
-    padding: 10px;
+    padding: 10px 8px;
   }
   
   .attack-results-section {
     padding: 10px;
+  }
+  
+  .group-stats-grid,
+  .attack-stats-grid-small,
+  .template-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Improve button layout on small screens */
+  .target-button,
+  .aoe-button,
+  .scroll-button,
+  .duplicate-button {
+    padding: 6px 4px;
+    font-size: 0.8rem;
   }
 }
 
@@ -1296,33 +1338,4 @@
   text-align: center;
   border: 1px dashed #e2e8f0;
   border-radius: 4px;
-}
-
-/* Responsive styles */
-@media (max-width: 768px) {
-  .group-attack-calculator {
-    padding: 15px;
-  }
-  
-  .import-export-buttons {
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .export-button,
-  .import-button {
-    width: 100%;
-    max-width: 200px;
-  }
-}
-
-@media (max-width: 576px) {
-  .group-attack-calculator {
-    padding: 10px;
-  }
-  
-  .attack-results-section {
-    padding: 10px;
-  }
 } 
