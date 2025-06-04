@@ -472,19 +472,19 @@ const DamageApplication = () => {
     const updatedGroup = { ...group };
     const updatedCreatures = [...group.creatures];
     
-    // Sort creatures by current HP (highest first, but exclude those with 0 HP)
+    // Sort creatures by current HP (lowest first, but exclude those with 0 HP)
     updatedCreatures.sort((a, b) => {
       // Dead creatures (0 HP) go last
       if (a.hp === 0) return 1;
       if (b.hp === 0) return -1;
       
-      // Otherwise sort by current HP, highest first
-      return b.hp - a.hp;
+      // Otherwise sort by current HP, lowest first
+      return a.hp - b.hp;
     });
     
     let remainingHealing = amount;
     
-    // Apply healing to each creature that isn't dead, starting with highest HP
+    // Apply healing to each creature that isn't dead, starting with lowest HP
     for (let i = 0; i < updatedCreatures.length && remainingHealing > 0; i++) {
       const creature = updatedCreatures[i];
       
@@ -504,9 +504,9 @@ const DamageApplication = () => {
     // Update the group with healed creatures
     updatedGroup.creatures = updatedCreatures;
     
-    // Calculate new current HP for the group
+    // Calculate new current HP for the group as the average of all creatures
     const totalCurrentHP = updatedCreatures.reduce((sum, creature) => sum + creature.hp, 0);
-    updatedGroup.currentHp = Math.floor(totalCurrentHP / updatedCreatures.length);
+    updatedGroup.currentHp = Math.round(totalCurrentHP / updatedCreatures.length);
     
     // Update the group in the store
     updateEnemyGroup(groupId, null, updatedGroup);
@@ -516,14 +516,22 @@ const DamageApplication = () => {
   const getGroupDetails = (group) => {
     if (!group || !group.creatures) return null;
     
+    const creatureDetails = group.creatures.map((creature, index) => ({
+      id: index,
+      hp: creature.hp,
+      maxHp: group.maxHp,
+      percent: Math.floor((creature.hp / group.maxHp) * 100)
+    }));
+    
+    // Calculate total current HP and total max HP
+    const totalCurrentHP = creatureDetails.reduce((sum, creature) => sum + creature.hp, 0);
+    const totalMaxHP = group.count * group.maxHp;
+    
     return {
       ...group,
-      creatureDetails: group.creatures.map((creature, index) => ({
-        id: index,
-        hp: creature.hp,
-        maxHp: group.maxHp,
-        percent: Math.floor((creature.hp / group.maxHp) * 100)
-      }))
+      creatureDetails,
+      totalCurrentHP,
+      totalMaxHP
     };
   };
   
@@ -1093,24 +1101,30 @@ const DamageApplication = () => {
                                 <span className="entity-name">{group.name}</span>
                                 <span className="entity-count">x{group.count}</span>
                               </div>
-                              <span className="entity-hp">{group.currentHp}/{group.maxHp} HP</span>
-                              
-                              {groupDetails && groupDetails.creatureDetails && (
-                                <div className="creature-hp-list">
-                                  {groupDetails.creatureDetails.map((creature, idx) => (
-                                    <div 
-                                      key={idx} 
-                                      className={`creature-hp-indicator ${creature.hp === 0 ? 'dead' : ''}`}
-                                      title={`Creature ${idx+1}: ${creature.hp}/${creature.maxHp} HP`}
-                                    >
+                              {groupDetails && groupDetails.creatureDetails ? (
+                                <>
+                                  {/* Show total HP of all creatures */}
+                                  <span className="entity-hp">
+                                    {groupDetails.totalCurrentHP}/{groupDetails.totalMaxHP} HP (Total)
+                                  </span>
+                                  <div className="creature-hp-list">
+                                    {groupDetails.creatureDetails.map((creature, idx) => (
                                       <div 
-                                        className="creature-hp-bar" 
-                                        style={{width: `${creature.percent}%`}}
-                                      ></div>
-                                      <span className="creature-hp-text">{creature.hp}</span>
-                                    </div>
-                                  ))}
-                                </div>
+                                        key={idx} 
+                                        className={`creature-hp-indicator ${creature.hp === 0 ? 'dead' : ''}`}
+                                        title={`Creature ${idx+1}: ${creature.hp}/${creature.maxHp} HP`}
+                                      >
+                                        <div 
+                                          className="creature-hp-bar" 
+                                          style={{width: `${creature.percent}%`}}
+                                        ></div>
+                                        <span className="creature-hp-text">{creature.hp}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </>
+                              ) : (
+                                <span className="entity-hp">{group.currentHp}/{group.maxHp} HP</span>
                               )}
                             </div>
                           );

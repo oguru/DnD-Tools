@@ -2166,7 +2166,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                         <div className="entity-details">
                           <div className="entity-field">
                             <span>HP:</span>
-                            <span>{group.currentHp}/{group.maxHp}</span>
+                            <span>{totalCurrentHP}/{totalOriginalMaxHP} (Total)</span>
                           </div>
                           <div className="entity-field">
                             <span>AC:</span>

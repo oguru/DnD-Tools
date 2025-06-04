@@ -617,9 +617,10 @@ const useDnDStore = create((set, get) => {
         updatedGroup.creatures = survivingCreatures;
         updatedGroup.count = survivingCreatures.length;
         
-        // Update currentHp to represent the lowest HP in the group
+        // Update currentHp to represent the average HP in the group
         if (updatedGroup.creatures.length > 0) {
-          updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
+          const totalHP = updatedGroup.creatures.reduce((sum, creature) => sum + creature.hp, 0);
+          updatedGroup.currentHp = Math.round(totalHP / updatedGroup.creatures.length);
         }
         
         // Check if the group is completely defeated
@@ -719,9 +720,10 @@ const useDnDStore = create((set, get) => {
         updatedGroup.creatures = [...survivingCreatures, ...unaffectedCreatures];
         updatedGroup.count = updatedGroup.creatures.length;
         
-        // Update currentHp to represent the lowest HP in the group
+        // Update currentHp to represent the average HP in the group
         if (updatedGroup.creatures.length > 0) {
-          updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
+          const totalHP = updatedGroup.creatures.reduce((sum, creature) => sum + creature.hp, 0);
+          updatedGroup.currentHp = Math.round(totalHP / updatedGroup.creatures.length);
         }
         
         const updatedGroups = state.enemyGroups.map(g => {
@@ -809,9 +811,10 @@ const useDnDStore = create((set, get) => {
           updatedGroup.creatures = [...survivingCreatures, ...unaffectedCreatures];
           updatedGroup.count = updatedGroup.creatures.length;
           
-          // Update currentHp to represent the lowest HP in the group
+          // Update currentHp to represent the average HP in the group
           if (updatedGroup.creatures.length > 0) {
-            updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
+            const totalHP = updatedGroup.creatures.reduce((sum, creature) => sum + creature.hp, 0);
+            updatedGroup.currentHp = Math.round(totalHP / updatedGroup.creatures.length);
           }
           
           // Add to global kill count
@@ -959,9 +962,10 @@ const useDnDStore = create((set, get) => {
           updatedGroup.creatures = [...survivingCreatures, ...unaffectedCreatures];
           updatedGroup.count = updatedGroup.creatures.length;
           
-          // Update currentHp to represent the lowest HP in the group
+          // Update currentHp to represent the average HP in the group
           if (updatedGroup.creatures.length > 0) {
-            updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
+            const totalHP = updatedGroup.creatures.reduce((sum, creature) => sum + creature.hp, 0);
+            updatedGroup.currentHp = Math.round(totalHP / updatedGroup.creatures.length);
           }
           
           totalKillCount += killCount;
@@ -1227,6 +1231,8 @@ const useDnDStore = create((set, get) => {
     applyDamageToAllCharactersInAoe: (aoeParams, forceAll = false) => {
       const { damage, saveType, saveDC, halfOnSave, characterDamageParams } = aoeParams;
       if (damage <= 0) return;
+      
+      let resultMessage = "";
       
       set(state => {
         // Either all characters or those marked for AoE
@@ -2694,9 +2700,10 @@ const useDnDStore = create((set, get) => {
           updatedGroup.creatures = [...survivingCreatures, ...unaffectedCreatures];
           updatedGroup.count = updatedGroup.creatures.length;
           
-          // Update currentHp to represent the lowest HP in the group
+          // Update currentHp to represent the average HP in the group
           if (updatedGroup.creatures.length > 0) {
-            updatedGroup.currentHp = Math.min(...updatedGroup.creatures.map(c => c.hp));
+            const totalHP = updatedGroup.creatures.reduce((sum, creature) => sum + creature.hp, 0);
+            updatedGroup.currentHp = Math.round(totalHP / updatedGroup.creatures.length);
           }
           
           totalKillCount += killCount;
