@@ -1117,6 +1117,24 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     setIsModalOpen(!isModalOpen);
   };
 
+  // Set a boss as the target and handle scroll behavior
+  const handleSetBossAsTarget = (bossId) => {
+    const isAlreadyTargeted = targetEntity && 
+                            targetEntity.type === 'boss' && 
+                            targetEntity.id === bossId;
+                            
+    if (isAlreadyTargeted) {
+      // If already targeted, just scroll to damage section
+      scrollToDamageSection();
+    } else {
+      // Set as target but don't scroll yet
+      setBossTarget(bossId);
+      
+      // Remove the auto-scroll behavior from setBossTarget
+      // The user will need to click the button again to scroll
+    }
+  };
+
   return (
     <div className="groups-section" ref={sectionRef}>
       <div className="section-header">
@@ -1914,10 +1932,10 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                         <div className="boss-targeting">
                           <button 
                             className={`target-button ${isTargeted ? 'active' : ''}`}
-                            onClick={() => setBossTarget(boss.id)}
-                            title={isTargeted ? "Already targeted" : "Set as target for single attack"}
+                            onClick={() => handleSetBossAsTarget(boss.id)}
+                            title={isTargeted ? "Scroll to damage section" : "Set as target for single attack"}
                           >
-                            Target
+                            {isTargeted ? "Scroll to Damage" : "Target"}
                           </button>
                           <button 
                             className={`aoe-button ${boss.inAoe ? 'active' : ''}`}

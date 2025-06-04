@@ -1059,7 +1059,9 @@ const DamageApplication = () => {
                               className={`entity-select-item ${isEntitySelectedForHealing('character', character.id) ? 'selected' : ''}`}
                               onClick={() => toggleEntityForHealing('character', character.id)}
                             >
-                              <span className="entity-name">{character.name}</span>
+                              <div className="entity-header">
+                                <span className="entity-name">{character.name}</span>
+                              </div>
                               <span className="entity-hp">{character.currentHp}/{character.maxHp} HP</span>
                               <div className="health-bar-container">
                                 <div 
@@ -1069,6 +1071,20 @@ const DamageApplication = () => {
                                     backgroundColor: healthColor
                                   }}
                                 ></div>
+                              </div>
+                              {/* Add detailed health status text */}
+                              <div className="health-status">
+                                {character.currentHp === character.maxHp ? (
+                                  <span className="full-health">Full Health</span>
+                                ) : character.currentHp === 0 ? (
+                                  <span className="no-health">Unconscious</span>
+                                ) : healthPercentage < 25 ? (
+                                  <span className="critical-health">Critically Wounded</span>
+                                ) : healthPercentage < 50 ? (
+                                  <span className="wounded">Wounded</span>
+                                ) : (
+                                  <span className="injured">Lightly Injured</span>
+                                )}
                               </div>
                             </div>
                           );
@@ -1140,7 +1156,9 @@ const DamageApplication = () => {
                               className={`entity-select-item ${isEntitySelectedForHealing('boss', boss.id) ? 'selected' : ''}`}
                               onClick={() => toggleEntityForHealing('boss', boss.id)}
                             >
-                              <span className="entity-name">{boss.name}</span>
+                              <div className="entity-header">
+                                <span className="entity-name">{boss.name}</span>
+                              </div>
                               <span className="entity-hp">{boss.currentHp}/{boss.maxHp} HP</span>
                               <div className="health-bar-container">
                                 <div 
@@ -1150,6 +1168,20 @@ const DamageApplication = () => {
                                     backgroundColor: healthColor
                                   }}
                                 ></div>
+                              </div>
+                              {/* Add detailed health status text */}
+                              <div className="health-status">
+                                {boss.currentHp === boss.maxHp ? (
+                                  <span className="full-health">Unharmed</span>
+                                ) : boss.currentHp === 0 ? (
+                                  <span className="no-health">Defeated</span>
+                                ) : healthPercentage < 25 ? (
+                                  <span className="critical-health">Near Death</span>
+                                ) : healthPercentage < 50 ? (
+                                  <span className="wounded">Badly Wounded</span>
+                                ) : (
+                                  <span className="injured">Wounded</span>
+                                )}
                               </div>
                             </div>
                           );

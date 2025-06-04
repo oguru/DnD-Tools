@@ -2311,6 +2311,9 @@ const useDnDStore = create((set, get) => {
           targetEntity: { type: 'boss', id: bossId }
         };
       });
+      
+      // Remove the auto-scrolling behavior
+      // This will allow the button to change to "Scroll to Damage" without scrolling immediately
     },
     
     // Add a function to set a boss as AOE target
