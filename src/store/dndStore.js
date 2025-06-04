@@ -993,7 +993,7 @@ const useDnDStore = create((set, get) => {
             {
               id: Date.now().toString(),
               damage,
-              message: `AoE: ${damage} ${saveType.toUpperCase()} save DC ${saveDC} (${percentAffected}% affected) - ${groupMessages}${totalKillCount > 0 ? ` - Total kills: ${totalKillCount}` : ""}`,
+              message: `AoE: ${damage} ${saveType.toUpperCase()} save DC ${saveDC} (${percentAffected}% affected) to groups - ${groupMessages}${totalKillCount > 0 ? ` - Total kills: ${totalKillCount}` : ""}`,
               isAoE: true,
               timestamp: Date.now()
             }
@@ -1283,7 +1283,7 @@ const useDnDStore = create((set, get) => {
         const targetText = forceAll ? "all characters" : charNames;
         
         // Create a more detailed message that includes save results
-        let message = `AoE: ${damage} ${saveType.toUpperCase()} save DC ${saveDC} to: ${targetText}`;
+        let message = `AoE: ${damage} ${saveType.toUpperCase()} save DC ${saveDC} to characters - `;
         
         // Add save roll details for characters with custom parameters
         if (characterDamageParams) {
@@ -1298,8 +1298,12 @@ const useDnDStore = create((set, get) => {
           });
           
           if (saveDetails.length > 0) {
-            message += ` - ${saveDetails.join('; ')}`;
+            message += saveDetails.join('; ');
+          } else {
+            message += `${targetText}`;
           }
+        } else {
+          message += `${targetText}`;
         }
         
         return { 

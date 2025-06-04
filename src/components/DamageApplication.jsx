@@ -864,21 +864,6 @@ const DamageApplication = () => {
                         const modifier = damageModifiers[characterId];
                         const adjustment = manualDamageAdjustments[characterId] || 0;
                         
-                        // Calculate damage
-                        let baseDamage = aoeState.damageAmount;
-                        let finalDamage = parseInt(baseDamage);
-                        
-                        if (modifier === 'half') {
-                          finalDamage = Math.floor(finalDamage / 2);
-                        } else if (modifier === 'quarter') {
-                          finalDamage = Math.floor(finalDamage / 4);
-                        } else if (modifier === 'none') {
-                          finalDamage = 0;
-                        }
-                        
-                        // Apply manual adjustment
-                        finalDamage = Math.max(0, finalDamage + adjustment);
-                        
                         return (
                           <div key={characterId} className="character-saves-row">
                             <div>{character.name}</div>
@@ -902,13 +887,36 @@ const DamageApplication = () => {
                             <div className={`save-result ${saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'success' : 'failure')}`}>
                               {saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'Success' : 'Failure')}
                             </div>
-                            <div className="damage-value">
-                              {finalDamage}
-                              {adjustment !== 0 && (
-                                <span className="damage-adjustment">
-                                  {adjustment > 0 ? ` (+${adjustment})` : ` (${adjustment})`}
-                                </span>
-                              )}
+                            <div>
+                              {(() => {
+                                // Calculate damage
+                                let baseDamage = aoeState.damageAmount;
+                                let finalDamage = parseInt(baseDamage);
+                                
+                                if (modifier === 'half') {
+                                  finalDamage = Math.floor(finalDamage / 2);
+                                } else if (modifier === 'quarter') {
+                                  finalDamage = Math.floor(finalDamage / 4);
+                                } else if (modifier === 'none') {
+                                  finalDamage = 0;
+                                }
+                                
+                                // Apply manual adjustment
+                                finalDamage = Math.max(0, finalDamage + adjustment);
+                                
+                                return (
+                                  <>
+                                    <span className="damage-value">{finalDamage}</span>
+                                    {(modifier !== 'default' || adjustment !== 0) && (
+                                      <small className="damage-details">
+                                        {' '}(Base: {baseDamage}
+                                        {modifier !== 'default' && `, ${modifier}`}
+                                        {adjustment !== 0 && `, ${adjustment > 0 ? '+' : ''}${adjustment}`})
+                                      </small>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </div>
                             <div className="damage-adjustment-controls">
                               <button onClick={() => handleDamageAdjustment(characterId, -5)}>-5</button>

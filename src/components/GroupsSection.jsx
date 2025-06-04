@@ -110,6 +110,7 @@ const GroupsSection = () => {
   const [damageModifiers, setDamageModifiers] = useState({});
   const [damageAdjustments, setDamageAdjustments] = useState({});
   const [showGlobalAttacks, setShowGlobalAttacks] = useState(true);
+  const [showAddGroupOrBoss, setShowAddGroupOrBoss] = useState(true);
 
   // State for showing/hiding notes and attacks for bosses
   const [showNotes, setShowNotes] = useState({});
@@ -451,24 +452,24 @@ ${attack.halfOnSave ? `On success: ${Math.floor(totalDamage/2)} damage (half dam
       if (criticalMiss) {
         resultMessage = `Critical Miss against ${targetCharacter.name} (AC ${targetCharacter.ac})!`;
       } else if (criticalHit) {
-        resultMessage = `Critical Hit against ${targetCharacter.name}! ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${critDamageRoll} + ${attack.modifier})`;
+        resultMessage = `Critical Hit against ${targetCharacter.name}! <span class="damage-number">${totalDamage}</span> ${attack.damageType || 'slashing'} damage (${damageRoll} + ${critDamageRoll} + ${attack.modifier})`;
       } else if (hits) {
-        resultMessage = `Hit ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})! Damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
+        resultMessage = `Hit ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})! Damage: <span class="damage-number">${totalDamage}</span> ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
       } else {
         resultMessage = `Miss against ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})`;
       }
     } else if (attack.attackMethod === 'save') {
       resultMessage = `${targetCharacter.name} needs to make a ${attack.saveType.toUpperCase()} save (DC ${attack.saveDC}). 
-Potential damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})
+Potential damage: <span class="damage-number">${totalDamage}</span> ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})
 ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successful save'}`;
     } else { // auto hit
       if (attack.saveType && attack.saveDC) {
         resultMessage = `Automatic hit on ${targetCharacter.name}! 
 ${targetCharacter.name} needs to make a ${attack.saveType.toUpperCase()} save (DC ${attack.saveDC}).
-Potential damage: ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})
+Potential damage: <span class="damage-number">${totalDamage}</span> ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})
 ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successful save'}`;
       } else {
-        resultMessage = `Automatic hit on ${targetCharacter.name}! ${totalDamage} ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
+        resultMessage = `Automatic hit on ${targetCharacter.name}! <span class="damage-number">${totalDamage}</span> ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
       }
     }
     
@@ -496,31 +497,21 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
       damageType: attack.damageType || 'slashing'
     };
     
-    // Store in pending attacks if it hit and caused damage, or if it's a save-based attack
-    if ((hits && totalDamage > 0) || hitStatus === 'save-pending' || hitStatus === 'auto-save-pending') {
-      console.log(`Adding to pending attacks: ${attack.name} against ${targetCharacter.name} (ID: ${uniqueId})`);
-      
-      // Force update in next microtask to ensure React processes the state update
-      setTimeout(() => {
-        setPendingAttacks(prev => {
-          const newPending = {
-            ...prev,
-            [uniqueId]: {
-              ...attackResult,
-              modifier: 'full'  // Default to full damage
-            }
-          };
-          console.log(`Updated pending attacks, count: ${Object.keys(newPending).length}`);
-          setAttackProcessing(false);
-          return newPending;
-        });
-      }, 0);
-    } else {
-      // If it's a miss or no damage, just add the result
-      console.log(`Adding direct attack result (miss or no damage): ${attack.name}`);
-      addBossAttackResult(boss.id, attackResult);
-      setAttackProcessing(false);
-    }
+    // Force update in next microtask to ensure React processes the state update
+    setTimeout(() => {
+      setPendingAttacks(prev => {
+        const newPending = {
+          ...prev,
+          [uniqueId]: {
+            ...attackResult,
+            modifier: 'full'  // Default to full damage
+          }
+        };
+        console.log(`Updated pending attacks, count: ${Object.keys(newPending).length}`);
+        setAttackProcessing(false);
+        return newPending;
+      });
+    }, 0);
   };
 
   // Handle applying damage with modifier
@@ -1162,9 +1153,16 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
             >
               Add Boss
             </button>
+            <div className='grow' />
+            <button
+                  className="toggle-section-button small hide-group-boss-button"
+                  onClick={() => setShowAddGroupOrBoss(!showAddGroupOrBoss)}
+                >
+                  {showAddGroupOrBoss ? 'Hide' : 'Show'}
+                </button>
           </div>
 
-          {addEntityType === 'group' ? (
+          {showAddGroupOrBoss && (addEntityType === 'group' ? (
             <div className="group-template">
               <h4>Add New Enemy Group</h4>
               <div className="group-template-fields">
@@ -1602,7 +1600,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                 Add Boss
               </button>
             </div>
-          )}
+          ))}
 
           {/* Global Attack System */}
           {enemyGroups && enemyGroups.length > 0 && characters && characters.length > 0 && (
@@ -2019,64 +2017,83 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                         )
                                         .map(attackResult => (
                                           <div key={attackResult.id} className="pending-attack-result">
-                                            <div className="attack-result-message">
-                                              {attackResult.message}
+                                            <div className="attack-result-header">
+                                              <div className="attack-result-message" dangerouslySetInnerHTML={{ __html: attackResult.message }} />
+                                              <button 
+                                                className="dismiss-attack-button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  // Remove from pending attacks
+                                                  setPendingAttacks(prev => {
+                                                    const newPending = { ...prev };
+                                                    delete newPending[attackResult.id];
+                                                    return newPending;
+                                                  });
+                                                }}
+                                                title="Dismiss"
+                                              >
+                                                ×
+                                              </button>
                                             </div>
-                                            <div className="damage-modifier-controls">
-                                              {attackResult.hitStatus === 'save-pending' || attackResult.hitStatus === 'auto-save-pending' ? (
-                                                <>
-                                                  <span className="save-result-label">Apply based on save result:</span>
-                                                  <button 
-                                                    className="damage-button full-damage"
-                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
-                                                    title="Apply full damage (failed save)"
-                                                  >
-                                                    Failed Save (Full)
-                                                  </button>
-                                                  <button 
-                                                    className="damage-button half-damage"
-                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
-                                                    title="Apply half damage (passed save with half damage)"
-                                                  >
-                                                    Passed Save (Half)
-                                                  </button>
-                                                  <button 
-                                                    className="damage-button no-damage"
-                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
-                                                    title="Apply no damage (passed save with no damage)"
-                                                  >
-                                                    Passed Save (None)
-                                                  </button>
-                                                </>
-                                              ) : (
-                                                <>
-                                                  <button 
-                                                    className="damage-button full-damage"
-                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
-                                                  >
-                                                    Full
-                                                  </button>
-                                                  <button 
-                                                    className="damage-button half-damage"
-                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
-                                                  >
-                                                    Half
-                                                  </button>
-                                                  <button 
-                                                    className="damage-button quarter-damage"
-                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'quarter')}
-                                                  >
-                                                    Quarter
-                                                  </button>
-                                                  <button 
-                                                    className="damage-button no-damage"
-                                                    onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
-                                                  >
-                                                    None
-                                                  </button>
-                                                </>
-                                              )}
-                                            </div>
+                                            
+                                            {/* Only show damage buttons for hits or save-based attacks */}
+                                            {(attackResult.hitStatus !== 'miss' && attackResult.hitStatus !== 'critical-miss') && (
+                                              <div className="damage-modifier-controls">
+                                                {attackResult.hitStatus === 'save-pending' || attackResult.hitStatus === 'auto-save-pending' ? (
+                                                  <>
+                                                    <span className="save-result-label">Apply based on save result:</span>
+                                                    <button 
+                                                      className="damage-button full-damage"
+                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
+                                                      title="Apply full damage (failed save)"
+                                                    >
+                                                      Failed Save (Full)
+                                                    </button>
+                                                    <button 
+                                                      className="damage-button half-damage"
+                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
+                                                      title="Apply half damage (passed save with half damage)"
+                                                    >
+                                                      Passed Save (Half)
+                                                    </button>
+                                                    <button 
+                                                      className="damage-button no-damage"
+                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
+                                                      title="Apply no damage (passed save with no damage)"
+                                                    >
+                                                      Passed Save (None)
+                                                    </button>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <button 
+                                                      className="damage-button full-damage"
+                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
+                                                    >
+                                                      Full
+                                                    </button>
+                                                    <button 
+                                                      className="damage-button half-damage"
+                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
+                                                    >
+                                                      Half
+                                                    </button>
+                                                    <button 
+                                                      className="damage-button quarter-damage"
+                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'quarter')}
+                                                    >
+                                                      Quarter
+                                                    </button>
+                                                    <button 
+                                                      className="damage-button no-damage"
+                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
+                                                    >
+                                                      None
+                                                    </button>
+                                                  </>
+                                                )}
+                                              </div>
+                                            )}
                                           </div>
                                         ))}
                                     </li>
@@ -2254,7 +2271,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                             <h6>Attack Results vs {attackResult.targetName} (AC: {attackResult.targetAc})</h6>
                             <div className="attack-summary">
                               <div>Hits: {attackResult.results.filter(r => r.hits).length} / {group.count}</div>
-                              <div>Total Damage: {attackResult.totalDamage} {attackResult.damageType || 'slashing'}</div>
+                              <div>Total Damage: <span className="damage-value">{attackResult.totalDamage}</span> {attackResult.damageType || 'slashing'}</div>
                             </div>
                             <div className="attack-rolls">
                               {attackResult.results.map((result, index) => (
@@ -2269,7 +2286,10 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                   }
                                 >
                                   {result.hits ? 
-                                    (result.isNatural20 ? `Crit! ${result.damage}` : result.damage) : 
+                                    (result.isNatural20 ? 
+                                      <>Crit! <span className="damage-value">{result.damage}</span></> : 
+                                      <><span className="damage-value">{result.damage}</span></>
+                                    ) : 
                                     'Miss'
                                   }
                                 </div>

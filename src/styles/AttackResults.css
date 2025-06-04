@@ -123,6 +123,73 @@
   white-space: pre-wrap;
 }
 
+/* Style for damage numbers */
+.damage-number {
+  font-weight: 700;
+  color: #e53e3e;
+  font-size: 1.1em;
+}
+
+/* Improved formatting for the attack result message */
+.result-message {
+  margin: 0;
+  color: #4a5568;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  text-align: left;
+}
+
+/* Add proper spacing after each line break in AOE results */
+.aoe-result .result-message br {
+  content: "";
+  display: block;
+  margin-top: 4px;
+}
+
+/* Target name styling in AOE results */
+.aoe-result .result-message b,
+.aoe-result .result-message strong {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* Make AOE results more readable */
+.aoe-result .result-message {
+  display: block;
+  gap: 6px;
+}
+
+/* Style target entries in AOE results */
+.aoe-result .result-message span {
+  display: inline;
+}
+
+/* Target items in AOE damage results */
+.aoe-target-item {
+  padding-left: 10px;
+  border-left: 2px solid #e2e8f0;
+  margin-bottom: 2px;
+}
+
+/* Style for target names in AOE results */
+.aoe-result .result-message:not(:empty) {
+  padding: 6px 0;
+}
+
+/* Format character/boss/group names in AOE results */
+.aoe-result .result-message [class^="name-"] {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* Add styling for headers in AOE results */
+.aoe-result .result-message b {
+  font-weight: 600;
+  color: #2d3748;
+  margin-top: 4px;
+  display: inline-block;
+}
+
 .no-results-message {
   color: #a0aec0;
   font-style: italic;

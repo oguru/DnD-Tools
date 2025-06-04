@@ -458,6 +458,27 @@
   color: #555;
 }
 
+/* Style the damage numbers to make them stand out */
+.attack-summary div:last-child,
+.modified-damage,
+.damage-value {
+  font-weight: 700;
+  color: #e53e3e;
+  font-size: 1.1em;
+}
+
+/* Highlight damage numbers in attack rolls */
+.attack-roll.hit, .attack-roll.crit {
+  position: relative;
+}
+
+.attack-roll.hit .damage-value, 
+.attack-roll.crit .damage-value {
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0px 0px 2px rgba(0, 0, 0, 0.5);
+}
+
 .attack-rolls {
   display: flex;
   flex-wrap: wrap;
@@ -859,6 +880,14 @@
   margin-bottom: 20px;
 }
 
+.hide-group-boss-button {
+  align-self: flex-start;
+}
+
+.grow {
+  flex-grow: 1
+}
+
 .entity-toggle-button {
   flex: 1;
   padding: 10px 15px;
@@ -883,10 +912,11 @@
   border-color: #2c5282;
 }
 
-/* Damage display styles */
+/* Character damage row styles for all damage modifiers */
 .character-damage-row .modified-damage {
-  font-weight: bold;
-  color: #e53e3e; /* Red color for modified damage */
+  font-weight: 700;
+  color: #e53e3e;
+  font-size: 1.1em;
 }
 
 .character-damage-row .original-damage {
@@ -897,12 +927,13 @@
 
 .character-damage-row .damage-adjustment {
   font-size: 0.85rem;
-  color: #4299e1; /* Blue color for manual adjustments */
+  color: #4299e1;
+  margin-left: 4px;
 }
 
 .character-damage-row .ac-adjustment {
   font-size: 0.85rem;
-  color: #805ad5; /* Purple color for AC adjustments */
+  color: #805ad5;
   margin-left: 4px;
 }
 
@@ -1019,6 +1050,14 @@
   margin-bottom: 8px;
   white-space: pre-line;
   font-size: 0.9rem;
+}
+
+/* Ensure damage numbers stand out in attack result messages */
+.attack-result-message .damage-number,
+.pending-attack-result .damage-number {
+  font-weight: 700;
+  color: #e53e3e;
+  font-size: 1.1em;
 }
 
 /* Selection flash animation */

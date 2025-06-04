@@ -145,6 +145,13 @@ body, html {
   font-size: 0.9rem;
 }
 
+/* Style for damage numbers in results */
+.result-details .damage-number {
+  font-weight: 700;
+  color: #e53e3e;
+  font-size: 1.1em;
+}
+
 .apply-damage-controls {
   display: flex;
   flex-wrap: wrap;

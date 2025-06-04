@@ -1313,6 +1313,29 @@
   line-height: 1.2;
 }
 
+.attack-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.dismiss-attack-button {
+  background: none;
+  border: none;
+  color: #718096;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.dismiss-attack-button:hover {
+  color: #e53e3e;
+}
+
 .damage-modifier-controls {
   display: flex;
   flex-wrap: wrap;

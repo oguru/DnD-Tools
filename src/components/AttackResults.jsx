@@ -32,9 +32,47 @@ const AttackResults = () => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+  
+  // Format message to highlight damage numbers
+  const formatMessage = (message) => {
+    if (!message) return '';
+    
+    // Add highlighting for "Damage: X" pattern
+    const damagePattern = /(Damage: )(\d+)( \w+)/g;
+    let formattedMessage = message.replace(damagePattern, '$1<span class="damage-number">$2</span>$3');
+    
+    // Add highlighting for "Total Damage: X" pattern
+    const totalDamagePattern = /(Total Damage: )(\d+)( \w+)/g;
+    formattedMessage = formattedMessage.replace(totalDamagePattern, '$1<span class="damage-number">$2</span>$3');
+    
+    // Highlight AOE damage numbers - pattern: "X damage"
+    formattedMessage = formattedMessage.replace(/(\d+)( damage)/g, 
+      '<span class="damage-number">$1</span>$2');
+    
+    // Highlight numbers in the format of "damage: X" regardless of case
+    formattedMessage = formattedMessage.replace(/(damage: )(\d+)/gi, 
+      '$1<span class="damage-number">$2</span>');
+    
+    // Highlight numbers in character AOE format "X dmg"
+    formattedMessage = formattedMessage.replace(/(\d+)( dmg)/g, 
+      '<span class="damage-number">$1</span>$2');
+    
+    // Add line breaks between targets for AoE attacks for better readability
+    if (formattedMessage.includes('AoE') || formattedMessage.includes('AOE')) {
+      // Add line breaks after semicolons (separates individual results)
+      formattedMessage = formattedMessage.replace(/; /g, ';<br />');
+      
+      // Add line breaks between boss/character/group names and their results
+      formattedMessage = formattedMessage.replace(/(to bosses - |to groups - |to characters - )/g, '$1<br />');
+    }
+    
+    return formattedMessage;
+  };
 
   // Only show the most recent maxResults, in reverse chronological order
-  const visibleResults = [...(attackResults || [])].reverse().slice(0, maxResults);
+  const visibleResults = [...(attackResults || [])]
+    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+    .slice(0, maxResults);
 
   return (
     <div className="attack-results">
@@ -74,7 +112,10 @@ const AttackResults = () => {
                         ×
                       </button>
                     </div>
-                    <pre className="result-message">{result.message}</pre>
+                    <div 
+                      className="result-message"
+                      dangerouslySetInnerHTML={{ __html: formatMessage(result.message) }}
+                    />
                   </div>
                 ))}
               </div>
