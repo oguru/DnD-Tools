@@ -6,9 +6,9 @@ import useDnDStore from '../store/dndStore';
 
 const DamageApplication = () => {
   const {
-    enemyGroups,
-    bosses,
     characters,
+    bosses,
+    enemyGroups,
     targetEntity,
     expandedSections,
     toggleSection,
@@ -18,9 +18,11 @@ const DamageApplication = () => {
     applyAoeDamageToAll,
     setDamageApplicationRef,
     aoeDamageParams,
-    updateEnemyGroup,
-    updateBoss,
-    updateCharacter
+    applyHealingToGroup,
+    applyHealingToBoss,
+    applyHealingToCharacter,
+    calculateHealthPercentage,
+    getHealthColor
   } = useDnDStore();
 
   // Local state for single target damage
@@ -75,6 +77,7 @@ const DamageApplication = () => {
         ? characters
         : characters.filter(char => char.inAoe);
       
+      // Clear previous state and only add currently affected characters
       affectedCharacters.forEach(character => {
         initialSaves[character.id] = {
           roll: '',
@@ -88,7 +91,49 @@ const DamageApplication = () => {
       setDamageModifiers(initialModifiers);
       setManualDamageAdjustments({});
     }
-  }, [showAoeSaves, characters, aoeState.applyToAll]);
+  }, [showAoeSaves, characters, aoeState.applyToAll, aoeState.saveDC, aoeState.damageAmount]);
+
+  // Add an effect to reset character saves when AoE targets change
+  useEffect(() => {
+    // When not in the saves UI, we don't need to do anything
+    if (!showAoeSaves) return;
+    
+    // Get the current affected characters
+    const affectedCharacters = aoeState.applyToAll
+      ? characters
+      : characters.filter(char => char.inAoe);
+    
+    // Get current character IDs in the saves state
+    const currentSaveIds = Object.keys(characterSaves);
+    
+    // Get the affected character IDs
+    const affectedIds = affectedCharacters.map(char => char.id);
+    
+    // Check if there are any characters in saves that aren't in the affected list
+    const hasStaleCharacters = currentSaveIds.some(id => !affectedIds.includes(id));
+    
+    // Check if there are any affected characters not in the saves
+    const hasMissingCharacters = affectedIds.some(id => !currentSaveIds.includes(id));
+    
+    // If there's a mismatch, reset the saves
+    if (hasStaleCharacters || hasMissingCharacters) {
+      const initialSaves = {};
+      const initialModifiers = {};
+      
+      affectedCharacters.forEach(character => {
+        initialSaves[character.id] = {
+          roll: '',
+          autoRoll: true,
+          succeeded: false
+        };
+        initialModifiers[character.id] = 'default';
+      });
+      
+      setCharacterSaves(initialSaves);
+      setDamageModifiers(initialModifiers);
+      setManualDamageAdjustments({});
+    }
+  }, [characters, showAoeSaves, aoeState.applyToAll, characterSaves]);
 
   // Get lists of entities marked for AoE
   const getAoeTargets = () => {
@@ -241,33 +286,16 @@ const DamageApplication = () => {
     }));
   };
   
-  // Prepare AOE damage inputs from the boss attack or user input
-  const prepareAoeDamage = () => {
-    // If AOE damage is from a boss attack, populate the form
-    if (aoeDamageParams) {
-      setAoeState(prev => ({
-        ...prev,
-        damageAmount: aoeDamageParams.damage || '',
-        saveType: aoeDamageParams.saveType || 'dex',
-        saveDC: aoeDamageParams.saveDC || 15,
-        halfOnSave: aoeDamageParams.halfOnSave !== undefined ? aoeDamageParams.halfOnSave : true
-      }));
-    }
-    
-    // Show the AOE saves UI
-    setShowAoeSaves(true);
-    
-    // Auto-roll saves for all characters
-    autoRollAllSaves();
-  };
-  
   // Auto-roll saves for a character
   const autoRollSave = (characterId) => {
     // Simple d20 roll
     const roll = Math.floor(Math.random() * 20) + 1;
     
-    // Check if save succeeds
-    const succeeded = roll >= aoeState.saveDC;
+    // Get the current save DC directly from the state (not from the closure)
+    const currentSaveDC = aoeState.saveDC;
+    
+    // Check if save succeeds against the current DC
+    const succeeded = roll >= currentSaveDC;
     
     setCharacterSaves(prev => ({
       ...prev,
@@ -296,7 +324,9 @@ const DamageApplication = () => {
   // Handle manual save roll input
   const handleSaveRollChange = (characterId, value) => {
     const roll = value === '' ? '' : parseInt(value);
-    const succeeded = roll !== '' ? roll >= aoeState.saveDC : false;
+    // Get the current save DC directly
+    const currentSaveDC = aoeState.saveDC;
+    const succeeded = roll !== '' ? roll >= currentSaveDC : false;
     
     setCharacterSaves(prev => ({
       ...prev,
@@ -333,69 +363,26 @@ const DamageApplication = () => {
     }));
   };
   
-  // Apply the AoE damage with manual saves
-  const handleApplyAoeDamageWithSaves = () => {
-    // Collect data from character save states
-    const characterDamageParams = {};
+  // Prepare AOE damage inputs from the boss attack or user input
+  const prepareAoeDamage = () => {
+    // If AOE damage is from a boss attack, populate the form
+    if (aoeDamageParams) {
+      setAoeState(prev => ({
+        ...prev,
+        damageAmount: aoeDamageParams.damage || '',
+        saveType: aoeDamageParams.saveType || 'dex',
+        saveDC: aoeDamageParams.saveDC || 15,
+        halfOnSave: aoeDamageParams.halfOnSave !== undefined ? aoeDamageParams.halfOnSave : true
+      }));
+    }
     
-    Object.entries(characterSaves).forEach(([characterId, saveInfo]) => {
-      // Parse damage from state
-      const damage = parseInt(aoeState.damageAmount);
-      
-      // Get modifier (half, quarter, none)
-      const modifier = damageModifiers[characterId] || 'none';
-      
-      // Get manual adjustment amount
-      const adjustment = manualDamageAdjustments[characterId] || 0;
-      
-      // Calculate damage with modifier applied
-      let damageToApply = damage;
-      
-      // Apply modifier
-      if (modifier === 'half') {
-        damageToApply = Math.floor(damage / 2);
-      } else if (modifier === 'quarter') {
-        damageToApply = Math.floor(damage / 4);
-      } else if (modifier === 'none') {
-        damageToApply = 0;
-      }
-      
-      // Apply manual adjustment
-      damageToApply = Math.max(0, damageToApply + adjustment);
-      
-      characterDamageParams[characterId] = {
-        damage: damageToApply,
-        saveRoll: saveInfo.roll === '' ? null : parseInt(saveInfo.roll),
-        succeeded: saveInfo.succeeded,
-        originalDamage: damage
-      };
-    });
+    // Show the AOE saves UI
+    setShowAoeSaves(true);
     
-    // Apply AoE damage with custom parameters
-    const aoeParams = {
-      damage: parseInt(aoeState.damageAmount),
-      saveType: aoeState.saveType,
-      saveDC: aoeState.saveDC,
-      halfOnSave: aoeState.halfOnSave,
-      percentAffected: aoeState.percentAffected,
-      characterDamageParams,
-      applyToAll: aoeState.applyToAll
-    };
-    
-    // Apply AOE damage to all entities in one go
-    applyAoeDamageToAll(aoeParams);
-    
-    // Reset state
-    setShowAoeSaves(false);
-    setAoeState(prev => ({
-      ...prev,
-      damageAmount: ''
-    }));
-  };
-  
-  // Cancel AoE save UI
-  const handleCancelAoeSaves = () => {
-    setShowAoeSaves(false);
+    // Delay auto-roll to ensure it uses updated state values
+    setTimeout(() => {
+      autoRollAllSaves();
+    }, 0);
   };
   
   // Handle changes to single target state
@@ -463,55 +450,6 @@ const DamageApplication = () => {
     );
   };
   
-  // Helper function to apply healing to a group
-  const applyHealingToGroup = (groupId, amount) => {
-    const group = enemyGroups.find(g => g.id === groupId);
-    if (!group || !group.creatures || amount <= 0) return;
-    
-    // Create a copy of the group
-    const updatedGroup = { ...group };
-    const updatedCreatures = [...group.creatures];
-    
-    // Sort creatures by current HP (lowest first, but exclude those with 0 HP)
-    updatedCreatures.sort((a, b) => {
-      // Dead creatures (0 HP) go last
-      if (a.hp === 0) return 1;
-      if (b.hp === 0) return -1;
-      
-      // Otherwise sort by current HP, lowest first
-      return a.hp - b.hp;
-    });
-    
-    let remainingHealing = amount;
-    
-    // Apply healing to each creature that isn't dead, starting with lowest HP
-    for (let i = 0; i < updatedCreatures.length && remainingHealing > 0; i++) {
-      const creature = updatedCreatures[i];
-      
-      // Skip dead creatures
-      if (creature.hp === 0) continue;
-      
-      const missingHP = group.maxHp - creature.hp;
-      
-      if (missingHP > 0) {
-        // Apply healing up to max HP
-        const healingToApply = Math.min(remainingHealing, missingHP);
-        creature.hp += healingToApply;
-        remainingHealing -= healingToApply;
-      }
-    }
-    
-    // Update the group with healed creatures
-    updatedGroup.creatures = updatedCreatures;
-    
-    // Calculate new current HP for the group as the average of all creatures
-    const totalCurrentHP = updatedCreatures.reduce((sum, creature) => sum + creature.hp, 0);
-    updatedGroup.currentHp = Math.round(totalCurrentHP / updatedCreatures.length);
-    
-    // Update the group in the store
-    updateEnemyGroup(groupId, null, updatedGroup);
-  };
-  
   // Get detailed group information including individual creature HP
   const getGroupDetails = (group) => {
     if (!group || !group.creatures) return null;
@@ -535,18 +473,6 @@ const DamageApplication = () => {
     };
   };
   
-  // Helper function to apply healing to a boss
-  const applyHealingToBoss = (bossId, amount) => {
-    const boss = bosses.find(b => b.id === bossId);
-    if (!boss || amount <= 0) return;
-    
-    // Calculate new HP
-    const newHP = Math.min(boss.maxHp, boss.currentHp + amount);
-    
-    // Update the boss HP
-    updateBoss(bossId, 'currentHp', newHP);
-  };
-
   // Get healable entities
   const getHealableEntities = () => {
     return {
@@ -562,20 +488,6 @@ const DamageApplication = () => {
   // Get healable entities
   const healableEntities = getHealableEntities();
 
-  // Helper function to apply healing to a character
-  const applyHealingToCharacter = (characterId, amount) => {
-    const character = characters.find(c => c.id === characterId);
-    if (!character || amount <= 0) return;
-    
-    // For characters, allow healing from 0 HP
-    // Get current character HP, making sure we don't go negative
-    const currentHp = Math.max(0, character.currentHp);
-    const newHp = Math.min(character.maxHp, currentHp + amount);
-    
-    // Use the updateCharacter function from the store
-    updateCharacter(characterId, 'currentHp', newHp);
-  };
-
   // Apply healing to multiple entities
   const handleApplyMultiHealing = () => {
     // Parse healing amount
@@ -590,14 +502,17 @@ const DamageApplication = () => {
       return;
     }
     
+    // Generate a single transaction ID for all healing operations in this batch
+    const batchTransactionId = `healing-${Date.now()}`;
+    
     // Apply healing to each selected entity
     healingState.selectedEntities.forEach(entity => {
       if (entity.type === 'group') {
-        applyHealingToGroup(entity.id, healing);
+        applyHealingToGroup(entity.id, healing, batchTransactionId);
       } else if (entity.type === 'boss') {
-        applyHealingToBoss(entity.id, healing);
+        applyHealingToBoss(entity.id, healing, batchTransactionId);
       } else if (entity.type === 'character') {
-        applyHealingToCharacter(entity.id, healing);
+        applyHealingToCharacter(entity.id, healing, batchTransactionId);
       }
     });
     
@@ -606,6 +521,71 @@ const DamageApplication = () => {
       ...prev,
       healingAmount: '',
       selectedEntities: []
+    }));
+  };
+
+  // Handle applying AOE damage with saves
+  const handleApplyAoeDamageWithSaves = () => {
+    // Collect data from character save states
+    const characterDamageParams = {};
+    
+    // Ensure we have current values
+    const currentDamage = parseInt(aoeState.damageAmount);
+    const currentSaveType = aoeState.saveType;
+    const currentSaveDC = aoeState.saveDC;
+    const currentHalfOnSave = aoeState.halfOnSave;
+    const currentPercentAffected = aoeState.percentAffected;
+    const currentApplyToAll = aoeState.applyToAll;
+    
+    Object.entries(characterSaves).forEach(([characterId, saveInfo]) => {
+      // Get modifier (half, quarter, none)
+      const modifier = damageModifiers[characterId] || 'none';
+      
+      // Get manual adjustment amount
+      const adjustment = manualDamageAdjustments[characterId] || 0;
+      
+      // Calculate damage with modifier applied
+      let damageToApply = currentDamage;
+      
+      // Apply modifier
+      if (modifier === 'half') {
+        damageToApply = Math.floor(damageToApply / 2);
+      } else if (modifier === 'quarter') {
+        damageToApply = Math.floor(damageToApply / 4);
+      } else if (modifier === 'none') {
+        damageToApply = 0;
+      }
+      
+      // Apply manual adjustment
+      damageToApply = Math.max(0, damageToApply + adjustment);
+      
+      characterDamageParams[characterId] = {
+        damage: damageToApply,
+        saveRoll: saveInfo.roll === '' ? null : parseInt(saveInfo.roll),
+        succeeded: saveInfo.succeeded,
+        originalDamage: currentDamage
+      };
+    });
+    
+    // Apply AoE damage with custom parameters
+    const aoeParams = {
+      damage: currentDamage,
+      saveType: currentSaveType,
+      saveDC: currentSaveDC,
+      halfOnSave: currentHalfOnSave,
+      percentAffected: currentPercentAffected,
+      characterDamageParams,
+      applyToAll: currentApplyToAll
+    };
+    
+    // Apply AOE damage to all entities in one go
+    applyAoeDamageToAll(aoeParams);
+    
+    // Reset state
+    setShowAoeSaves(false);
+    setAoeState(prev => ({
+      ...prev,
+      damageAmount: ''
     }));
   };
 
@@ -926,9 +906,9 @@ const DamageApplication = () => {
                             </div>
                             <div>
                               {(() => {
-                                // Calculate damage
-                                let baseDamage = aoeState.damageAmount;
-                                let finalDamage = parseInt(baseDamage);
+                                // Calculate damage - ensure we're using current values
+                                const currentDamage = parseInt(aoeState.damageAmount);
+                                let finalDamage = isNaN(currentDamage) ? 0 : currentDamage;
                                 
                                 if (modifier === 'half') {
                                   finalDamage = Math.floor(finalDamage / 2);
@@ -946,7 +926,7 @@ const DamageApplication = () => {
                                     <span className="damage-value">{finalDamage}</span>
                                     {(modifier !== 'default' || adjustment !== 0) && (
                                       <small className="damage-details">
-                                        {' '}(Base: {baseDamage}
+                                        {' '}(Base: {aoeState.damageAmount}
                                         {modifier !== 'default' && `, ${modifier}`}
                                         {adjustment !== 0 && `, ${adjustment > 0 ? '+' : ''}${adjustment}`})
                                       </small>
@@ -1021,7 +1001,7 @@ const DamageApplication = () => {
                   <div className="aoe-saves-footer">
                     <button
                       className="cancel-button"
-                      onClick={handleCancelAoeSaves}
+                      onClick={() => setShowAoeSaves(false)}
                     >
                       Cancel
                     </button>
@@ -1070,16 +1050,29 @@ const DamageApplication = () => {
                     <div className="entity-select-section">
                       <h6>Characters</h6>
                       <div className="entity-select-grid">
-                        {healableEntities.characters.map(character => (
-                          <div 
-                            key={`character-${character.id}`}
-                            className={`entity-select-item ${isEntitySelectedForHealing('character', character.id) ? 'selected' : ''}`}
-                            onClick={() => toggleEntityForHealing('character', character.id)}
-                          >
-                            <span className="entity-name">{character.name}</span>
-                            <span className="entity-hp">{character.currentHp}/{character.maxHp} HP</span>
-                          </div>
-                        ))}
+                        {healableEntities.characters.map(character => {
+                          const healthPercentage = calculateHealthPercentage(character.currentHp, character.maxHp);
+                          const healthColor = getHealthColor(healthPercentage);
+                          return (
+                            <div 
+                              key={`character-${character.id}`}
+                              className={`entity-select-item ${isEntitySelectedForHealing('character', character.id) ? 'selected' : ''}`}
+                              onClick={() => toggleEntityForHealing('character', character.id)}
+                            >
+                              <span className="entity-name">{character.name}</span>
+                              <span className="entity-hp">{character.currentHp}/{character.maxHp} HP</span>
+                              <div className="health-bar-container">
+                                <div 
+                                  className="health-bar" 
+                                  style={{
+                                    width: `${healthPercentage}%`,
+                                    backgroundColor: healthColor
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1138,16 +1131,29 @@ const DamageApplication = () => {
                     <div className="entity-select-section">
                       <h6>Bosses</h6>
                       <div className="entity-select-grid">
-                        {healableEntities.bosses.map(boss => (
-                          <div 
-                            key={`boss-${boss.id}`}
-                            className={`entity-select-item ${isEntitySelectedForHealing('boss', boss.id) ? 'selected' : ''}`}
-                            onClick={() => toggleEntityForHealing('boss', boss.id)}
-                          >
-                            <span className="entity-name">{boss.name}</span>
-                            <span className="entity-hp">{boss.currentHp}/{boss.maxHp} HP</span>
-                          </div>
-                        ))}
+                        {healableEntities.bosses.map(boss => {
+                          const healthPercentage = calculateHealthPercentage(boss.currentHp, boss.maxHp);
+                          const healthColor = getHealthColor(healthPercentage);
+                          return (
+                            <div 
+                              key={`boss-${boss.id}`}
+                              className={`entity-select-item ${isEntitySelectedForHealing('boss', boss.id) ? 'selected' : ''}`}
+                              onClick={() => toggleEntityForHealing('boss', boss.id)}
+                            >
+                              <span className="entity-name">{boss.name}</span>
+                              <span className="entity-hp">{boss.currentHp}/{boss.maxHp} HP</span>
+                              <div className="health-bar-container">
+                                <div 
+                                  className="health-bar" 
+                                  style={{
+                                    width: `${healthPercentage}%`,
+                                    backgroundColor: healthColor
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

@@ -2823,6 +2823,167 @@ const useDnDStore = create((set, get) => {
       
       return resultMessage;
     },
+    
+    // Helper function to apply healing to a character
+    applyHealingToCharacter: (characterId, amount, transactionId = null) => {
+      const character = get().characters.find(c => c.id === characterId);
+      if (!character || amount <= 0) return;
+      
+      // For characters, allow healing from 0 HP
+      // Get current character HP, making sure we don't go negative
+      const currentHp = Math.max(0, character.currentHp);
+      const newHp = Math.min(character.maxHp, currentHp + amount);
+      
+      // Generate transaction ID if not provided
+      const healingId = transactionId || Date.now().toString();
+      
+      // Use the updateCharacter function to update the HP
+      set(state => {
+        const updatedCharacters = state.characters.map(char => {
+          if (char.id === characterId) {
+            return { ...char, currentHp: newHp };
+          }
+          return char;
+        });
+        
+        localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
+        
+        // Add to attack results
+        return { 
+          characters: updatedCharacters,
+          attackResults: [
+            ...state.attackResults,
+            {
+              id: healingId + '-' + characterId,
+              characterId,
+              healing: amount,
+              message: `Healing! ${amount} healing to ${character.name}`,
+              isHealing: true,
+              timestamp: Date.now()
+            }
+          ]
+        };
+      });
+    },
+    
+    // Helper function to apply healing to a boss
+    applyHealingToBoss: (bossId, amount, transactionId = null) => {
+      const boss = get().bosses.find(b => b.id === bossId);
+      if (!boss || amount <= 0) return;
+      
+      // Calculate new HP
+      const newHP = Math.min(boss.maxHp, boss.currentHp + amount);
+      
+      // Generate transaction ID if not provided
+      const healingId = transactionId || Date.now().toString();
+      
+      // Update the boss HP
+      set(state => {
+        const updatedBosses = state.bosses.map(b => {
+          if (b.id === bossId) {
+            return { ...b, currentHp: newHP };
+          }
+          return b;
+        });
+        
+        localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+        
+        // Add to attack results
+        return { 
+          bosses: updatedBosses,
+          attackResults: [
+            ...state.attackResults,
+            {
+              id: healingId + '-' + bossId,
+              bossId,
+              healing: amount,
+              message: `Healing! ${amount} healing to ${boss.name}`,
+              isHealing: true,
+              timestamp: Date.now()
+            }
+          ]
+        };
+      });
+    },
+    
+    // Helper function to apply healing to a group
+    applyHealingToGroup: (groupId, amount, transactionId = null) => {
+      const group = get().enemyGroups.find(g => g.id === groupId);
+      if (!group || !group.creatures || amount <= 0) return;
+      
+      // Create a copy of the group
+      const updatedGroup = { ...group };
+      const updatedCreatures = [...group.creatures];
+      
+      // Sort creatures by current HP (lowest first, but exclude those with 0 HP)
+      updatedCreatures.sort((a, b) => {
+        // Dead creatures (0 HP) go last
+        if (a.hp === 0) return 1;
+        if (b.hp === 0) return -1;
+        
+        // Otherwise sort by current HP, lowest first
+        return a.hp - b.hp;
+      });
+      
+      let remainingHealing = amount;
+      let healedCreatureCount = 0;
+      
+      // Apply healing to each creature that isn't dead, starting with lowest HP
+      for (let i = 0; i < updatedCreatures.length && remainingHealing > 0; i++) {
+        const creature = updatedCreatures[i];
+        
+        // Skip dead creatures
+        if (creature.hp === 0) continue;
+        
+        const missingHP = group.maxHp - creature.hp;
+        
+        if (missingHP > 0) {
+          // Apply healing up to max HP
+          const healingToApply = Math.min(remainingHealing, missingHP);
+          creature.hp += healingToApply;
+          remainingHealing -= healingToApply;
+          healedCreatureCount++;
+        }
+      }
+      
+      // Update the group with healed creatures
+      updatedGroup.creatures = updatedCreatures;
+      
+      // Calculate new current HP for the group as the average of all creatures
+      const totalHP = updatedCreatures.reduce((sum, creature) => sum + creature.hp, 0);
+      updatedGroup.currentHp = Math.round(totalHP / updatedCreatures.length);
+      
+      // Generate transaction ID if not provided
+      const healingId = transactionId || Date.now().toString();
+      
+      // Update the group in the store
+      set(state => {
+        const updatedGroups = state.enemyGroups.map(g => {
+          if (g.id === groupId) {
+            return updatedGroup;
+          }
+          return g;
+        });
+        
+        localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
+        
+        // Add to attack results
+        return { 
+          enemyGroups: updatedGroups,
+          attackResults: [
+            ...state.attackResults,
+            {
+              id: healingId + '-' + groupId,
+              groupId,
+              healing: amount,
+              message: `Healing! ${amount} healing to ${healedCreatureCount} creatures in ${group.name}`,
+              isHealing: true,
+              timestamp: Date.now()
+            }
+          ]
+        };
+      });
+    },
   };
 });
 

@@ -130,6 +130,13 @@
   font-size: 1.1em;
 }
 
+/* Style for healing numbers */
+.healing-number {
+  font-weight: 700;
+  color: #38a169;  /* Green color */
+  font-size: 1.1em;
+}
+
 /* Improved formatting for the attack result message */
 .result-message {
   margin: 0;
