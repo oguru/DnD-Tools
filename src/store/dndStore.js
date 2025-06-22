@@ -1504,7 +1504,7 @@ const useDnDStore = create((set, get) => {
     // Export/Import
     exportState: () => {
       const { characters, bosses, enemyGroups } = get();
-      const exportData = JSON.stringify({ characters, bosses, enemyGroups });
+      const exportData = JSON.stringify({ characters, bosses, enemyGroups }, null, 2);
       
       // Create a blob with the data
       const blob = new Blob([exportData], { type: 'application/json' });
@@ -1570,8 +1570,8 @@ const useDnDStore = create((set, get) => {
         }
       }
       
-      // Create a blob with the data
-      const jsonData = JSON.stringify(exportData);
+      // Create a blob with the data - use pretty formatting with indentation
+      const jsonData = JSON.stringify(exportData, null, 2);
       const blob = new Blob([jsonData], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       
