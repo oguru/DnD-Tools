@@ -184,6 +184,11 @@ const DamageApplication = () => {
           if (damageInput) damageInput.focus();
         }, 500);
       }
+      
+      // Clear aoeDamageParams from the store after using it
+      setTimeout(() => {
+        useDnDStore.getState().prepareAoeDamage(null);
+      }, 100);
     }
   }, [aoeDamageParams]);
 
@@ -374,6 +379,11 @@ const DamageApplication = () => {
         saveDC: aoeDamageParams.saveDC || 15,
         halfOnSave: aoeDamageParams.halfOnSave !== undefined ? aoeDamageParams.halfOnSave : true
       }));
+      
+      // Clear aoeDamageParams from the store after using it
+      setTimeout(() => {
+        useDnDStore.getState().prepareAoeDamage(null);
+      }, 100);
     }
     
     // Show the AOE saves UI
@@ -407,6 +417,9 @@ const DamageApplication = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    
+    // Clear any stale aoeDamageParams when user manually changes values
+    useDnDStore.getState().prepareAoeDamage(null);
   };
 
   // Add a variable to check if AOE damage is coming from a boss attack
@@ -587,6 +600,9 @@ const DamageApplication = () => {
       ...prev,
       damageAmount: ''
     }));
+    
+    // Ensure aoeDamageParams is cleared
+    useDnDStore.getState().prepareAoeDamage(null);
   };
 
   // Apply AOE damage without showing manual saves UI
