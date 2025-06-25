@@ -125,6 +125,7 @@ const useDnDStore = create((set, get) => {
         name: character.name || '',
         maxHp: character.maxHp || 0,
         currentHp: character.currentHp || 0,
+        tempHp: character.tempHp || 0,
         ac: character.ac || 0,
         initiative: character.initiative || 0,
         inAoe: false
@@ -183,6 +184,32 @@ const useDnDStore = create((set, get) => {
           ...char,
           currentHp: char.maxHp
         }));
+        localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
+        return { characters: updatedCharacters };
+      });
+    },
+    
+    clearTemporaryHitPoints: () => {
+      set(state => {
+        const updatedCharacters = state.characters.map(char => ({
+          ...char,
+          tempHp: 0
+        }));
+        localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
+        return { characters: updatedCharacters };
+      });
+    },
+    
+    setTemporaryHitPoints: (characterId, amount) => {
+      if (amount < 0) amount = 0;
+      
+      set(state => {
+        const updatedCharacters = state.characters.map(char => {
+          if (char.id === characterId) {
+            return { ...char, tempHp: amount };
+          }
+          return char;
+        });
         localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
         return { characters: updatedCharacters };
       });
@@ -1191,9 +1218,30 @@ const useDnDStore = create((set, get) => {
               return char;
             }
             
-            // Calculate new HP, ensuring it doesn't go below 0
-            const newHp = Math.max(0, char.currentHp - damage);
-            return { ...char, currentHp: newHp };
+            // First apply damage to temporary hit points
+            let remainingDamage = damage;
+            let newTempHp = char.tempHp || 0;
+            
+            if (newTempHp > 0) {
+              if (newTempHp >= remainingDamage) {
+                // Temp HP absorbs all damage
+                newTempHp -= remainingDamage;
+                remainingDamage = 0;
+              } else {
+                // Temp HP absorbs part of the damage
+                remainingDamage -= newTempHp;
+                newTempHp = 0;
+              }
+            }
+            
+            // Apply any remaining damage to current HP
+            const newHp = Math.max(0, char.currentHp - remainingDamage);
+            
+            return { 
+              ...char, 
+              currentHp: newHp,
+              tempHp: newTempHp 
+            };
           }
           return char;
         });
@@ -1253,8 +1301,30 @@ const useDnDStore = create((set, get) => {
             
             // Apply damage
             if (customDamage > 0) {
-              const newHp = Math.max(0, char.currentHp - customDamage);
-              return { ...char, currentHp: newHp };
+              // First apply damage to temporary hit points
+              let remainingDamage = customDamage;
+              let newTempHp = char.tempHp || 0;
+              
+              if (newTempHp > 0) {
+                if (newTempHp >= remainingDamage) {
+                  // Temp HP absorbs all damage
+                  newTempHp -= remainingDamage;
+                  remainingDamage = 0;
+                } else {
+                  // Temp HP absorbs part of the damage
+                  remainingDamage -= newTempHp;
+                  newTempHp = 0;
+                }
+              }
+              
+              // Apply any remaining damage to current HP
+              const newHp = Math.max(0, char.currentHp - remainingDamage);
+              
+              return { 
+                ...char, 
+                currentHp: newHp,
+                tempHp: newTempHp 
+              };
             }
             
             return char;
@@ -1276,8 +1346,30 @@ const useDnDStore = create((set, get) => {
           
           // Apply damage
           if (damageToApply > 0) {
-            const newHp = Math.max(0, char.currentHp - damageToApply);
-            return { ...char, currentHp: newHp };
+            // First apply damage to temporary hit points
+            let remainingDamage = damageToApply;
+            let newTempHp = char.tempHp || 0;
+            
+            if (newTempHp > 0) {
+              if (newTempHp >= remainingDamage) {
+                // Temp HP absorbs all damage
+                newTempHp -= remainingDamage;
+                remainingDamage = 0;
+              } else {
+                // Temp HP absorbs part of the damage
+                remainingDamage -= newTempHp;
+                newTempHp = 0;
+              }
+            }
+            
+            // Apply any remaining damage to current HP
+            const newHp = Math.max(0, char.currentHp - remainingDamage);
+            
+            return { 
+              ...char, 
+              currentHp: newHp,
+              tempHp: newTempHp 
+            };
           }
           
           return char;
@@ -1801,53 +1893,88 @@ const useDnDStore = create((set, get) => {
           
           if (finalDamage <= 0) return char;
           
-          // Calculate new HP
-          const newHp = Math.max(0, char.currentHp - finalDamage);
-          console.log(`Final damage applied to ${char.name}: ${finalDamage} (HP: ${char.currentHp} -> ${newHp})`);
+          // First apply damage to temporary hit points
+          let remainingDamage = finalDamage;
+          let newTempHp = char.tempHp || 0;
           
-          return { ...char, currentHp: newHp };
+          if (newTempHp > 0) {
+            if (newTempHp >= remainingDamage) {
+              // Temp HP absorbs all damage
+              newTempHp -= remainingDamage;
+              remainingDamage = 0;
+            } else {
+              // Temp HP absorbs part of the damage
+              remainingDamage -= newTempHp;
+              newTempHp = 0;
+            }
+          }
+          
+          // Apply any remaining damage to current HP
+          const newHp = Math.max(0, char.currentHp - remainingDamage);
+          console.log(`Final damage applied to ${char.name}: ${finalDamage} (HP: ${char.currentHp} -> ${newHp}, Temp HP: ${char.tempHp || 0} -> ${newTempHp})`);
+          
+          return { 
+            ...char, 
+            currentHp: newHp,
+            tempHp: newTempHp
+          };
         });
         
         localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
         
-        // Create attack result messages
+        // Prepare result messages for the attack results
         const resultMessages = damageDetails.map(detail => {
           if (!detail.characterId) return null;
           
           const character = state.characters.find(c => c.id === detail.characterId);
           if (!character) return null;
           
-          let modifierText = '';
+          // Calculate final damage with modifiers
           let finalDamage = detail.damage;
           
-          // Apply AC override text if applicable
-          let acText = '';
-          if (detail.acOverride !== null && detail.acOverride !== undefined && detail.acOverride !== character.ac) {
-            acText = ` (AC: ${detail.acOverride}`;
-            // Add hit information if available
-            if (detail.hitCount !== undefined && detail.adjustedHitCount !== undefined) {
-              acText += `, Hits: ${detail.adjustedHitCount}/${detail.hitCount}`;
+          // Apply AC override adjustment if needed
+          if (detail.acOverride !== null && 
+              detail.acOverride !== undefined && 
+              character.ac !== detail.acOverride && 
+              detail.attackRolls && 
+              detail.adjustedHitCount === undefined) {
+            
+            const newHitCount = detail.attackRolls.filter(roll => 
+              roll.isNatural20 || (!roll.isNatural1 && roll.attackRoll >= detail.acOverride)
+            ).length;
+            
+            if (detail.hitCount) {
+              const hitRatio = newHitCount / detail.hitCount;
+              finalDamage = Math.floor(finalDamage * hitRatio);
             }
-            acText += ')';
           }
           
-          // Apply manual adjustment text if applicable
+          // Apply damage modifier if not pre-calculated
+          if (!detail.damagePreCalculated) {
+            if (detail.modifier === 'half') {
+              finalDamage = Math.floor(finalDamage / 2);
+            } else if (detail.modifier === 'quarter') {
+              finalDamage = Math.floor(finalDamage / 4);
+            } else if (detail.modifier === 'none') {
+              finalDamage = 0;
+            }
+          }
+          
+          // Format additional text for result message
+          let acText = '';
+          if (detail.acOverride !== null && detail.acOverride !== undefined && character.ac !== detail.acOverride) {
+            acText = ` (AC override: ${detail.acOverride})`;
+          }
+          
           let adjustmentText = '';
-          if (detail.manualAdjustment && detail.manualAdjustment !== 0) {
-            adjustmentText = detail.manualAdjustment > 0 
-              ? ` (+${detail.manualAdjustment} manual)`
-              : ` (${detail.manualAdjustment} manual)`;
+          if (detail.manualAdjustment) {
+            const sign = detail.manualAdjustment > 0 ? '+' : '';
+            adjustmentText = ` (Adjustment: ${sign}${detail.manualAdjustment})`;
           }
           
-          // Use originalModifier if available, otherwise use modifier
-          const displayModifier = detail.originalModifier || detail.modifier;
-          
-          if (displayModifier === 'half') {
-            modifierText = ' (half damage)';
-          } else if (displayModifier === 'quarter') {
-            modifierText = ' (quarter damage)';
-          } else if (displayModifier === 'none') {
-            modifierText = ' (no damage)';
+          let modifierText = '';
+          if (detail.originalModifier && detail.originalModifier !== 'full' && detail.originalModifier !== 'default') {
+            modifierText = ` (${detail.originalModifier} damage)`;
           }
           
           return {
@@ -2768,8 +2895,30 @@ const useDnDStore = create((set, get) => {
             
             // Apply damage
             if (customDamage > 0) {
-              const newHp = Math.max(0, char.currentHp - customDamage);
-              return { ...char, currentHp: newHp };
+              // First apply damage to temporary hit points
+              let remainingDamage = customDamage;
+              let newTempHp = char.tempHp || 0;
+              
+              if (newTempHp > 0) {
+                if (newTempHp >= remainingDamage) {
+                  // Temp HP absorbs all damage
+                  newTempHp -= remainingDamage;
+                  remainingDamage = 0;
+                } else {
+                  // Temp HP absorbs part of the damage
+                  remainingDamage -= newTempHp;
+                  newTempHp = 0;
+                }
+              }
+              
+              // Apply any remaining damage to current HP
+              const newHp = Math.max(0, char.currentHp - remainingDamage);
+              
+              return { 
+                ...char, 
+                currentHp: newHp,
+                tempHp: newTempHp 
+              };
             }
             
             return char;
@@ -2791,8 +2940,30 @@ const useDnDStore = create((set, get) => {
           
           // Apply damage
           if (damageToApply > 0) {
-            const newHp = Math.max(0, char.currentHp - damageToApply);
-            return { ...char, currentHp: newHp };
+            // First apply damage to temporary hit points
+            let remainingDamage = damageToApply;
+            let newTempHp = char.tempHp || 0;
+            
+            if (newTempHp > 0) {
+              if (newTempHp >= remainingDamage) {
+                // Temp HP absorbs all damage
+                newTempHp -= remainingDamage;
+                remainingDamage = 0;
+              } else {
+                // Temp HP absorbs part of the damage
+                remainingDamage -= newTempHp;
+                newTempHp = 0;
+              }
+            }
+            
+            // Apply any remaining damage to current HP
+            const newHp = Math.max(0, char.currentHp - remainingDamage);
+            
+            return { 
+              ...char, 
+              currentHp: newHp,
+              tempHp: newTempHp 
+            };
           }
           
           return char;

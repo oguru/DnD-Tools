@@ -102,7 +102,7 @@
 
 .characters-header {
   display: grid;
-  grid-template-columns: 1.5fr 0.7fr 0.7fr 0.5fr 0.7fr 1.5fr 0.8fr;
+  grid-template-columns: 1.5fr 0.7fr 0.7fr 0.7fr 0.5fr 0.7fr 1.5fr 0.8fr;
   gap: 0.5rem;
   font-weight: 600;
   color: #4a5568;
@@ -112,7 +112,7 @@
 
 .character-row {
   display: grid;
-  grid-template-columns: 1.5fr 0.7fr 0.7fr 0.5fr 0.7fr 1.5fr 0.8fr;
+  grid-template-columns: 1.5fr 0.7fr 0.7fr 0.7fr 0.5fr 0.7fr 1.5fr 0.8fr;
   gap: 0.5rem;
   padding: 0.5rem;
   border-radius: 4px;
@@ -255,15 +255,28 @@
   background-color: #c53030;
 }
 
+.clear-temp-hp-button {
+  background-color: #ed8936;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.clear-temp-hp-button:hover {
+  background-color: #dd6b20;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .characters-header {
-    grid-template-columns: 1.2fr 0.6fr 0.6fr 0.4fr 1fr 0.8fr;
-    font-size: 0.8rem;
+    grid-template-columns: 1.5fr 0.7fr 0.7fr 0.7fr 0.5fr 0.7fr 1.5fr 0.8fr;
   }
   
   .character-row {
-    grid-template-columns: 1.2fr 0.6fr 0.6fr 0.4fr 1fr 0.8fr;
+    grid-template-columns: 1.5fr 0.7fr 0.7fr 0.7fr 0.5fr 0.7fr 1.5fr 0.8fr;
   }
   
   .character-field input {
@@ -296,15 +309,13 @@
   }
   
   .characters-header {
-    display: none;
+    grid-template-columns: 1fr 0.6fr 0.6fr 0.6fr 0.5fr 0.6fr 1fr 0.8fr;
+    font-size: 0.8rem;
   }
   
   .character-row {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: repeat(3, auto);
-    gap: 0.5rem;
-    padding: 0.75rem;
-    border: 1px solid #e2e8f0;
+    grid-template-columns: 1fr 0.6fr 0.6fr 0.6fr 0.5fr 0.6fr 1fr 0.8fr;
+    font-size: 0.8rem;
   }
   
   .character-row > div:nth-child(1) {

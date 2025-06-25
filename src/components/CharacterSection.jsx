@@ -14,6 +14,7 @@ const CharacterSection = () => {
     toggleSection,
     addCharacter,
     resetCharacters,
+    clearTemporaryHitPoints,
     calculateHealthPercentage,
     getHealthColor,
     setTargetEntity,
@@ -135,6 +136,7 @@ const CharacterSection = () => {
       name: `Player ${index}`,
       maxHp: 50,
       currentHp: 50,
+      tempHp: 0,
       ac: 15
     });
   };
@@ -169,6 +171,7 @@ const CharacterSection = () => {
         name: '',
         maxHp: 0,
         currentHp: 0,
+        tempHp: 0,
         ac: 0
       };
       return [...allCharacters, emptyChar];
@@ -196,13 +199,22 @@ const CharacterSection = () => {
             {expandedSections.characters ? 'Hide Characters' : 'Show Characters'}
           </button>
           {characters.length > 0 && (
-            <button
-              className="reset-characters-button"
-              onClick={resetCharacters}
-              title="Reset all character HP to max"
-            >
-              Reset HP
-            </button>
+            <>
+              <button
+                className="reset-characters-button"
+                onClick={resetCharacters}
+                title="Reset all character HP to max"
+              >
+                Reset HP
+              </button>
+              <button
+                className="clear-temp-hp-button"
+                onClick={clearTemporaryHitPoints}
+                title="Clear all temporary hit points"
+              >
+                Clear Temp HP
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -213,6 +225,7 @@ const CharacterSection = () => {
             <div className="characters-header">
               <div>Name</div>
               <div>HP</div>
+              <div>Temp HP</div>
               <div>Max HP</div>
               <div>AC</div>
               <div>Initiative</div>
@@ -255,6 +268,16 @@ const CharacterSection = () => {
                       min="0"
                       max={character.maxHp}
                       placeholder="HP"
+                      className={isEmpty ? 'empty-field' : ''}
+                    />
+                  </div>
+                  <div className="character-field">
+                    <input
+                      type="number"
+                      value={character.tempHp || ''}
+                      onChange={(e) => handleCharacterChange(character.id, 'tempHp', e.target.value)}
+                      min="0"
+                      placeholder="Temp"
                       className={isEmpty ? 'empty-field' : ''}
                     />
                   </div>
