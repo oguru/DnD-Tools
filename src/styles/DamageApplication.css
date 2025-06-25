@@ -1685,4 +1685,14 @@
   height: 100%;
   transition: width 0.3s ease, background-color 0.3s ease;
   min-width: 2px;
+}
+
+.entity-table-header {
+  margin-top: 15px;
+  margin-bottom: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4a5568;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 5px;
 } 

@@ -79,19 +79,74 @@ const DamageApplication = () => {
       
       // Clear previous state and only add currently affected characters
       affectedCharacters.forEach(character => {
-        initialSaves[character.id] = {
+        initialSaves[`character-${character.id}`] = {
           roll: '',
-          autoRoll: true, // Default to auto-roll
-          succeeded: false
+          autoRoll: true,
+          succeeded: false,
+          entityType: 'character'
         };
-        initialModifiers[character.id] = 'default'; // Default, half, none
+        initialModifiers[`character-${character.id}`] = 'default';
+      });
+      
+      // Add bosses to the saves state and auto-roll their saves
+      const affectedBosses = aoeState.applyToAll
+        ? bosses
+        : bosses.filter(boss => boss.inAoe);
+        
+      affectedBosses.forEach(boss => {
+        // Calculate save bonus for this boss
+        const saveBonus = boss.savingThrows?.[aoeState.saveType] || 0;
+        
+        // Auto-roll save
+        const roll = Math.floor(Math.random() * 20) + 1;
+        const totalRoll = roll + saveBonus;
+        const succeeded = totalRoll >= aoeState.saveDC;
+        
+        initialSaves[`boss-${boss.id}`] = {
+          roll: roll,
+          totalRoll: totalRoll,
+          saveBonus: saveBonus,
+          autoRoll: true,
+          succeeded: succeeded,
+          entityType: 'boss'
+        };
+        
+        // Set damage modifier based on save result
+        initialModifiers[`boss-${boss.id}`] = succeeded && aoeState.halfOnSave ? 'half' : 'default';
+      });
+      
+      // Add enemy groups to the saves state and auto-roll their saves
+      const affectedGroups = aoeState.applyToAll
+        ? enemyGroups
+        : enemyGroups.filter(group => group.inAoe);
+        
+      affectedGroups.forEach(group => {
+        // Calculate save bonus for this group
+        const saveBonus = group.savingThrows?.[aoeState.saveType] || 0;
+        
+        // Auto-roll save
+        const roll = Math.floor(Math.random() * 20) + 1;
+        const totalRoll = roll + saveBonus;
+        const succeeded = totalRoll >= aoeState.saveDC;
+        
+        initialSaves[`group-${group.id}`] = {
+          roll: roll,
+          totalRoll: totalRoll,
+          saveBonus: saveBonus,
+          autoRoll: true,
+          succeeded: succeeded,
+          entityType: 'group'
+        };
+        
+        // Set damage modifier based on save result
+        initialModifiers[`group-${group.id}`] = succeeded && aoeState.halfOnSave ? 'half' : 'default';
       });
       
       setCharacterSaves(initialSaves);
       setDamageModifiers(initialModifiers);
       setManualDamageAdjustments({});
     }
-  }, [showAoeSaves, characters, aoeState.applyToAll, aoeState.saveDC, aoeState.damageAmount]);
+  }, [showAoeSaves, characters, bosses, enemyGroups, aoeState.applyToAll, aoeState.saveDC, aoeState.damageAmount, aoeState.saveType, aoeState.halfOnSave]);
 
   // Add an effect to reset character saves when AoE targets change
   useEffect(() => {
@@ -102,38 +157,97 @@ const DamageApplication = () => {
     const affectedCharacters = aoeState.applyToAll
       ? characters
       : characters.filter(char => char.inAoe);
+      
+    // Get the current affected bosses
+    const affectedBosses = aoeState.applyToAll
+      ? bosses
+      : bosses.filter(boss => boss.inAoe);
+      
+    // Get the current affected groups
+    const affectedGroups = aoeState.applyToAll
+      ? enemyGroups
+      : enemyGroups.filter(group => group.inAoe);
     
-    // Get current character IDs in the saves state
+    // Get current entity IDs in the saves state
     const currentSaveIds = Object.keys(characterSaves);
     
-    // Get the affected character IDs
-    const affectedIds = affectedCharacters.map(char => char.id);
+    // Get the affected entity IDs
+    const affectedIds = [
+      ...affectedCharacters.map(char => `character-${char.id}`),
+      ...affectedBosses.map(boss => `boss-${boss.id}`),
+      ...affectedGroups.map(group => `group-${group.id}`)
+    ];
     
-    // Check if there are any characters in saves that aren't in the affected list
-    const hasStaleCharacters = currentSaveIds.some(id => !affectedIds.includes(id));
+    // Check if there are any entities in saves that aren't in the affected list
+    const hasStaleEntities = currentSaveIds.some(id => !affectedIds.includes(id));
     
-    // Check if there are any affected characters not in the saves
-    const hasMissingCharacters = affectedIds.some(id => !currentSaveIds.includes(id));
+    // Check if there are any affected entities not in the saves
+    const hasMissingEntities = affectedIds.some(id => !currentSaveIds.includes(id));
     
     // If there's a mismatch, reset the saves
-    if (hasStaleCharacters || hasMissingCharacters) {
+    if (hasStaleEntities || hasMissingEntities) {
       const initialSaves = {};
       const initialModifiers = {};
       
       affectedCharacters.forEach(character => {
-        initialSaves[character.id] = {
+        initialSaves[`character-${character.id}`] = {
           roll: '',
           autoRoll: true,
-          succeeded: false
+          succeeded: false,
+          entityType: 'character'
         };
-        initialModifiers[character.id] = 'default';
+        initialModifiers[`character-${character.id}`] = 'default';
+      });
+      
+      affectedBosses.forEach(boss => {
+        // Calculate save bonus for this boss
+        const saveBonus = boss.savingThrows?.[aoeState.saveType] || 0;
+        
+        // Auto-roll save
+        const roll = Math.floor(Math.random() * 20) + 1;
+        const totalRoll = roll + saveBonus;
+        const succeeded = totalRoll >= aoeState.saveDC;
+        
+        initialSaves[`boss-${boss.id}`] = {
+          roll: roll,
+          totalRoll: totalRoll,
+          saveBonus: saveBonus,
+          autoRoll: true,
+          succeeded: succeeded,
+          entityType: 'boss'
+        };
+        
+        // Set damage modifier based on save result
+        initialModifiers[`boss-${boss.id}`] = succeeded && aoeState.halfOnSave ? 'half' : 'default';
+      });
+      
+      affectedGroups.forEach(group => {
+        // Calculate save bonus for this group
+        const saveBonus = group.savingThrows?.[aoeState.saveType] || 0;
+        
+        // Auto-roll save
+        const roll = Math.floor(Math.random() * 20) + 1;
+        const totalRoll = roll + saveBonus;
+        const succeeded = totalRoll >= aoeState.saveDC;
+        
+        initialSaves[`group-${group.id}`] = {
+          roll: roll,
+          totalRoll: totalRoll,
+          saveBonus: saveBonus,
+          autoRoll: true,
+          succeeded: succeeded,
+          entityType: 'group'
+        };
+        
+        // Set damage modifier based on save result
+        initialModifiers[`group-${group.id}`] = succeeded && aoeState.halfOnSave ? 'half' : 'default';
       });
       
       setCharacterSaves(initialSaves);
       setDamageModifiers(initialModifiers);
       setManualDamageAdjustments({});
     }
-  }, [characters, showAoeSaves, aoeState.applyToAll, characterSaves]);
+  }, [characters, bosses, enemyGroups, showAoeSaves, aoeState.applyToAll, characterSaves, aoeState.saveType, aoeState.saveDC, aoeState.halfOnSave]);
 
   // Get lists of entities marked for AoE
   const getAoeTargets = () => {
@@ -291,22 +405,45 @@ const DamageApplication = () => {
     }));
   };
   
-  // Auto-roll saves for a character
-  const autoRollSave = (characterId) => {
+  // Auto-roll saves for an entity
+  const autoRollSave = (entityId) => {
+    // Parse entity type and ID from the composite key
+    const [entityType, id] = entityId.split('-');
+    
+    // Get the current save DC and save type
+    const currentSaveDC = aoeState.saveDC;
+    const currentSaveType = aoeState.saveType;
+    
+    // Calculate save bonus based on entity type
+    let saveBonus = 0;
+    
+    if (entityType === 'boss') {
+      const boss = bosses.find(b => b.id === id);
+      if (boss && boss.savingThrows && currentSaveType) {
+        saveBonus = boss.savingThrows[currentSaveType] || 0;
+      }
+    } else if (entityType === 'group') {
+      const group = enemyGroups.find(g => g.id === id);
+      if (group && group.savingThrows && currentSaveType) {
+        saveBonus = group.savingThrows[currentSaveType] || 0;
+      }
+    }
+    // Characters don't have saving throw bonuses in this system
+    
     // Simple d20 roll
     const roll = Math.floor(Math.random() * 20) + 1;
-    
-    // Get the current save DC directly from the state (not from the closure)
-    const currentSaveDC = aoeState.saveDC;
+    const totalRoll = roll + saveBonus;
     
     // Check if save succeeds against the current DC
-    const succeeded = roll >= currentSaveDC;
+    const succeeded = totalRoll >= currentSaveDC;
     
     setCharacterSaves(prev => ({
       ...prev,
-      [characterId]: {
-        ...prev[characterId],
+      [entityId]: {
+        ...prev[entityId],
         roll: roll,
+        totalRoll: totalRoll,
+        saveBonus: saveBonus,
         autoRoll: true,
         succeeded
       }
@@ -315,29 +452,79 @@ const DamageApplication = () => {
     // Set default damage modifier based on save result
     setDamageModifiers(prev => ({
       ...prev,
-      [characterId]: succeeded && aoeState.halfOnSave ? 'half' : 'default'
+      [entityId]: succeeded && aoeState.halfOnSave ? 'half' : 'default'
     }));
   };
   
-  // Auto-roll saves for all characters
+  // Auto-roll saves for all entities
   const autoRollAllSaves = () => {
-    Object.keys(characterSaves).forEach(characterId => {
-      autoRollSave(characterId);
+    // First roll for bosses and groups to ensure they always have values
+    Object.keys(characterSaves).forEach(entityId => {
+      const [entityType] = entityId.split('-');
+      if (entityType === 'boss' || entityType === 'group') {
+        autoRollSave(entityId);
+      }
+    });
+    
+    // Then roll for characters if needed
+    Object.keys(characterSaves).forEach(entityId => {
+      const [entityType] = entityId.split('-');
+      if (entityType === 'character') {
+        autoRollSave(entityId);
+      }
     });
   };
   
   // Handle manual save roll input
-  const handleSaveRollChange = (characterId, value) => {
-    const roll = value === '' ? '' : parseInt(value);
-    // Get the current save DC directly
+  const handleSaveRollChange = (entityId, value) => {
+    // Parse entity type and ID from the composite key
+    const [entityType, id] = entityId.split('-');
+    
+    // For bosses and groups, we're directly inputting the total roll
+    // For characters, we're inputting the base roll
+    let roll, totalRoll, saveBonus = 0;
+    
+    if (entityType === 'boss' || entityType === 'group') {
+      // For bosses and groups, the input is the total roll
+      totalRoll = value === '' ? '' : parseInt(value);
+      
+      // Get the current save type
+      const currentSaveType = aoeState.saveType;
+      
+      // Calculate save bonus based on entity type
+      if (entityType === 'boss') {
+        const boss = bosses.find(b => b.id === id);
+        if (boss && boss.savingThrows && currentSaveType) {
+          saveBonus = boss.savingThrows[currentSaveType] || 0;
+        }
+      } else if (entityType === 'group') {
+        const group = enemyGroups.find(g => g.id === id);
+        if (group && group.savingThrows && currentSaveType) {
+          saveBonus = group.savingThrows[currentSaveType] || 0;
+        }
+      }
+      
+      // Calculate the base roll by subtracting the bonus
+      roll = totalRoll !== '' ? Math.max(1, totalRoll - saveBonus) : '';
+    } else {
+      // For characters, the input is the base roll
+      roll = value === '' ? '' : parseInt(value);
+      totalRoll = roll; // Characters don't have save bonuses in this system
+    }
+    
+    // Get the current save DC
     const currentSaveDC = aoeState.saveDC;
-    const succeeded = roll !== '' ? roll >= currentSaveDC : false;
+    
+    // Check if save succeeds
+    const succeeded = totalRoll !== '' ? totalRoll >= currentSaveDC : false;
     
     setCharacterSaves(prev => ({
       ...prev,
-      [characterId]: {
-        ...prev[characterId],
-        roll: value,
+      [entityId]: {
+        ...prev[entityId],
+        roll: roll,
+        totalRoll: totalRoll,
+        saveBonus: saveBonus,
         autoRoll: false,
         succeeded
       }
@@ -347,24 +534,24 @@ const DamageApplication = () => {
     if (roll !== '') {
       setDamageModifiers(prev => ({
         ...prev,
-        [characterId]: succeeded && aoeState.halfOnSave ? 'half' : 'default'
+        [entityId]: succeeded && aoeState.halfOnSave ? 'half' : 'default'
       }));
     }
   };
   
   // Handle damage modifier change
-  const handleDamageModifierChange = (characterId, value) => {
+  const handleDamageModifierChange = (entityId, value) => {
     setDamageModifiers(prev => ({
       ...prev,
-      [characterId]: value
+      [entityId]: value
     }));
   };
   
   // Handle manual damage adjustment
-  const handleDamageAdjustment = (characterId, amount) => {
+  const handleDamageAdjustment = (entityId, amount) => {
     setManualDamageAdjustments(prev => ({
       ...prev,
-      [characterId]: (prev[characterId] || 0) + amount
+      [entityId]: (prev[entityId] || 0) + amount
     }));
   };
   
@@ -391,8 +578,9 @@ const DamageApplication = () => {
     
     // Delay auto-roll to ensure it uses updated state values
     setTimeout(() => {
+      // Auto-roll all saves (this will roll for characters, bosses, and groups)
       autoRollAllSaves();
-    }, 0);
+    }, 100);
   };
   
   // Handle changes to single target state
@@ -539,8 +727,9 @@ const DamageApplication = () => {
 
   // Handle applying AOE damage with saves
   const handleApplyAoeDamageWithSaves = () => {
-    // Collect data from character save states
+    // Collect data from entity save states
     const characterDamageParams = {};
+    const entityDamageModifiers = {};
     
     // Ensure we have current values
     const currentDamage = parseInt(aoeState.damageAmount);
@@ -550,12 +739,12 @@ const DamageApplication = () => {
     const currentPercentAffected = aoeState.percentAffected;
     const currentApplyToAll = aoeState.applyToAll;
     
-    Object.entries(characterSaves).forEach(([characterId, saveInfo]) => {
+    Object.entries(characterSaves).forEach(([entityId, saveInfo]) => {
       // Get modifier (half, quarter, none)
-      const modifier = damageModifiers[characterId] || 'none';
+      const modifier = damageModifiers[entityId] || 'none';
       
       // Get manual adjustment amount
-      const adjustment = manualDamageAdjustments[characterId] || 0;
+      const adjustment = manualDamageAdjustments[entityId] || 0;
       
       // Calculate damage with modifier applied
       let damageToApply = currentDamage;
@@ -572,12 +761,26 @@ const DamageApplication = () => {
       // Apply manual adjustment
       damageToApply = Math.max(0, damageToApply + adjustment);
       
-      characterDamageParams[characterId] = {
-        damage: damageToApply,
-        saveRoll: saveInfo.roll === '' ? null : parseInt(saveInfo.roll),
-        succeeded: saveInfo.succeeded,
-        originalDamage: currentDamage
-      };
+      // Parse entity type and ID
+      const [entityType, id] = entityId.split('-');
+      
+      if (entityType === 'character') {
+        characterDamageParams[id] = {
+          damage: damageToApply,
+          saveRoll: saveInfo.roll === '' ? null : parseInt(saveInfo.roll),
+          succeeded: saveInfo.succeeded,
+          originalDamage: currentDamage
+        };
+      } else {
+        // For bosses and groups, use the entityDamageModifiers format
+        entityDamageModifiers[entityId] = {
+          modifier,
+          adjustment,
+          roll: saveInfo.roll === '' ? null : parseInt(saveInfo.roll),
+          totalRoll: saveInfo.totalRoll,
+          succeeded: saveInfo.succeeded
+        };
+      }
     });
     
     // Apply AoE damage with custom parameters
@@ -588,6 +791,7 @@ const DamageApplication = () => {
       halfOnSave: currentHalfOnSave,
       percentAffected: currentPercentAffected,
       characterDamageParams,
+      entityDamageModifiers,
       applyToAll: currentApplyToAll
     };
     
@@ -878,135 +1082,247 @@ const DamageApplication = () => {
                     </div>
                   </div>
                   
-                  {Object.keys(characterSaves).length > 0 ? (
-                    <div className="character-saves-table">
-                      <div className="character-saves-header">
-                        <div>Character</div>
-                        <div>Save Roll</div>
-                        <div>Result</div>
-                        <div>Damage</div>
-                        <div>Adjust</div>
-                        <div>Modifier</div>
-                      </div>
+                  {/* Filter entities by type */}
+                  {(() => {
+                    const playerEntities = Object.entries(characterSaves)
+                      .filter(([entityId]) => entityId.startsWith('character-'));
                       
-                      {Object.keys(characterSaves).map(characterId => {
-                        const character = characters.find(c => c.id === characterId);
-                        if (!character) return null;
-                        
-                        const saveInfo = characterSaves[characterId];
-                        const modifier = damageModifiers[characterId];
-                        const adjustment = manualDamageAdjustments[characterId] || 0;
-                        
-                        return (
-                          <div key={characterId} className="character-saves-row">
-                            <div>{character.name}</div>
-                            <div className="save-roll-cell">
-                              <input
-                                type="number"
-                                value={saveInfo.roll}
-                                onChange={(e) => handleSaveRollChange(characterId, e.target.value)}
-                                placeholder="Roll"
-                                min="1"
-                                max="20"
-                              />
-                              <button
-                                className="auto-roll-single"
-                                onClick={() => autoRollSave(characterId)}
-                                title="Auto-roll save"
-                              >
-                                🎲
-                              </button>
-                            </div>
-                            <div className={`save-result ${saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'success' : 'failure')}`}>
-                              {saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'Success' : 'Failure')}
-                            </div>
-                            <div>
-                              {(() => {
-                                // Calculate damage - ensure we're using current values
-                                const currentDamage = parseInt(aoeState.damageAmount);
-                                let finalDamage = isNaN(currentDamage) ? 0 : currentDamage;
+                    const nonPlayerEntities = Object.entries(characterSaves)
+                      .filter(([entityId]) => entityId.startsWith('boss-') || entityId.startsWith('group-'));
+                    
+                    return (
+                      <>
+                        {/* Players Table */}
+                        {playerEntities.length > 0 && (
+                          <>
+                            <h5 className="entity-table-header">Player Characters</h5>
+                            <div className="character-saves-table">
+                              <div className="character-saves-header">
+                                <div>Character</div>
+                                <div>Save Roll</div>
+                                <div>Result</div>
+                                <div>Damage</div>
+                                <div>Adjust</div>
+                                <div>Modifier</div>
+                              </div>
+                              
+                              {playerEntities.map(([entityId, saveInfo]) => {
+                                // Parse entity type and ID
+                                const [_, id] = entityId.split('-');
                                 
-                                if (modifier === 'half') {
-                                  finalDamage = Math.floor(finalDamage / 2);
-                                } else if (modifier === 'quarter') {
-                                  finalDamage = Math.floor(finalDamage / 4);
-                                } else if (modifier === 'none') {
-                                  finalDamage = 0;
-                                }
+                                // Get the entity
+                                const entity = characters.find(c => c.id === id);
+                                if (!entity) return null;
                                 
-                                // Apply manual adjustment
-                                finalDamage = Math.max(0, finalDamage + adjustment);
+                                const modifier = damageModifiers[entityId];
+                                const adjustment = manualDamageAdjustments[entityId] || 0;
                                 
                                 return (
-                                  <>
-                                    <span className="damage-value">{finalDamage}</span>
-                                    {(modifier !== 'default' || adjustment !== 0) && (
-                                      <small className="damage-details">
-                                        {' '}(Base: {aoeState.damageAmount}
-                                        {modifier !== 'default' && `, ${modifier}`}
-                                        {adjustment !== 0 && `, ${adjustment > 0 ? '+' : ''}${adjustment}`})
-                                      </small>
-                                    )}
-                                  </>
+                                  <div key={entityId} className="character-saves-row">
+                                    <div>{entity.name}</div>
+                                    <div className="save-roll-cell">
+                                      <input
+                                        type="number"
+                                        value={saveInfo.roll}
+                                        onChange={(e) => handleSaveRollChange(entityId, e.target.value)}
+                                        placeholder="Roll"
+                                        min="1"
+                                        max="20"
+                                      />
+                                      <button
+                                        className="auto-roll-single"
+                                        onClick={() => autoRollSave(entityId)}
+                                        title="Auto-roll save"
+                                      >
+                                        🎲
+                                      </button>
+                                    </div>
+                                    <div className={`save-result ${saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'success' : 'failure')}`}>
+                                      {saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'Success' : 'Failure')}
+                                    </div>
+                                    <div>
+                                      {(() => {
+                                        // Calculate damage - ensure we're using current values
+                                        const currentDamage = parseInt(aoeState.damageAmount);
+                                        let finalDamage = isNaN(currentDamage) ? 0 : currentDamage;
+                                        
+                                        if (modifier === 'half') {
+                                          finalDamage = Math.floor(finalDamage / 2);
+                                        } else if (modifier === 'quarter') {
+                                          finalDamage = Math.floor(finalDamage / 4);
+                                        } else if (modifier === 'none') {
+                                          finalDamage = 0;
+                                        }
+                                        
+                                        // Apply manual adjustment
+                                        finalDamage = Math.max(0, finalDamage + adjustment);
+                                        
+                                        return (
+                                          <>
+                                            <span className="damage-value">{finalDamage}</span>
+                                            {(modifier !== 'default' || adjustment !== 0) && (
+                                              <small className="damage-details">
+                                                {' '}(Base: {aoeState.damageAmount}
+                                                {modifier !== 'default' && `, ${modifier}`}
+                                                {adjustment !== 0 && `, ${adjustment > 0 ? '+' : ''}${adjustment}`})
+                                              </small>
+                                            )}
+                                          </>
+                                        );
+                                      })()}
+                                    </div>
+                                    <div className="damage-adjustment-controls">
+                                      <button onClick={() => handleDamageAdjustment(entityId, -5)}>-5</button>
+                                      <button onClick={() => handleDamageAdjustment(entityId, -1)}>-1</button>
+                                      <button onClick={() => handleDamageAdjustment(entityId, 1)}>+1</button>
+                                      <button onClick={() => handleDamageAdjustment(entityId, 5)}>+5</button>
+                                    </div>
+                                    <div>
+                                      <select
+                                        value={modifier}
+                                        onChange={(e) => handleDamageModifierChange(entityId, e.target.value)}
+                                      >
+                                        <option value="default">Default Damage</option>
+                                        <option value="half">Half Damage</option>
+                                        <option value="quarter">Quarter Damage</option>
+                                        <option value="none">No Damage</option>
+                                      </select>
+                                    </div>
+                                  </div>
                                 );
-                              })()}
+                              })}
                             </div>
-                            <div className="damage-adjustment-controls">
-                              <button onClick={() => handleDamageAdjustment(characterId, -5)}>-5</button>
-                              <button onClick={() => handleDamageAdjustment(characterId, -1)}>-1</button>
-                              <button onClick={() => handleDamageAdjustment(characterId, 1)}>+1</button>
-                              <button onClick={() => handleDamageAdjustment(characterId, 5)}>+5</button>
+                          </>
+                        )}
+                        
+                        {/* Bosses and Groups Table */}
+                        {nonPlayerEntities.length > 0 && (
+                          <>
+                            <h5 className="entity-table-header">Bosses & Enemy Groups</h5>
+                            <div className="character-saves-table">
+                              <div className="character-saves-header">
+                                <div>Name</div>
+                                <div>Save Roll</div>
+                                <div>Result</div>
+                                <div>Damage</div>
+                                <div>Adjust</div>
+                                <div>Modifier</div>
+                              </div>
+                              
+                              {nonPlayerEntities.map(([entityId, saveInfo]) => {
+                                // Parse entity type and ID
+                                const [entityType, id] = entityId.split('-');
+                                
+                                // Get the entity based on its type
+                                let entity;
+                                if (entityType === 'boss') {
+                                  entity = bosses.find(b => b.id === id);
+                                } else if (entityType === 'group') {
+                                  entity = enemyGroups.find(g => g.id === id);
+                                }
+                                
+                                if (!entity) return null;
+                                
+                                const modifier = damageModifiers[entityId];
+                                const adjustment = manualDamageAdjustments[entityId] || 0;
+                                
+                                // Get save bonus for display
+                                const saveBonus = saveInfo.saveBonus || 0;
+                                
+                                return (
+                                  <div key={entityId} className="character-saves-row">
+                                    <div>{entity.name}</div>
+                                    <div className="save-roll-cell">
+                                      <input
+                                        type="number"
+                                        value={saveInfo.totalRoll || saveInfo.roll}
+                                        onChange={(e) => handleSaveRollChange(entityId, e.target.value)}
+                                        placeholder="Roll"
+                                        min="1"
+                                      />
+                                      <button
+                                        className="auto-roll-single"
+                                        onClick={() => autoRollSave(entityId)}
+                                        title="Auto-roll save"
+                                      >
+                                        🎲
+                                      </button>
+                                    </div>
+                                    <div className={`save-result ${saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'success' : 'failure')}`}>
+                                      {saveInfo.roll === '' ? '' : (
+                                        <>
+                                          {saveInfo.succeeded ? 'Success' : 'Failure'}
+                                          {saveBonus !== 0 && (
+                                            <small> ({saveInfo.roll}+{saveBonus})</small>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                    <div>
+                                      {(() => {
+                                        // Calculate damage - ensure we're using current values
+                                        const currentDamage = parseInt(aoeState.damageAmount);
+                                        let finalDamage = isNaN(currentDamage) ? 0 : currentDamage;
+                                        
+                                        if (modifier === 'half') {
+                                          finalDamage = Math.floor(finalDamage / 2);
+                                        } else if (modifier === 'quarter') {
+                                          finalDamage = Math.floor(finalDamage / 4);
+                                        } else if (modifier === 'none') {
+                                          finalDamage = 0;
+                                        }
+                                        
+                                        // Apply manual adjustment
+                                        finalDamage = Math.max(0, finalDamage + adjustment);
+                                        
+                                        return (
+                                          <>
+                                            <span className="damage-value">{finalDamage}</span>
+                                            {(modifier !== 'default' || adjustment !== 0) && (
+                                              <small className="damage-details">
+                                                {' '}(Base: {aoeState.damageAmount}
+                                                {modifier !== 'default' && `, ${modifier}`}
+                                                {adjustment !== 0 && `, ${adjustment > 0 ? '+' : ''}${adjustment}`})
+                                              </small>
+                                            )}
+                                          </>
+                                        );
+                                      })()}
+                                    </div>
+                                    <div className="damage-adjustment-controls">
+                                      <button onClick={() => handleDamageAdjustment(entityId, -5)}>-5</button>
+                                      <button onClick={() => handleDamageAdjustment(entityId, -1)}>-1</button>
+                                      <button onClick={() => handleDamageAdjustment(entityId, 1)}>+1</button>
+                                      <button onClick={() => handleDamageAdjustment(entityId, 5)}>+5</button>
+                                    </div>
+                                    <div>
+                                      <select
+                                        value={modifier}
+                                        onChange={(e) => handleDamageModifierChange(entityId, e.target.value)}
+                                      >
+                                        <option value="default">Default Damage</option>
+                                        <option value="half">Half Damage</option>
+                                        <option value="quarter">Quarter Damage</option>
+                                        <option value="none">No Damage</option>
+                                      </select>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
-                            <div>
-                              <select
-                                value={modifier}
-                                onChange={(e) => handleDamageModifierChange(characterId, e.target.value)}
-                              >
-                                <option value="default">Default Damage</option>
-                                <option value="half">Half Damage</option>
-                                <option value="quarter">Quarter Damage</option>
-                                <option value="none">No Damage</option>
-                              </select>
-                            </div>
+                          </>
+                        )}
+                        
+                        {/* No entities message */}
+                        {playerEntities.length === 0 && nonPlayerEntities.length === 0 && (
+                          <div className="no-characters-message">
+                            <p>No entities marked for AoE damage.</p>
                           </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="no-characters-message">
-                      <p>No characters marked for AoE damage.</p>
-                    </div>
-                  )}
+                        )}
+                      </>
+                    );
+                  })()}
                   
-                  {/* Display Enemy Groups in AoE */}
-                  {aoeTargets.groups.length > 0 && (
-                    <div className="aoe-entity-section">
-                      <h5>Enemy Groups in AoE:</h5>
-                      <div className="aoe-entity-list">
-                        {aoeTargets.groups.map(group => (
-                          <div key={group.id} className="aoe-entity-item">
-                            <span className="entity-name">{group.name}</span>
-                            <span className="entity-count">x{group.count}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Display Bosses in AoE */}
-                  {aoeTargets.bosses.length > 0 && (
-                    <div className="aoe-entity-section">
-                      <h5>Bosses in AoE:</h5>
-                      <div className="aoe-entity-list">
-                        {aoeTargets.bosses.map(boss => (
-                          <div key={boss.id} className="aoe-entity-item">
-                            <span className="entity-name">{boss.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {/* No targets message if nothing is selected */}
                   {!aoeTargets.hasTargets && (
                     <div className="no-targets-message">
