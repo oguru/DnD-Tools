@@ -186,14 +186,14 @@ const CharacterSection = () => {
         <h3>Player Characters</h3>
         <div className="character-buttons">
           <button
-            className="import-export-button"
+            className="btn import-export-button"
             onClick={toggleModal}
             title="Import/Export Data"
           >
             Import/Export
           </button>
           <button
-            className="toggle-section-button"
+            className="btn toggle-section-button"
             onClick={() => toggleSection('characters')}
           >
             {expandedSections.characters ? 'Hide Characters' : 'Show Characters'}
@@ -201,14 +201,14 @@ const CharacterSection = () => {
           {characters.length > 0 && (
             <>
               <button
-                className="reset-characters-button"
+                className="btn reset-characters-button"
                 onClick={resetCharacters}
                 title="Reset all character HP to max"
               >
                 Reset HP
               </button>
               <button
-                className="clear-temp-hp-button"
+                className="btn clear-temp-hp-button"
                 onClick={clearTemporaryHitPoints}
                 title="Clear all temporary hit points"
               >
@@ -325,22 +325,41 @@ const CharacterSection = () => {
                   <div className="character-actions">
                     {!isEmpty && (
                       <>
-                        <button
-                          className={`target-button ${isTargeted ? 'active' : ''}`}
-                          onClick={() => handleSetCharacterAsTarget(character)}
-                          title={isTargeted ? "Scroll to damage application" : "Set as target"}
-                        >
-                          {isTargeted ? "Scroll to Damage" : "Target"}
-                        </button>
+                        {isTargeted ? (
+                          <div className="target-buttons-container">
+                            <button
+                              className="btn cancel-target-button"
+                              onClick={() => setTargetEntity(null)}
+                              title="Cancel targeting"
+                            >
+                              ×
+                            </button>
+                            <button
+                              className="btn scroll-to-damage-button"
+                              onClick={() => scrollToDamageSection()}
+                              title="Scroll to damage section"
+                            >
+                              ↓
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="btn target-button"
+                            onClick={() => handleSetCharacterAsTarget(character)}
+                            title="Set as target"
+                          >
+                            Target
+                          </button>
+                        )}
                         <button 
-                          className={`aoe-button ${character.inAoe ? 'active' : ''}`}
+                          className={`btn aoe-button ${character.inAoe ? 'active' : ''}`}
                           onClick={(e) => handleToggleCharacterAoe(e, character.id)}
                           title={character.inAoe ? "Remove from AoE" : "Add to AoE"}
                         >
-                          {character.inAoe ? "In AoE" : "Add to AoE"}
+                          {character.inAoe ? "-AOE" : "+AOE"}
                         </button>
                         <button
-                          className="remove-character-button"
+                          className="btn remove-character-button"
                           onClick={() => handleRemoveCharacter(character.id)}
                           title="Remove Character"
                         >
@@ -350,7 +369,7 @@ const CharacterSection = () => {
                     )}
                     {isEmpty && (
                       <button
-                        className="add-character-button"
+                        className="btn add-character-button"
                         onClick={handleAddNewCharacter}
                         title="Add New Character"
                       >
@@ -365,7 +384,7 @@ const CharacterSection = () => {
           
           {!visibleCharacters().some(char => !char.name) && (
             <button 
-              className="add-character-button-large"
+              className="btn add-character-button-large"
               onClick={handleAddNewCharacter}
             >
               Add New Character
