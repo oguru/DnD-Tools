@@ -1,0 +1,406 @@
+/* Divine Powers Page Styles */
+.divine-powers-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* GM Authentication */
+.gm-auth-section {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 15px;
+}
+
+.gm-button {
+  padding: 6px 12px;
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.gm-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gm-status {
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.gm-button:hover {
+  background-color: #2d3748;
+}
+
+.view-toggle {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.view-toggle button {
+  padding: 8px 16px;
+  margin: 0 8px;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  color: #4a5568;
+}
+
+.view-toggle button.active {
+  background-color: #3182ce;
+  color: white;
+  border-color: #3182ce;
+}
+
+/* Level Selector Styles */
+.printable-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.level-selector,
+.character-selector {
+  margin: 15px 0;
+  display: flex;
+  align-items: center;
+}
+
+.level-selector label,
+.character-selector label {
+  margin-right: 10px;
+  font-weight: 500;
+}
+
+.level-selector select,
+.character-selector select {
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+}
+
+/* Section Titles */
+.section-title {
+  margin-top: 40px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #3182ce;
+  color: #2d3748;
+  font-size: 1.5rem;
+}
+
+/* Detailed View Styles */
+.divine-powers-detailed {
+  text-align: left;
+}
+
+.divine-level {
+  margin-bottom: 30px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.level-subtitle {
+  font-weight: normal;
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+.powers-list {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.power-item {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.power-item:last-child {
+  border-bottom: none;
+}
+
+.sub-powers {
+  list-style-type: none;
+  padding-left: 20px;
+  margin-top: 8px;
+}
+
+/* Item Summaries */
+.item-summary {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f7fafc;
+  border-radius: 6px;
+  border-left: 4px solid #3182ce;
+}
+
+.item-summary h4 {
+  margin-top: 0;
+  color: #2d3748;
+}
+
+.item-description {
+  font-style: italic;
+  margin-bottom: 10px;
+  color: #4a5568;
+}
+
+.item-effects {
+  padding-left: 20px;
+  margin-top: 10px;
+}
+
+.item-effects li {
+  margin-bottom: 5px;
+}
+
+/* Printable View Styles */
+.divine-powers-printable {
+  margin-top: 20px;
+}
+
+.printable-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 10px;
+  justify-content: center;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Universal Card Styles */
+.universal-card {
+  background-color: white;
+  min-height: auto;
+  max-height: fit-content;
+}
+
+.universal-card h4 {
+  background-color: #f0f0f0;
+  color: black;
+}
+
+/* Character-specific Card Styles */
+.specific-card {
+  background-color: white;
+  min-height: auto;
+  max-height: fit-content;
+}
+
+.specific-card h4 {
+  background-color: #f0f0f0;
+  color: black;
+}
+
+/* Character Card Styles */
+.character-card {
+  width: 100%;
+  border: 1px solid #000;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 10px;
+  font-size: 0.75rem;
+  text-align: left;
+  page-break-inside: avoid;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.character-card h4 {
+  text-align: center;
+  margin: 0 0 4px 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #000;
+  padding-bottom: 2px;
+}
+
+.card-section {
+  margin-bottom: 10px;
+}
+
+.card-section h5 {
+  margin: 0 0 3px 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 2px;
+  color: black;
+}
+
+.item-name {
+  font-weight: bold;
+  margin: 3px 0 1px 0;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.item-description-print {
+  font-style: italic;
+  font-size: 0.7rem;
+  margin: 5px 0;
+  padding: 0;
+}
+
+.printable-summary {
+  margin: 0;
+  padding-left: 15px;
+  list-style-type: disc;
+  margin-bottom: 5px;
+}
+
+.printable-summary li {
+  margin-bottom: 2px;
+  line-height: 1.1;
+}
+
+.printable-summary li.sub-item {
+  padding-left: 0px;
+  list-style-type: none;
+  font-size: 0.75rem;
+}
+
+.item-list {
+  margin-top: 0;
+  padding-left: 20px;
+}
+
+.print-instructions {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.print-button {
+  padding: 8px 16px;
+  background-color: #3182ce;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.print-button:hover {
+  background-color: #2c5282;
+}
+
+/* Print Media Styles */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 1cm;
+  }
+  
+  /* Hide non-printable elements */
+  nav, .view-toggle, .print-instructions, .printable-controls, .gm-auth-section, h2 {
+    display: none !important;
+  }
+  
+  /* Reset margins and padding */
+  body, html {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .divine-powers-page {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    display: block !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+  }
+  
+  /* Container styling */
+  .printable-container {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    grid-gap: 10px !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-before: avoid !important;
+  }
+  
+  /* Card styling */
+  .character-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    border: 1px solid #000 !important;
+    margin: 3px !important;
+    width: calc(100% - 6px) !important;
+    box-sizing: border-box !important;
+    min-height: auto !important;
+    max-height: fit-content !important;
+    padding: 8px !important;
+  }
+  
+  /* Card colors for print (black and white) */
+  .universal-card, .specific-card {
+    background-color: white !important;
+  }
+  
+  .universal-card h4, .specific-card h4 {
+    background-color: #f0f0f0 !important;
+    color: black !important;
+  }
+  
+  /* Prevent page breaks */
+  *, *:before, *:after {
+    page-break-before: avoid !important;
+  }
+}
+
+.level-powers {
+  margin-bottom: 12px;
+}
+
+.level-header {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin: 8px 0 3px 0;
+  color: #2d3748;
+  border-bottom: 1px dashed #cbd5e0;
+  padding-bottom: 2px;
+}
+
+.level-indicator {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 5px 0 2px 0;
+  font-style: italic;
+}
+
+.sub-item {
+  font-size: 0.7rem !important;
+}
+
+.god-boons-section {
+  margin-top: 5px;
+  border-top: 1px dashed #ccc;
+  padding-top: 5px;
+}
+
+.god-boons-section h5 {
+  font-size: 0.8rem;
+  margin: 0 0 2px 0;
+}
+
+.level-indicator {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 5px 0 2px 0;
+  font-style: italic;
+} 

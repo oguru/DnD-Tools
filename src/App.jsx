@@ -12,6 +12,7 @@ import {
 import AllAspects from './pages/AllAspects';
 import AspectDescriptions from './pages/AspectDescriptions';
 import DiscoveredAspects from './pages/DiscoveredAspects';
+import DivinePowers from './pages/DivinePowers';
 import GroupAttackCalculator from './components/GroupAttackCalculator';
 import LimboInfo from './pages/LimboInfo';
 import SecretMessages from './pages/SecretMessages';
@@ -45,6 +46,7 @@ function App() {
                   <option value="/limbo-info">Limbo</option>
                   <option value="/all-aspects">All Aspects</option>
                   <option value="/discovered-aspects">Discovered Aspects</option>
+                  <option value="/divine-powers">Divine Powers</option>
                 </select>
               </div>
             </li>
@@ -76,6 +78,7 @@ function App() {
           <Route path="/limbo-info" element={<LimboInfo />} />
           <Route path="/discovered-aspects" element={<DiscoveredAspects />} />
           <Route path="/all-aspects" element={<AllAspects />} />
+          <Route path="/divine-powers" element={<DivinePowers />} />
           <Route path="/player-info/wild-surges" element={<WildSurgeInfo />} />
           <Route path="/swarm-attack" element={<SwarmAttackPage />} />
           <Route path="/group-attack" element={<GroupAttackCalculator />} />
