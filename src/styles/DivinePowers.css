@@ -68,20 +68,23 @@
 }
 
 .level-selector,
-.character-selector {
+.character-selector,
+.print-view-selector {
   margin: 15px 0;
   display: flex;
   align-items: center;
 }
 
 .level-selector label,
-.character-selector label {
+.character-selector label,
+.print-view-selector label {
   margin-right: 10px;
   font-weight: 500;
 }
 
 .level-selector select,
-.character-selector select {
+.character-selector select,
+.print-view-selector select {
   padding: 5px 10px;
   border-radius: 4px;
   border: 1px solid #e2e8f0;
@@ -172,13 +175,22 @@
   margin-top: 20px;
 }
 
+.no-break-before {
+  page-break-before: avoid;
+}
+
 .printable-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-gap: 10px;
-  justify-content: center;
+  display: flex;
+  justify-content: space-between;
   max-width: 100%;
   margin: 0 auto;
+}
+
+.printable-column {
+  width: 32.5%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 /* Universal Card Styles */
@@ -211,7 +223,7 @@
   border: 1px solid #000;
   border-radius: 4px;
   padding: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
   font-size: 0.75rem;
   text-align: left;
   page-break-inside: avoid;
@@ -300,7 +312,7 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 1cm;
+    margin: 1.5cm 1cm 1.5cm 1cm; /* top, right, bottom, left */
   }
   
   /* Hide non-printable elements */
@@ -319,32 +331,68 @@
     margin: 0 !important;
     max-width: 100% !important;
     display: block !important;
-    page-break-before: avoid !important;
-    page-break-after: avoid !important;
   }
   
-  /* Container styling */
+  /* Force page break between universal and character cards */
   .printable-container {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    grid-gap: 10px !important;
-    justify-content: center !important;
+    display: flex !important;
+    justify-content: space-between !important;
     margin: 0 !important;
     padding: 0 !important;
+  }
+  
+  /* Add page break for character cards when showing all */
+  .specific-card:first-of-type {
+    page-break-before: always !important;
+  }
+  
+  .no-break-before {
     page-break-before: avoid !important;
+  }
+  
+  .printable-column {
+    width: 32.5% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important; /* Reduced gap between cards */
   }
   
   /* Card styling */
   .character-card {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
+    break-inside: avoid !important; /* Prevent card from breaking across pages */
+    page-break-inside: avoid !important; /* Legacy support */
+    page-break-before: auto !important; /* Allow page break before if needed */
+    page-break-after: auto !important; /* Allow page break after if needed */
     border: 1px solid #000 !important;
-    margin: 3px !important;
-    width: calc(100% - 6px) !important;
+    margin-bottom: 2px !important; /* Reduced margin between cards */
+    margin-top: 0.3cm !important; /* Add margin to top of cards */
+    width: 100% !important;
     box-sizing: border-box !important;
     min-height: auto !important;
     max-height: fit-content !important;
-    padding: 8px !important;
+    padding: 6px !important; /* Slightly reduced padding */
+    overflow: visible !important;
+  }
+  
+  /* First card in each column should have no top margin */
+  .printable-column > .character-card:first-child {
+    margin-top: 0 !important;
+  }
+  
+  /* Reduce spacing within cards */
+  .card-section {
+    margin-bottom: 5px !important; /* Reduced margin */
+  }
+  
+  .printable-summary {
+    margin: 0 !important;
+    padding-left: 12px !important; /* Reduced padding */
+    margin-bottom: 3px !important; /* Reduced margin */
+  }
+  
+  .printable-summary li {
+    margin-bottom: 1px !important; /* Reduced margin */
+    line-height: 1.05 !important; /* Reduced line height */
   }
   
   /* Card colors for print (black and white) */
@@ -355,11 +403,13 @@
   .universal-card h4, .specific-card h4 {
     background-color: #f0f0f0 !important;
     color: black !important;
+    margin: 0 0 3px 0 !important; /* Reduced margin */
+    padding-bottom: 1px !important; /* Reduced padding */
   }
   
-  /* Prevent page breaks */
-  *, *:before, *:after {
-    page-break-before: avoid !important;
+  /* Ensure cards have enough space at bottom of page */
+  .character-card:last-child {
+    margin-bottom: 1cm !important; /* Add space after last card to prevent overflow */
   }
 }
 

@@ -10,6 +10,7 @@ const DivinePowers = () => {
   const [selectedLevel, setSelectedLevel] = useState(2); // Default to level 2
   const [user, setUser] = useState(null);
   const [showGMControls, setShowGMControls] = useState(false);
+  const [printView, setPrintView] = useState('all'); // 'all', 'universal', or 'character'
   
   // Check if user is logged in and is GM
   useEffect(() => {
@@ -93,6 +94,7 @@ const DivinePowers = () => {
         { name: "Divine Restoration", description: "During a short rest, recover hit points equal to half your maximum hit points" },
         { name: "Divine Form", description: "As an action once per long rest, transform into a celestial version of yourself for your next 3 turns", 
           subPowers: [
+            "Your size increases by 1 category",
             "+2 to AC (stacks with Divine Armor)",
             "+30 temporary hit points",
             "Once per round when you damage a creature with a weapon attack or spell, you can add 5d8 radiant damage (to 1 target only)",
@@ -107,8 +109,7 @@ const DivinePowers = () => {
         "Resistance to one damage type",
         "Revive ally to full HP 1/day",
         "Recover half max HP on short rest",
-        "+20ft walking speed and flying speed",
-        "Divine Form 1/long rest (3 turns)"
+        "Divine Form 1/long rest (3 turns, +1 size, +2 AC, +30 temp HP, 5d8 radiant)"
       ],
       godBoons: [
         { 
@@ -135,6 +136,7 @@ const DivinePowers = () => {
         { name: "Divine Speed", description: "Your movement speed increases by 20ft" },
         { name: "Divine Form (Level 3)", description: "Divine Form improves with the following enhancements", 
           subPowers: [
+            "Your size increases by 1 category",
             "+4 to AC (stacks with Divine Armor)",
             "+50 temporary hit points",
             "Once per round when you damage a creature with a weapon attack or spell, you can add 6d10 radiant damage (to 1 target only)"
@@ -148,8 +150,7 @@ const DivinePowers = () => {
         "Immunity to one damage type",
         "Return to half HP when reduced to 0 HP 1/long rest",
         "Ignore resistance, treat immunity as resistance",
-        "+40ft walking speed and flying speed",
-        "Divine Form improved (+4 AC, +50 temp HP, 6d10 radiant)"
+        "Divine Form improved (+1 size, +4 AC, +50 temp HP, 6d10 radiant)"
       ],
       godBoons: [
         { 
@@ -163,16 +164,16 @@ const DivinePowers = () => {
 
   const classSpecificPowers = {
     kalmia: [
-      { level: 2, name: "Divine Momentum (Level 2)", description: "(2x per day) - Your attack damages all enemies in a 10ft line from your target" },
-      { level: 3, name: "Divine Momentum (Level 3)", description: "(3x per day) - Your attack damages all enemies in a 10ft cone from your target" }
+      { level: 2, name: "Divine Momentum (Level 2)", description: "(2x per day) - You can choose for an attack to damage all enemies in a 10ft line from your target" },
+      { level: 3, name: "Divine Momentum (Level 3)", description: "(3x per day) - You can choose for an attack to damage all enemies in a 15ft sphere from your target" }
     ],
     yrsa: [
-      { level: 2, name: "Divine Aura (Level 2)", description: "Your Aura of Protection heals you and allies within 30 feet 4x your Charisma modifier at the start of each of your turns" },
+      { level: 2, name: "Divine Aura (Level 2)", description: "Your Aura of Protection heals you and allies within your aura 4x your Charisma modifier at the start of each of your turns" },
       { level: 3, name: "Divine Aura (Level 3)", description: "Your Aura of Protection reduces enemy saving throws equal to half your Charisma modifier (rounded down)" }
     ],
     pyre: [
       { level: 2, name: "Divine Alacrity (Level 2)", description: "(1x per day) you can cast an additional spell in 1 round as a bonus action" },
-      { level: 3, name: "Divine Alacrity (Level 3)", description: "(2x per day) you can cast an additional spell in 1 round as a bonus action" }
+      { level: 3, name: "Divine Alacrity (Level 3)", description: "(2x per day) you can cast an additional spell in 1 round as a bonus action. The first spell cast this way after a long rest does not consume a spell slot." }
     ],
     khada: [
       { level: 2, name: "Divine Prowess (Level 2)", description: "Your critical hits with weapons heal you for half the damage dealt" },
@@ -184,7 +185,7 @@ const DivinePowers = () => {
         name: "Divine Decree (Level 2)", 
         description: "(1x per day) Issue one divine command:",
         subPowers: [
-          "\"I deny your power\": (Action) - You cause all damage caused by your target to be halved until the end of your next turn",
+          "\"I deny your power\": (Action) - You cause all damage caused by your target to be completely negated until the start of your next turn",
           "\"I grant you my blessing\": (Bonus Action) - Cure the target of any status condition"
         ]
       },
@@ -235,6 +236,18 @@ const DivinePowers = () => {
           "Command shadows to turn enemies against allies (3/day, DC16 Int save)",
           "Maximum damage on Sneak Attack (2/day)",
           "Steal specific memory for 1 hour (1/day, DC18 Int save)"
+        ]
+      },
+      {
+        name: "Shadowmend Crossbow +1",
+        description: "A crossbow that can channel healing energy",
+        effects: [
+          "10 charges, regains 2d4+2 daily at dawn",
+          "Cure Wounds (1 charge/level, up to 4th)",
+          "Freedom of Movement (4 charges)",
+          "Greater Restoration (5 charges)",
+          "Mass Cure Wounds (5 charges)",
+          "Raise Dead (5 charges)"
         ]
       }
     ],
@@ -516,6 +529,20 @@ const DivinePowers = () => {
                 </li>
               ))}
             </ul>
+            
+            {/* God Boons Section */}
+            {level.godBoons.length > 0 && (
+              <div className="god-boons">
+                <h4>God-Specific Boons</h4>
+                <ul className="powers-list">
+                  {level.godBoons.map((boon, index) => (
+                    <li key={index} className="power-item">
+                      <strong>{boon.god}'s {boon.name}:</strong> {boon.description}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         ))}
 
@@ -567,6 +594,7 @@ const DivinePowers = () => {
 
   const renderCombinedView = () => {
     const combinedPowers = getCombinedPowers();
+    const godBoons = getCombinedGodBoons();
     
     return (
       <div className="divine-powers-detailed">
@@ -600,6 +628,20 @@ const DivinePowers = () => {
               </li>
             ))}
           </ul>
+          
+          {/* God Boons Section */}
+          {godBoons.length > 0 && selectedLevel >= 2 && (
+            <div className="god-boons">
+              <h4>God-Specific Boons</h4>
+              <ul className="powers-list">
+                {godBoons.map((boon, index) => (
+                  <li key={index} className="power-item">
+                    <strong>{boon.god}'s {boon.name}:</strong> {boon.description}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -609,8 +651,168 @@ const DivinePowers = () => {
     const universalSummary = getCombinedPrintableSummary();
     const godBoons = getCombinedGodBoons();
     
+    // Create arrays for each column to better control layout
+    const column1 = [];
+    const column2 = [];
+    const column3 = [];
+    
+    // Add universal cards (2 per column) if showing universal powers
+    if (printView === 'all' || printView === 'universal') {
+      for (let i = 0; i < 6; i++) {
+        const universalCard = (
+          <div key={`universal-${i}`} className="printable-card character-card universal-card">
+            <h4>Universal Divine Powers (Level {selectedLevel})</h4>
+            <div className="card-section">
+              <ul className="printable-summary">
+                {universalSummary.map((item, itemIndex) => (
+                  <li key={itemIndex} className={item.startsWith('  •') ? 'sub-item' : ''}>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            {/* God-specific boons */}
+            {godBoons.length > 0 && (
+              <div className="card-section god-boons-section">
+                <h5>God-Specific Boons</h5>
+                <ul className="printable-summary">
+                  {godBoons.map((boon, index) => (
+                    <li key={index}>
+                      <strong>{boon.god}'s {boon.name}:</strong> 2/day, 4d10 radiant damage (6d10 vs. oath-breakers)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+        
+        // Distribute cards evenly across columns
+        if (i < 2) column1.push(universalCard);
+        else if (i < 4) column2.push(universalCard);
+        else column3.push(universalCard);
+      }
+    }
+    
+    // Add character-specific cards if showing character powers
+    if (printView === 'all' || printView === 'character') {
+      // Custom order for character cards to optimize space
+      const characterOrder = [
+        'kalmia',
+        'khada', // Swapped with Yrsa
+        'pyre',
+        'yrsa',  // Swapped with Khada
+        'pamykos'
+      ];
+      
+      // Add character-specific cards in the custom order
+      const characterCards = characterOrder.map(charId => {
+        const character = characters.find(c => c.id === charId);
+        if (!character) return null;
+        
+        const classPowers = getClassPowers(character.id, selectedLevel);
+        const items = getItemSummaries(character.id);
+        
+        return (
+          <div key={`character-${character.id}`} className="printable-card character-card specific-card">
+            <h4>{character.name}</h4>
+            
+            {/* Class Powers */}
+            {classPowers.length > 0 && (
+              <div className="card-section">
+                <h5>Class Abilities</h5>
+                
+                {/* Special handling for Pamykos - combine all decrees */}
+                {character.id === 'pamykos' && (
+                  <div>
+                    {classPowers.length > 0 && (
+                      <div>
+                        <p><strong>{classPowers[classPowers.length - 1].name.split(' (Level')[0]}:</strong> {selectedLevel >= 3 ? "(2x per day)" : "(1x per day)"} Issue one divine command:</p>
+                        <ul className="printable-summary">
+                          {/* Level 2 commands */}
+                          <li>"I deny your power": (Action) - You cause all damage caused by your target to be completely negated until the start of your next turn</li>
+                          <li>"I grant you my blessing": (Bonus Action) - Cure the target of any status condition</li>
+                          
+                          {/* Level 3 commands */}
+                          {selectedLevel >= 3 && (
+                            <>
+                              <li>"I command your obedience": (Bonus Action) - Target must immediately follow one simple command that does not cause them or their allies harm (no save)</li>
+                              <li>"I forbid your magic": (Reaction) - you can choose to nullify the effects of a spell cast against you or one creature of your choice (does not nullify AOE effects against other targets)</li>
+                            </>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Special handling for Yrsa - show both abilities without level indicators */}
+                {character.id === 'yrsa' && (
+                  <div>
+                    <ul className="printable-summary">
+                      {classPowers.map((power, index) => (
+                        <li key={index}>
+                          <strong>{power.name.split(' (Level')[0]}:</strong> {power.description}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {/* For all other characters with upgradable powers */}
+                {(character.id !== 'yrsa' && character.id !== 'pamykos') && (
+                  <ul className="printable-summary">
+                    {classPowers.map((power, index) => (
+                      <li key={index}>
+                        <strong>{power.name.split(' (Level')[0]}:</strong> {power.description}
+                        {power.subPowers && power.subPowers.map((subPower, subIndex) => (
+                          <li key={`sub-${subIndex}`} className="sub-item">• {subPower}</li>
+                        ))}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+            
+            {/* Item Abilities */}
+            {items.length > 0 && (
+              <div className="card-section">
+                <h5>Item Abilities</h5>
+                {items.map((item, itemIndex) => (
+                  <div key={itemIndex}>
+                    <p className="item-name">{item.name}</p>
+                    <ul className="printable-summary item-list">
+                      {item.effects.map((effect, effectIndex) => (
+                        <li key={effectIndex}>{effect}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* If no class powers or items, show a message */}
+            {classPowers.length === 0 && items.length === 0 && (
+              <div className="card-section">
+                <p>No unique powers or items for this character.</p>
+              </div>
+            )}
+          </div>
+        );
+      }).filter(Boolean);
+      
+      // Distribute character cards across columns
+      characterCards.forEach((card, index) => {
+        if (index % 3 === 0) column1.push(card);
+        else if (index % 3 === 1) column2.push(card);
+        else column3.push(card);
+      });
+    }
+    
     return (
-      <div className="divine-powers-printable">
+      <div className="divine-powers-printable no-break-before">
         <div className="printable-controls">
           <div className="level-selector">
             <label htmlFor="printable-level-select">Show powers up to level: </label>
@@ -626,132 +828,31 @@ const DivinePowers = () => {
               ))}
             </select>
           </div>
+          
+          <div className="print-view-selector">
+            <label htmlFor="print-view-select">Show: </label>
+            <select 
+              id="print-view-select" 
+              value={printView} 
+              onChange={(e) => setPrintView(e.target.value)}
+            >
+              <option value="all">All Powers</option>
+              <option value="universal">Universal Powers Only</option>
+              <option value="character">Character-Specific Powers Only</option>
+            </select>
+          </div>
         </div>
         
         <div className="printable-container">
-          {/* Six Universal Power Cards - all identical */}
-          {[...Array(6)].map((_, index) => (
-            <div key={`universal-${index}`} className="printable-card character-card universal-card">
-              <h4>Universal Divine Powers (Level {selectedLevel})</h4>
-              <div className="card-section">
-                <ul className="printable-summary">
-                  {universalSummary.map((item, itemIndex) => (
-                    <li key={itemIndex} className={item.startsWith('  •') ? 'sub-item' : ''}>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              {/* God-specific boons */}
-              {godBoons.length > 0 && (
-                <div className="card-section god-boons-section">
-                  <h5>God-Specific Boons</h5>
-                  <ul className="printable-summary">
-                    {godBoons.map((boon, index) => (
-                      <li key={index}>
-                        <strong>{boon.god}'s {boon.name}:</strong> 2/day, 4d10 radiant damage (6d10 vs. oath-breakers)
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ))}
-          
-          {/* Character-specific cards - one for each character with their class powers and items */}
-          {characters.filter(char => char.id !== 'universal').map((character) => {
-            const classPowers = getClassPowers(character.id, selectedLevel);
-            const items = getItemSummaries(character.id);
-            
-            return (
-              <div key={`character-${character.id}`} className="printable-card character-card specific-card">
-                <h4>{character.name}</h4>
-                
-                {/* Class Powers */}
-                {classPowers.length > 0 && (
-                  <div className="card-section">
-                    <h5>Class Abilities</h5>
-                    
-                    {/* Special handling for Pamykos - combine all decrees */}
-                    {character.id === 'pamykos' && (
-                      <div>
-                        {classPowers.length > 0 && (
-                          <div>
-                            <p><strong>{classPowers[classPowers.length - 1].name.split(' (Level')[0]}:</strong> {selectedLevel >= 3 ? "(2x per day)" : "(1x per day)"} Issue one divine command:</p>
-                            <ul className="printable-summary">
-                              {/* Level 2 commands */}
-                              <li>"I deny your power": (Action) - You cause all damage caused by your target to be halved until the end of your next turn</li>
-                              <li>"I grant you my blessing": (Bonus Action) - Cure the target of any status condition</li>
-                              
-                              {/* Level 3 commands */}
-                              {selectedLevel >= 3 && (
-                                <>
-                                  <li>"I command your obedience": (Bonus Action) - Target must immediately follow one simple command that does not cause them or their allies harm (no save)</li>
-                                  <li>"I forbid your magic": (Reaction) - you can choose to nullify the effects of a spell cast against you or one creature of your choice (does not nullify AOE effects against other targets)</li>
-                                </>
-                              )}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Special handling for Yrsa - show both abilities without level indicators */}
-                    {character.id === 'yrsa' && (
-                      <div>
-                        <ul className="printable-summary">
-                          {classPowers.map((power, index) => (
-                            <li key={index}>
-                              <strong>{power.name.split(' (Level')[0]}:</strong> {power.description}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {/* For all other characters with upgradable powers */}
-                    {(character.id !== 'yrsa' && character.id !== 'pamykos') && (
-                      <ul className="printable-summary">
-                        {classPowers.map((power, index) => (
-                          <li key={index}>
-                            <strong>{power.name.split(' (Level')[0]}:</strong> {power.description}
-                            {power.subPowers && power.subPowers.map((subPower, subIndex) => (
-                              <li key={`sub-${subIndex}`} className="sub-item">• {subPower}</li>
-                            ))}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
-                
-                {/* Item Abilities */}
-                {items.length > 0 && (
-                  <div className="card-section">
-                    <h5>Item Abilities</h5>
-                    {items.map((item, itemIndex) => (
-                      <div key={itemIndex}>
-                        <p className="item-name">{item.name}</p>
-                        <ul className="printable-summary item-list">
-                          {item.effects.map((effect, effectIndex) => (
-                            <li key={effectIndex}>{effect}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {/* If no class powers or items, show a message */}
-                {classPowers.length === 0 && items.length === 0 && (
-                  <div className="card-section">
-                    <p>No unique powers or items for this character.</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          <div className="printable-column">
+            {column1}
+          </div>
+          <div className="printable-column">
+            {column2}
+          </div>
+          <div className="printable-column">
+            {column3}
+          </div>
         </div>
       </div>
     );
