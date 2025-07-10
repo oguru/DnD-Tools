@@ -71,9 +71,7 @@ const DivinePowers = () => {
       printableSummary: [
         "All damage & healing 1.5x",
         "Truesight 30ft",
-        "Reroll d20 1/long rest",
-        "Speak Celestial & telepathy with celestials",
-        "+10ft walking speed"
+        "Reroll d20 1/long rest"
       ],
       godBoons: []
     },
@@ -222,7 +220,9 @@ const DivinePowers = () => {
           "Store wild magic surge effect until next long rest (1/day)",
           "Roll twice on surge table and pick one OR avoid surge but take 1d10 force damage (1/long rest)",
           "Spend sorcery point to shift surge result up/down by 1",
-          "Stabilize 10ft radius in areas of wild magic (may trigger surge)"
+          "Use action to stabilize 10ft radius in areas of wild magic/chaos (may trigger surge)",
+          "Gain advantage on next spell attack after natural surge",
+          "Risk of instability: may cause disadvantage on spell save DC, minor magical effects, or increased surge chance"
         ]
       }
     ],
@@ -395,11 +395,9 @@ const DivinePowers = () => {
       'ac',              // AC increase
       'resistance',      // Damage resistance
       'immunity',        // Damage immunity
-      'movement',        // Movement speed
       'truesight',       // Truesight
       
       // Other abilities
-      'Speak Celestial & telepathy with celestials',
       'Revive ally to full HP 1/day',
       'Recover half max HP on short rest',
       'Return to half HP when reduced to 0 HP 1/long rest',
