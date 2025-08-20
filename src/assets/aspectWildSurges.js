@@ -105,7 +105,7 @@ export const aspectWildSurges = {
     duration: "1d4"
   },
   22: {
-    effect: "Planar Attunement",
+    effect: "Celestial Communication",
     description: "The initiator gains resistance to fire damage while in Limbo but vulnerability to physical damage for 1d4 rounds",
     duration: "1d4"
   },
@@ -335,7 +335,7 @@ export const aspectWildSurges = {
     duration: "1d4"
   },
   68: {
-    effect: "Planar Attunement",
+    effect: "Celestial Communication",
     description: "The initiator gains resistance to all damage types for 1d4 rounds but becomes vulnerable to force damage.",
     duration: "1d4"
   },

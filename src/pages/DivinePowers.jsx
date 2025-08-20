@@ -46,7 +46,7 @@ const DivinePowers = () => {
   const characters = [
     { id: 'universal', name: 'Universal Powers' },
     { id: 'kalmia', name: 'Kalmia (Rogue)' },
-    { id: 'yrsa', name: 'Yrsa (Paladin/Cleric/Warlock)' },
+    { id: 'okurak', name: 'Okurak (Cleric)' },
     { id: 'pyre', name: 'Pyre (Sorcerer)' },
     { id: 'khada', name: 'Khada (Fighter)' },
     { id: 'pamykos', name: 'Pamykos (Bard/Warlock)' }
@@ -63,9 +63,9 @@ const DivinePowers = () => {
         { name: "Divine Armor", description: "AC increases by 2, regardless of armor worn", replacedBy: "Divine Armor (Level 2)" },
         { name: "Empowered Attacks", description: "Weapon attacks and spell deal 1.5x damage (rounded up)", replacedBy: "Empowered Attacks (Level 2)" },
         { name: "Empowered Healing", description: "All healing you perform or receive (spells, potions, abilities, hit dice) is increased by 1.5x", replacedBy: "Empowered Healing (Level 2)" },
-        { name: "Celestial Vision", description: "Gain truesight 30 feet", replacedBy: "Celestial Vision (Level 2)" },
-        { name: "Divine Intuition", description: "Once per long rest, you can reroll any d20 and take either result", replacedBy: "Divine Intuition (Level 2)" },
-        { name: "Planar Attunement", description: "You can speak and understand Celestial and can communicate telepathically with any celestial being" },
+        { name: "Celestial Vision (Truesight 30ft)", description: "Gain truesight 30 feet", replacedBy: "Celestial Vision (Truesight 60ft)" },
+        { name: "Divine Intuition (Reroll d20)", description: "Once per long rest, you can reroll any d20 and take either result", replacedBy: "Divine Intuition (Reroll d20 - Level 2)" },
+        { name: "Celestial Communication", description: "You can speak and understand Celestial and can communicate telepathically with any celestial being" },
         { name: "Divine Movement", description: "Gain a 10ft walking speed", replacedBy: "Divine Movement (Level 2)" }
       ],
       printableSummary: [
@@ -86,7 +86,7 @@ const DivinePowers = () => {
         { name: "Divine Armor (Level 2)", description: "AC increases by 4 (replacing previous bonus)" },
         { name: "Empowered Attacks (Level 2)", description: "Weapon and spell attacks deal 2x damage (replacing previous multiplier)" },
         { name: "Empowered Healing (Level 2)", description: "All healing you perform or receive is increased by 2x (replacing previous multiplier)" },
-        { name: "Celestial Vision (Level 2)", description: "Truesight extends to 60 feet" },
+        { name: "Celestial Vision (Truesight 60ft)", description: "Truesight extends to 60 feet" },
         { name: "Divine Resurrection", description: "Once per day one of you can raise a fallen party member from the dead or unconscious to full HP using your combined divine essence" },
         { name: "Divine Movement (Level 2)", description: "Gain 10ft to your walking speed and a flying speed equal to half your new walking speed" },
         { name: "Divine Restoration", description: "During a short rest, recover hit points equal to half your maximum hit points" },
@@ -112,7 +112,7 @@ const DivinePowers = () => {
       godBoons: [
         { 
           god: "Tyr", 
-          name: "Smite of Justice", 
+          name: "Divine Smite of Justice", 
           description: "Twice per day when you deal damage to an enemy, you can unleash a smite of divine justice from above to deal an additional 4d10 radiant damage to a single target. This damage increases to 6d10 against creatures that have harmed innocents or broken sacred oaths."
         }
       ]
@@ -130,7 +130,7 @@ const DivinePowers = () => {
         { name: "Empowered Attacks (Level 3)", description: "Weapon and spell attacks deal 3x damage (replacing previous multiplier)" },
         { name: "Empowered Healing (Level 3)", description: "All healing you perform or receive is increased by 3x (replacing previous multiplier)" },
         { name: "Divine Penetration", description: "Your attacks and spells ignore resistance to damage and treat immunity as resistance. Additionally, your attacks count as magical for the purpose of overcoming damage reduction" },
-        { name: "Divine Intuition (Level 3)", description: "Increase to 2x per day and now includes ability to give an ally advantage on any roll once per short rest (counts as 1 use)" },
+        { name: "Divine Intuition (Reroll d20 - Level 2)", description: "Increase to 2x per day and now includes ability to give an ally advantage on any roll once per short rest (counts as 1 use)" },
         { name: "Divine Speed", description: "Your movement speed increases by 20ft" },
         { name: "Divine Form (Level 3)", description: "Divine Form improves with the following enhancements", 
           subPowers: [
@@ -153,7 +153,7 @@ const DivinePowers = () => {
       godBoons: [
         { 
           god: "Tyr", 
-          name: "Smite of Justice", 
+          name: "Divine Smite of Justice", 
           description: "Twice per day when you deal damage to an enemy, you can unleash a smite of divine justice from above to deal an additional 4d10 radiant damage to a single target. This damage increases to 6d10 against creatures that have harmed innocents or broken sacred oaths."
         }
       ]
@@ -165,7 +165,7 @@ const DivinePowers = () => {
       { level: 2, name: "Divine Momentum (Level 2)", description: "(2x per day) - You can choose for an attack to damage all enemies in a 10ft line from your target" },
       { level: 3, name: "Divine Momentum (Level 3)", description: "(3x per day) - You can choose for an attack to damage all enemies in a 15ft sphere from your target" }
     ],
-    yrsa: [
+    okurak: [
       { level: 2, name: "Divine Aura (Level 2)", description: "Your Aura of Protection heals you and allies within your aura 4x your Charisma modifier at the start of each of your turns" },
       { level: 3, name: "Divine Aura (Level 3)", description: "Your Aura of Protection reduces enemy saving throws equal to half your Charisma modifier (rounded down)" }
     ],
@@ -261,7 +261,7 @@ const DivinePowers = () => {
         ]
       }
     ],
-    yrsa: [
+    okurak: [
       {
         name: "Radiant Soul Greatsword",
         description: "A greatsword with a central diamond that glows with inner divine light",
@@ -479,7 +479,7 @@ const DivinePowers = () => {
     // Characters with powers that are upgrades (only show highest level)
     const upgradeCharacters = ['kalmia', 'pyre', 'khada'];
     // Characters with powers that are separate abilities (show all)
-    const separateCharacters = ['yrsa', 'pamykos'];
+    const separateCharacters = ['okurak', 'pamykos'];
     
     if (upgradeCharacters.includes(characterId)) {
       // For characters with upgradable powers, only show highest level
@@ -535,7 +535,7 @@ const DivinePowers = () => {
                 <ul className="powers-list">
                   {level.godBoons.map((boon, index) => (
                     <li key={index} className="power-item">
-                      <strong>{boon.god}'s {boon.name}:</strong> {boon.description}
+                      <strong>{boon.name} ({boon.god}):</strong> {boon.description}
                     </li>
                   ))}
                 </ul>
@@ -634,7 +634,7 @@ const DivinePowers = () => {
               <ul className="powers-list">
                 {godBoons.map((boon, index) => (
                   <li key={index} className="power-item">
-                    <strong>{boon.god}'s {boon.name}:</strong> {boon.description}
+                    <strong>{boon.name} ({boon.god}):</strong> {boon.description}
                   </li>
                 ))}
               </ul>
@@ -677,7 +677,7 @@ const DivinePowers = () => {
                 <ul className="printable-summary">
                   {godBoons.map((boon, index) => (
                     <li key={index}>
-                      <strong>{boon.god}'s {boon.name}:</strong> 2/day, 4d10 radiant damage (6d10 vs. oath-breakers)
+                      <strong>{boon.name} ({boon.god}):</strong> 2/day, 4d10 radiant damage (6d10 vs. oath-breakers)
                     </li>
                   ))}
                 </ul>
@@ -698,9 +698,9 @@ const DivinePowers = () => {
       // Custom order for character cards to optimize space
       const characterOrder = [
         'kalmia',
-        'khada', // Swapped with Yrsa
+        'khada', // Swapped with Okurak
         'pyre',
-        'yrsa',  // Swapped with Khada
+        'okurak',  // Swapped with Khada
         'pamykos'
       ];
       
@@ -745,8 +745,8 @@ const DivinePowers = () => {
                   </div>
                 )}
                 
-                {/* Special handling for Yrsa - show both abilities without level indicators */}
-                {character.id === 'yrsa' && (
+                {/* Special handling for Okurak - show both abilities without level indicators */}
+                {character.id === 'okurak' && (
                   <div>
                     <ul className="printable-summary">
                       {classPowers.map((power, index) => (
@@ -759,7 +759,7 @@ const DivinePowers = () => {
                 )}
                 
                 {/* For all other characters with upgradable powers */}
-                {(character.id !== 'yrsa' && character.id !== 'pamykos') && (
+                {(character.id !== 'okurak' && character.id !== 'pamykos') && (
                   <ul className="printable-summary">
                     {classPowers.map((power, index) => (
                       <li key={index}>
