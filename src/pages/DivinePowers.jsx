@@ -62,7 +62,7 @@ const DivinePowers = () => {
         { name: "Divine Vitality", description: "Rolled hit points increase by 1.5x" },
         { name: "Divine Armor", description: "AC increases by 2, regardless of armor worn", replacedBy: "Divine Armor (Level 2)" },
         { name: "Empowered Attacks", description: "Weapon attacks and spell deal 1.5x damage (rounded up)", replacedBy: "Empowered Attacks (Level 2)" },
-        { name: "Empowered Healing", description: "All healing you perform or receive (spells, potions, abilities, hit dice) is increased by 1.5x", replacedBy: "Empowered Healing (Level 2)" },
+        { name: "Empowered Healing", description: "All healing you perform or receive (spells, potions, abilities, hit dice) is increased to 1.5x", replacedBy: "Empowered Healing (Level 2)" },
         { name: "Celestial Vision (Truesight 30ft)", description: "Gain truesight 30 feet", replacedBy: "Celestial Vision (Truesight 60ft)" },
         { name: "Divine Intuition (Reroll d20)", description: "Once per long rest, you can reroll any d20 and take either result", replacedBy: "Divine Intuition (Reroll d20 - Level 2)" },
         { name: "Celestial Communication", description: "You can speak and understand Celestial and can communicate telepathically with any celestial being" },
@@ -85,7 +85,7 @@ const DivinePowers = () => {
         { name: "Divine Resistance", description: "Gain resistance to one damage type of your choice" },
         { name: "Divine Armor (Level 2)", description: "AC increases by 4 (replacing previous bonus)" },
         { name: "Empowered Attacks (Level 2)", description: "Weapon and spell attacks deal 2x damage (replacing previous multiplier)" },
-        { name: "Empowered Healing (Level 2)", description: "All healing you perform or receive is increased by 2x (replacing previous multiplier)" },
+        { name: "Empowered Healing (Level 2)", description: "All healing you perform or receive is increased to 2x (replacing previous multiplier)" },
         { name: "Celestial Vision (Truesight 60ft)", description: "Truesight extends to 60 feet" },
         { name: "Divine Resurrection", description: "Once per day one of you can raise a fallen party member from the dead or unconscious to full HP using your combined divine essence" },
         { name: "Divine Movement (Level 2)", description: "Gain 10ft to your walking speed and a flying speed equal to half your new walking speed" },
@@ -125,10 +125,10 @@ const DivinePowers = () => {
         { name: "Physical Enhancement (Level 3)", description: "+2 to all ability scores and max", stackable: true },
         { name: "Divine Vitality (Level 3)", description: "Multiply your current rolled hit points by 1.5 (stacking with previous multipliers)" },
         { name: "Divine Resilience (Level 3)", description: "Add immunity to 1 damage type" },
-        { name: "Divine Immortality", description: "If reduced to 0 hit points, you instead return to 1/2 your maximum HP (usable once per long rest)" },
+        { name: "Divine Immortality", description: "If reduced to 0 hit points, you instead return to 1/4 your maximum HP (usable once per long rest)" },
         { name: "Divine Armor (Level 3)", description: "AC increases by 6 (replacing previous bonus)" },
         { name: "Empowered Attacks (Level 3)", description: "Weapon and spell attacks deal 3x damage (replacing previous multiplier)" },
-        { name: "Empowered Healing (Level 3)", description: "All healing you perform or receive is increased by 3x (replacing previous multiplier)" },
+        { name: "Empowered Healing (Level 3)", description: "All healing you perform or receive is increased to 3x (replacing previous multiplier)" },
         { name: "Divine Penetration", description: "Your attacks and spells ignore resistance to damage and treat immunity as resistance. Additionally, your attacks count as magical for the purpose of overcoming damage reduction" },
         { name: "Divine Intuition (Reroll d20 - Level 2)", description: "Increase to 2x per day and now includes ability to give an ally advantage on any roll once per short rest (counts as 1 use)" },
         { name: "Divine Speed", description: "Your movement speed increases by 20ft" },
@@ -166,8 +166,8 @@ const DivinePowers = () => {
       { level: 3, name: "Divine Momentum (Level 3)", description: "(3x per day) - You can choose for an attack to damage all enemies in a 15ft sphere from your target" }
     ],
     okurak: [
-      { level: 2, name: "Divine Aura (Level 2)", description: "Your Aura of Protection heals you and allies within your aura 4x your Charisma modifier at the start of each of your turns" },
-      { level: 3, name: "Divine Aura (Level 3)", description: "Your Aura of Protection reduces enemy saving throws equal to half your Charisma modifier (rounded down)" }
+      { level: 2, name: "Divine Aura (Level 2)", description: "You gain a Divine Aura that adds temporary hit points equal to 10x your Wisdom modifier to you and allies within 10 feet at the start of each of your turns" },
+      { level: 3, name: "Divine Aura (Level 3)", description: "Your Divine Aura also reduces enemy saving throws by half your Wisdom modifier (rounded down)" }
     ],
     pyre: [
       { level: 2, name: "Divine Alacrity (Level 2)", description: "(1x per day) you can cast an additional spell in 1 round as a bonus action" },
