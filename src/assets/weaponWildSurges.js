@@ -8,7 +8,7 @@ export const weaponWildSurges = {
   },
   2: {
     effect: "Permanent: Max HP Reduction",
-    description: "Your maximum HP permanently decreases by 1",
+    description: "Your maximum HP permanently decreases by 5",
     duration: 0,
     permanent: true
   },
@@ -148,7 +148,7 @@ export const weaponWildSurges = {
   // MINOR NEGATIVE (26-40)
   26: {
     effect: "Dimensional Hiccups",
-    description: "For 1 minute, each time you hiccup you have a 25% change to teleport 5ft in a random direction, and have a 25% change to hiccup at the start of your turn",
+    description: "For 1 minute, each time you hiccup you have a 25% change to teleport 5ft in a random direction, and have a 25% changce to hiccup at the start of your turn",
     duration: "1"
   },
   27: {
@@ -261,28 +261,28 @@ export const weaponWildSurges = {
   },
   47: {
     effect: "False Life",
-    description: "Gain 1d4 + 4 temporary hit points",
+    description: "Gain 2d4 + 8 stacking temporary hit points",
     duration: "1",
     link: "https://www.dndbeyond.com/spells/false-life",
     linkText: "Read False Life Spell Details"
   },
   48: {
     effect: "Heroism",
-    description: "Gain temporary HP equal to your proficiency bonus at start of each turn",
-    duration: "1",
+    description: "Gain temporary stacking HP equal to double your proficiency bonus at start of each turn for 3 rounds",
+    duration: "3",
     link: "https://www.dndbeyond.com/spells/heroism",
     linkText: "Read Heroism Spell Details"
   },
   49: {
     effect: "Misty Step",
-    description: "You can teleport up to 30 feet as a bonus action this turn",
+    description: "You can teleport up to 30 feet as a bonus action until the end of your next turn",
     duration: "1",
     link: "https://www.dndbeyond.com/spells/misty-step",
     linkText: "Read Misty Step Spell Details"
   },
   50: {
     effect: "Sanctuary",
-    description: "Creatures must make Wisdom save to attack you",
+    description: "Creatures must make Wisdom save to attack you in the next round",
     duration: "1",
     link: "https://www.dndbeyond.com/spells/sanctuary",
     linkText: "Read Sanctuary Spell Details"
@@ -301,7 +301,7 @@ export const weaponWildSurges = {
   },
   53: {
     effect: "Equipment Swap",
-    description: "You and target swap all equipment instantly",
+    description: "You and target swap all equipment instantly for 1 round",
     duration: "1"
   },
   54: {
@@ -341,7 +341,7 @@ export const weaponWildSurges = {
   },
   61: {
     effect: "Magnificent Mustache",
-    description: "Everyone within 30ft grows a magnificent mustache",
+    description: "Everyone within 100ft grows a magnificent mustache for a day",
     duration: "24"
   },
   62: {
@@ -351,8 +351,8 @@ export const weaponWildSurges = {
   },
   63: {
     effect: "Cheese Armor",
-    description: "All armor turns into fortified cheese (retains AC but smells delicious)",
-    duration: "1"
+    description: "All armor turns into fortified cheese for a day (retains AC but smells delicious)",
+    duration: "24"
   },
   64: {
     effect: "Rhyming Curse",
@@ -361,7 +361,7 @@ export const weaponWildSurges = {
   },
   65: {
     effect: "Bouncy Ground",
-    description: "The ground in a 15ft radius becomes bouncy like a trampoline",
+    description: "The ground in a 15ft radius becomes bouncy like a trampoline (difficult terrain)",
     duration: "1"
   },
 
@@ -385,8 +385,8 @@ export const weaponWildSurges = {
   },
   69: {
     effect: "Haste",
-    description: "You gain Haste",
-    duration: "1",
+    description: "You gain Haste for the next 3 rounds",
+    duration: "3",
     link: "https://www.dndbeyond.com/spells/haste",
     linkText: "Read Haste Spell Details"
   },
@@ -397,13 +397,13 @@ export const weaponWildSurges = {
   },
   71: {
     effect: "Lightning Strike",
-    description: "Your weapon attacks shoot lightning bolts",
+    description: "Your weapon attacks shoot lightning bolts that do 2d6 damage",
     duration: "1"
   },
   72: {
     effect: "Vampiric Strikes",
     description: "Your next 3 attacks deal necrotic damage and heal you",
-    duration: "1"
+    duration: "0"
   },
   73: {
     effect: "Spatial Mastery",
@@ -457,7 +457,7 @@ export const weaponWildSurges = {
   // MAJOR POSITIVE (81-95)
   81: {
     effect: "Polymorph: Gelatinous Cube",
-    description: "Target polymorphs into a gelatinous cube for 1 minute (Con save)",
+    description: "Target polymorphs into a gelatinous cube for 1 minute (Con save, keeps same HP and AC)",
     duration: "1",
     link: "https://www.dndbeyond.com/monsters/16862-gelatinous-cube",
     linkText: "View Gelatinous Cube Stats"
@@ -474,14 +474,14 @@ export const weaponWildSurges = {
   },
   84: {
     effect: "Disintegrate",
-    description: "Disintegrate beam shoots from sword (Con save)",
+    description: "Disintegrate beam shoots from sword in 20ft cone (Con save)",
     duration: "0",
     link: "https://www.dndbeyond.com/spells/disintegrate",
     linkText: "Read Disintegrate Spell Details"
   },
   85: {
     effect: "Polymorph: Squirrel",
-    description: "Target becomes a squirrel; if killed while squirrel, permanently dead",
+    description: "Target becomes a squirrel (Wis save, retains HP and AC) for 1 round; if killed while squirrel, permanently dead",
     duration: "1",
     link: "https://www.dndbeyond.com/spells/polymorph",
     linkText: "Read Polymorph Spell Details"
@@ -519,8 +519,8 @@ export const weaponWildSurges = {
   },
   91: {
     effect: "Mind Break",
-    description: "Target has disadvantage on all saves for 1 minute",
-    duration: "1"
+    description: "Target has disadvantage on all saves for 3 rounds",
+    duration: "3"
   },
   92: {
     effect: "Vulnerability Curse",
@@ -534,25 +534,25 @@ export const weaponWildSurges = {
   },
   94: {
     effect: "Soul Bind",
-    description: "Target can't regain HP for 1 minute",
-    duration: "1"
+    description: "Target can't regain HP for 3 rounds",
+    duration: "3"
   },
   95: {
     effect: "Doom Strike",
-    description: "If target drops to less than 30HP with this attack they die instantly",
+    description: "If target drops to less than 50HP with this attack they die instantly",
     duration: "1"
   },
 
   // PERMANENT POSITIVE (96-100)
   96: {
     effect: "Permanent: Max HP Increase",
-    description: "Your maximum HP permanently increases by 1",
+    description: "Your maximum HP permanently increases by 5",
     duration: 0,
     permanent: true
   },
   97: {
     effect: "Permanent: Max HP Increase",
-    description: "Your maximum HP permanently increases by 2",
+    description: "Your maximum HP permanently increases by 10",
     duration: 0,
     permanent: true
   },
@@ -563,14 +563,14 @@ export const weaponWildSurges = {
     permanent: true
   },
   99: {
-    effect: "Permanent: Lucky Skill",
-    description: "Gain permanent proficiency in a random skill.",
+    effect: "Permanent: Combat Master",
+    description: "Gain permanent +1 to attack rolls with this weapon",
     duration: 0,
     permanent: true
   },
   100: {
     effect: "Permanent: Combat Master",
-    description: "Gain permanent +1 to attack rolls with this weapon",
+    description: "Gain permanent +1 to attack rolls and damage with this weapon",
     duration: 0,
     permanent: true
   }

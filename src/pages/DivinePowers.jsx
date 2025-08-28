@@ -146,7 +146,7 @@ const DivinePowers = () => {
         "Truesight 60ft",
         "Reroll d20 2/day + give ally advantage 1/short rest",
         "Immunity to one damage type",
-        "Return to half HP when reduced to 0 HP 1/long rest",
+        "Return to 1/4 HP when reduced to 0 HP 1/long rest",
         "Ignore resistance, treat immunity as resistance",
         "Divine Form improved (+1 size, +4 AC, +50 temp HP, 6d10 radiant)"
       ],
@@ -155,6 +155,11 @@ const DivinePowers = () => {
           god: "Tyr", 
           name: "Divine Smite of Justice", 
           description: "Twice per day when you deal damage to an enemy, you can unleash a smite of divine justice from above to deal an additional 4d10 radiant damage to a single target. This damage increases to 6d10 against creatures that have harmed innocents or broken sacred oaths."
+        },
+        {
+          god: "Mystra",
+          name: "Boon of the Weave",
+          description: "Once per long rest, you can cast any spell of 8th level or lower that you've seen cast before without expending a spell slot. Non-spellcasters: Spell save DC = 8 + proficiency bonus + your primary modifier; Spell attack bonus = proficiency bonus + your primary modifier. Spellcasters use their normal spellcasting ability and save DC."
         }
       ]
     }
@@ -166,7 +171,7 @@ const DivinePowers = () => {
       { level: 3, name: "Divine Momentum (Level 3)", description: "(3x per day) - You can choose for an attack to damage all enemies in a 15ft sphere from your target" }
     ],
     okurak: [
-      { level: 2, name: "Divine Aura (Level 2)", description: "You gain a Divine Aura that adds temporary hit points equal to 10x your Wisdom modifier to you and allies within 10 feet at the start of each of your turns" },
+      { level: 2, name: "Divine Aura (Level 2)", description: "You gain a Divine Aura that adds temporary hit points equal to 10x your Wisdom modifier to you and conscious allies within 10 feet at the start of each of your turns" },
       { level: 3, name: "Divine Aura (Level 3)", description: "Your Divine Aura also reduces enemy saving throws by half your Wisdom modifier (rounded down)" }
     ],
     pyre: [
@@ -175,7 +180,7 @@ const DivinePowers = () => {
     ],
     khada: [
       { level: 2, name: "Divine Prowess (Level 2)", description: "Your critical hits with weapons heal you for half the damage dealt" },
-      { level: 3, name: "Divine Prowess (Level 3)", description: "Your critical hits with weapons heal or give you temporary HP for half the damage dealt" }
+      { level: 3, name: "Divine Prowess (Level 3)", description: "Your critical hits with weapons heal or give you stacking temporary HP for half the damage dealt, and can trigger additional wild surge" }
     ],
     pamykos: [
       { 
@@ -263,11 +268,11 @@ const DivinePowers = () => {
     ],
     okurak: [
       {
-        name: "Radiant Soul Greatsword",
-        description: "A greatsword with a central diamond that glows with inner divine light",
+        name: "Radiant Soul Weapon",
+        description: "A mighty weapon with a central diamond that glows with inner divine light",
         effects: [
           "Add proficiency to healing (2x for level 3+)",
-          "Divine smites and radiant spells deal +2d8 radiant damage",
+          "Divine smites and thunder spells deal +2d8 radiant damage",
           "Halve damage to you or ally within 30ft (2/day)",
           "Add max level divine smite on critical hit (1/day)"
         ]
@@ -400,7 +405,7 @@ const DivinePowers = () => {
       // Other abilities
       'Revive ally to full HP 1/day',
       'Recover half max HP on short rest',
-      'Return to half HP when reduced to 0 HP 1/long rest',
+      'Return to 1/4 HP when reduced to 0 HP 1/long rest',
       'Ignore resistance, treat immunity as resistance',
       'reroll',          // Reroll ability
       
@@ -677,7 +682,7 @@ const DivinePowers = () => {
                 <ul className="printable-summary">
                   {godBoons.map((boon, index) => (
                     <li key={index}>
-                      <strong>{boon.name} ({boon.god}):</strong> 2/day, 4d10 radiant damage (6d10 vs. oath-breakers)
+                      <strong>{boon.name} ({boon.god}):</strong> {boon.description}
                     </li>
                   ))}
                 </ul>
@@ -800,6 +805,32 @@ const DivinePowers = () => {
           </div>
         );
       }).filter(Boolean);
+
+      // Add Okurak's Hybrid Werebear Form printable card
+      const okurakWerebearCard = (
+        <div key={`character-okurak-werebear`} className="printable-card character-card specific-card">
+          <h4>Okurak — Hybrid Werebear Form</h4>
+          <div className="card-section">
+            <ul className="printable-summary">
+              <li>Can transform (voluntarily) to hybrid form to use weapons and cast spells</li>
+              <li>Attacks get bonuses from items and class-specific abilities</li>
+              <li>Divine Strike on every attack</li>
+              <li>Powerful: Count as 1 size larger for carrying, pushing, dragging, lifting</li>
+              <li>Charge: After moving 15ft straight, natural weapon hit deals +3d6; target STR save vs. your STR Save DC or be knocked prone or pushed 5ft (DM choice)</li>
+              <li>DC 18 CHA save to gain control</li>
+              <li>Advantage on saves to not transform and to gain control during combat</li>
+              <li>
+                <strong>Save to transform when</strong>
+                <ul className="printable-summary">
+                  <li className="sub-item">DC17 — You are reduced below half your maximum HP. Ally ¼</li>
+                  <li className="sub-item">DC21 — Ally falls unconscious or dies</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      );
+      characterCards.push(okurakWerebearCard);
       
       // Distribute character cards across columns
       characterCards.forEach((card, index) => {
