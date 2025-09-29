@@ -6,6 +6,23 @@ import { useEffect, useRef, useState } from 'react';
 import ImportExportModal from './ImportExportModal';
 import useDnDStore from '../store/dndStore';
 
+// Damage types and compact icon mapping for defenses
+const DAMAGE_TYPES = [
+  { key: 'slashing', label: 'Slashing', icon: '🪓' },
+  { key: 'piercing', label: 'Piercing', icon: '🗡️' },
+  { key: 'bludgeoning', label: 'Bludgeoning', icon: '🔨' },
+  { key: 'fire', label: 'Fire', icon: '🔥' },
+  { key: 'cold', label: 'Cold', icon: '❄️' },
+  { key: 'lightning', label: 'Lightning', icon: '⚡' },
+  { key: 'thunder', label: 'Thunder', icon: '🌩️' },
+  { key: 'acid', label: 'Acid', icon: '🧪' },
+  { key: 'poison', label: 'Poison', icon: '☠️' },
+  { key: 'psychic', label: 'Psychic', icon: '🧠' },
+  { key: 'necrotic', label: 'Necrotic', icon: '💀' },
+  { key: 'radiant', label: 'Radiant', icon: '✨' },
+  { key: 'force', label: 'Force', icon: '💥' }
+];
+
 const GroupsSection = () => {
   const {
     enemyGroups,
@@ -66,6 +83,11 @@ const GroupsSection = () => {
     ac: 15,
     notes: '',
     attacks: [],
+    defenses: {
+      resistances: [],
+      vulnerabilities: [],
+      immunities: []
+    },
     savingThrows: {
       str: 0,
       dex: 0,
@@ -75,6 +97,7 @@ const GroupsSection = () => {
       cha: 0
     },
     showSavingThrows: false,
+    showDefenses: false,
     initiative: 0
   });
 
@@ -173,6 +196,52 @@ const GroupsSection = () => {
     }));
   };
 
+  // Toggle a damage type inside defenses for the boss template
+  const toggleBossTemplateDefense = (category, typeKey) => {
+    setBossTemplate(prev => {
+      const currentList = prev.defenses?.[category] || [];
+      const alreadySelected = currentList.includes(typeKey);
+
+      // Start from existing lists
+      let resistances = [...(prev.defenses?.resistances || [])];
+      let vulnerabilities = [...(prev.defenses?.vulnerabilities || [])];
+      let immunities = [...(prev.defenses?.immunities || [])];
+
+      // If selecting in one category, ensure exclusivity by removing from the others
+      if (!alreadySelected) {
+        if (category !== 'resistances') {
+          resistances = resistances.filter(t => t !== typeKey);
+        }
+        if (category !== 'vulnerabilities') {
+          vulnerabilities = vulnerabilities.filter(t => t !== typeKey);
+        }
+        if (category !== 'immunities') {
+          immunities = immunities.filter(t => t !== typeKey);
+        }
+      }
+
+      // Toggle in the chosen category
+      if (category === 'resistances') {
+        resistances = alreadySelected
+          ? resistances.filter(t => t !== typeKey)
+          : [...resistances, typeKey];
+      } else if (category === 'vulnerabilities') {
+        vulnerabilities = alreadySelected
+          ? vulnerabilities.filter(t => t !== typeKey)
+          : [...vulnerabilities, typeKey];
+      } else if (category === 'immunities') {
+        immunities = alreadySelected
+          ? immunities.filter(t => t !== typeKey)
+          : [...immunities, typeKey];
+      }
+
+      return {
+        ...prev,
+        defenses: { resistances, vulnerabilities, immunities }
+      };
+    });
+  };
+
   // Create a wrapper for the renderSavingThrows function to handle the different parameter pattern
   const handleBossTemplateSavingThrowWrapper = (_, ability, value) => {
     handleBossTemplateSavingThrowChange(ability, value);
@@ -185,6 +254,14 @@ const GroupsSection = () => {
       showSavingThrows: !prev.showSavingThrows
     }));
     toggleBossTemplateSavingThrows();
+  };
+
+  // Toggle defenses section in template
+  const handleToggleBossTemplateDefenses = () => {
+    setBossTemplate(prev => ({
+      ...prev,
+      showDefenses: !prev.showDefenses
+    }));
   };
 
   // Add a new boss
@@ -201,6 +278,8 @@ const GroupsSection = () => {
       ...prev,
       name: '',
       notes: '',
+      defenses: { resistances: [], vulnerabilities: [], immunities: [] },
+      showDefenses: false,
     }));
   };
 
@@ -1407,6 +1486,86 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                 {bossTemplate.showSavingThrows && renderSavingThrows(bossTemplate.savingThrows, handleBossTemplateSavingThrowWrapper)}
               </div>
 
+              {/* Defenses (Resistances, Vulnerabilities, Immunities) */}
+              <div className="defenses-container">
+                <div 
+                  className="defenses-header" 
+                  onClick={handleToggleBossTemplateDefenses}
+                >
+                  <h5>Defenses {bossTemplate.showDefenses ? '▼' : '►'}</h5>
+                </div>
+
+                {bossTemplate.showDefenses && (
+                  <div className="defenses-grid">
+                    {/* Resistances */}
+                    <div className="defense-column">
+                      <div className="defense-title">Resistances</div>
+                      <div className="defense-chips-select">
+                        {DAMAGE_TYPES.map(dt => {
+                          const selected = bossTemplate.defenses?.resistances?.includes(dt.key);
+                          return (
+                            <button
+                              key={`res-${dt.key}`}
+                              type="button"
+                              className={`defense-chip ${selected ? 'selected' : ''}`}
+                              title={`${dt.label} (Resistance)`}
+                              onClick={() => toggleBossTemplateDefense('resistances', dt.key)}
+                            >
+                              <span className="chip-icon" aria-hidden>{dt.icon}</span>
+                              <span className="chip-label">{dt.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Vulnerabilities */}
+                    <div className="defense-column">
+                      <div className="defense-title">Vulnerabilities</div>
+                      <div className="defense-chips-select">
+                        {DAMAGE_TYPES.map(dt => {
+                          const selected = bossTemplate.defenses?.vulnerabilities?.includes(dt.key);
+                          return (
+                            <button
+                              key={`vuln-${dt.key}`}
+                              type="button"
+                              className={`defense-chip vuln ${selected ? 'selected' : ''}`}
+                              title={`${dt.label} (Vulnerability)`}
+                              onClick={() => toggleBossTemplateDefense('vulnerabilities', dt.key)}
+                            >
+                              <span className="chip-icon" aria-hidden>{dt.icon}</span>
+                              <span className="chip-label">{dt.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Immunities */}
+                    <div className="defense-column">
+                      <div className="defense-title">Immunities</div>
+                      <div className="defense-chips-select">
+                        {DAMAGE_TYPES.map(dt => {
+                          const selected = bossTemplate.defenses?.immunities?.includes(dt.key);
+                          return (
+                            <button
+                              key={`imm-${dt.key}`}
+                              type="button"
+                              className={`defense-chip imm ${selected ? 'selected' : ''}`}
+                              title={`${dt.label} (Immunity)`}
+                              onClick={() => toggleBossTemplateDefense('immunities', dt.key)}
+                            >
+                              <span className="chip-icon" aria-hidden>{dt.icon}</span>
+                              <span className="chip-label">{dt.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="add-attack-section">
                 <h5>Add Attack</h5>
                 <div className="attack-template-fields">
@@ -1904,6 +2063,53 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                               min="0"
                             />
                           </div>
+                          {/* Compact defenses display */}
+                          {(boss.defenses?.resistances?.length || boss.defenses?.vulnerabilities?.length || boss.defenses?.immunities?.length) ? (
+                            <div className="boss-defenses-display">
+                              {boss.defenses?.resistances?.length > 0 && (
+                                <div className="defense-row">
+                                  <span className="defense-label res">RES</span>
+                                  <div className="defense-icons">
+                                    {boss.defenses.resistances.map(key => {
+                                      const dt = DAMAGE_TYPES.find(d => d.key === key);
+                                      if (!dt) return null;
+                                      return (
+                                        <span key={`res-icon-${key}`} className="defense-icon" title={`Resistant: ${dt.label}`}>{dt.icon}</span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                              {boss.defenses?.vulnerabilities?.length > 0 && (
+                                <div className="defense-row">
+                                  <span className="defense-label vuln">VULN</span>
+                                  <div className="defense-icons">
+                                    {boss.defenses.vulnerabilities.map(key => {
+                                      const dt = DAMAGE_TYPES.find(d => d.key === key);
+                                      if (!dt) return null;
+                                      return (
+                                        <span key={`vuln-icon-${key}`} className="defense-icon" title={`Vulnerable: ${dt.label}`}>{dt.icon}</span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                              {boss.defenses?.immunities?.length > 0 && (
+                                <div className="defense-row">
+                                  <span className="defense-label imm">IMM</span>
+                                  <div className="defense-icons">
+                                    {boss.defenses.immunities.map(key => {
+                                      const dt = DAMAGE_TYPES.find(d => d.key === key);
+                                      if (!dt) return null;
+                                      return (
+                                        <span key={`imm-icon-${key}`} className="defense-icon" title={`Immune: ${dt.label}`}>{dt.icon}</span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
                         </div>
                         
                         <div className="boss-health-bar-container">

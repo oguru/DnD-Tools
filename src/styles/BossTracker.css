@@ -450,6 +450,163 @@
   gap: 10px;
 }
 
+/* Defenses selector (template) */
+.defenses-container {
+  margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.defenses-header {
+  background-color: #f7fafc;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.defenses-header h5 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.defenses-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+}
+
+.defense-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.defense-title {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.defense-chips-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.defense-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #2d3748;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.defense-chip .chip-icon {
+  font-size: 1rem;
+}
+
+.defense-chip .chip-label { display: none; }
+
+.defense-chip:hover {
+  background-color: #edf2f7;
+}
+
+.defense-chip.selected {
+  background-color: #e6fffa;
+  border-color: #2c7a7b;
+  box-shadow: 0 0 0 2px rgba(44, 122, 123, 0.25);
+}
+
+.defense-chip.vuln.selected {
+  background-color: #fff5f5;
+  border-color: #c53030;
+  box-shadow: 0 0 0 2px rgba(197, 48, 48, 0.25);
+}
+
+.defense-chip.imm.selected {
+  background-color: #f0fff4;
+  border-color: #2f855a;
+  box-shadow: 0 0 0 2px rgba(47, 133, 90, 0.25);
+}
+
+/* Show labels on selected for clarity */
+.defense-chip.selected .chip-label { display: inline; font-weight: 600; }
+.defense-chip.selected .chip-icon { transform: scale(1.1); }
+
+/* Add a subtle checkmark badge when selected */
+.defense-chip.selected::after {
+  content: "✓";
+  margin-left: 4px;
+  font-size: 0.75rem;
+  color: currentColor;
+}
+
+/* Compact display on boss card */
+.boss-defenses-display {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.defense-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.defense-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: #edf2f7;
+  color: #2d3748;
+}
+
+.defense-label.res { background: #ebf8ff; color: #2b6cb0; }
+.defense-label.vuln { background: #fff5f5; color: #c53030; }
+.defense-label.imm { background: #f0fff4; color: #2f855a; }
+
+.defense-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.defense-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+}
+
+/* Faster tooltips - reduce browser default delay */
+.defense-chip[title],
+.defense-icon[title] {
+  /* Some browsers respect this for faster tooltip display */
+  -webkit-tooltip-delay: 250ms;
+  tooltip-delay: 250ms;
+}
+
+@media (max-width: 768px) {
+  .defenses-grid { grid-template-columns: 1fr; }
+}
+
 .no-attacks-message {
   color: #718096;
   font-style: italic;
