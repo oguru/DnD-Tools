@@ -72,6 +72,7 @@ const useDnDStore = create((set, get) => {
       ac: 12,
       count: 4,
       initiative: 0,
+      initiativeModifier: 0,
       showSavingThrows: false,
       savingThrows: {
         str: 0,
@@ -97,6 +98,7 @@ const useDnDStore = create((set, get) => {
       currentHp: 100,
       ac: 15,
       initiative: 0,
+      initiativeModifier: 0,
       notes: '',
       attacks: [],
       showSavingThrows: false,
@@ -217,6 +219,7 @@ const useDnDStore = create((set, get) => {
     
     // Boss actions
     addBoss: (boss) => {
+      console.log('[Store.addBoss] incoming', boss);
       const newBoss = {
         ...boss,
         id: boss.id || Date.now().toString(),
@@ -235,6 +238,7 @@ const useDnDStore = create((set, get) => {
       
       set(state => {
         const updatedBosses = [...state.bosses, newBoss];
+        console.log('[Store.addBoss] saved', newBoss);
         localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
         return { bosses: updatedBosses };
       });
@@ -410,6 +414,7 @@ const useDnDStore = create((set, get) => {
     
     addEnemyGroup: () => {
       const { groupTemplate } = get();
+      console.log('[Store.addEnemyGroup] template before create', groupTemplate);
       
       // Initialize individual creature HPs
       const creatures = Array(groupTemplate.count).fill().map(() => ({
@@ -425,6 +430,7 @@ const useDnDStore = create((set, get) => {
         count: groupTemplate.count,
         originalCount: groupTemplate.count, // Track original count
         initiative: groupTemplate.initiative || 0,
+        // Do not persist initiativeModifier in created group
         inAoe: false,
         showSavingThrows: false,
         savingThrows: { ...groupTemplate.savingThrows },
@@ -435,6 +441,7 @@ const useDnDStore = create((set, get) => {
       
       set(state => {
         const updatedGroups = [...state.enemyGroups, newGroup];
+        console.log('[Store.addEnemyGroup] saved', newGroup);
         localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
         return { enemyGroups: updatedGroups };
       });
@@ -445,6 +452,7 @@ const useDnDStore = create((set, get) => {
     
     addMultipleEnemyGroups: (count) => {
       const { groupTemplate } = get();
+      console.log('[Store.addMultipleEnemyGroups] template before create', groupTemplate);
       const newGroups = [];
       
       for (let i = 0; i < count; i++) {
@@ -457,6 +465,7 @@ const useDnDStore = create((set, get) => {
           count: groupTemplate.count,
           originalCount: groupTemplate.count, // Track original count
           initiative: groupTemplate.initiative || 0,
+          // Do not persist initiativeModifier in created group
           inAoe: false,
           showSavingThrows: false,
           savingThrows: { ...groupTemplate.savingThrows },
@@ -470,6 +479,7 @@ const useDnDStore = create((set, get) => {
       
       set(state => {
         const updatedGroups = [...state.enemyGroups, ...newGroups];
+        console.log('[Store.addMultipleEnemyGroups] saved', newGroups);
         localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
         return { enemyGroups: updatedGroups };
       });

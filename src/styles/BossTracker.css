@@ -595,16 +595,69 @@
   font-size: 0.9rem;
 }
 
-/* Faster tooltips - reduce browser default delay */
-.defense-chip[title],
-.defense-icon[title] {
-  /* Some browsers respect this for faster tooltip display */
-  -webkit-tooltip-delay: 250ms;
-  tooltip-delay: 250ms;
+/* Note: Browser tooltip timing is largely controlled by OS/browser settings */
+
+/* Initiative controls */
+.initiative-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.initiative-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.initiative-controls input[name="initiative"] {
+  width: 70px;
+  text-align: center;
+}
+
+.initiative-separator {
+  font-weight: bold;
+  color: #4a5568;
+  font-size: 1rem;
+}
+
+.initiative-modifier {
+  width: 50px !important;
+  text-align: center;
+}
+
+.roll-initiative-button {
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+}
+
+.roll-initiative-button:hover {
+  background-color: #3182ce;
+}
+
+.roll-initiative-button:active {
+  transform: scale(0.95);
 }
 
 @media (max-width: 768px) {
   .defenses-grid { grid-template-columns: 1fr; }
+  
+  .initiative-controls {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
 }
 
 .no-attacks-message {

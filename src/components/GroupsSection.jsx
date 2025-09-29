@@ -98,7 +98,8 @@ const GroupsSection = () => {
     },
     showSavingThrows: false,
     showDefenses: false,
-    initiative: 0
+    initiative: 0,
+    initiativeModifier: 0
   });
 
   // Attack/spell template for bosses
@@ -179,7 +180,7 @@ const GroupsSection = () => {
   // Handle changes to the boss template
   const handleBossTemplateChange = (e) => {
     const { name, value } = e.target;
-    const parsedValue = ['maxHp', 'currentHp', 'ac', 'initiative'].includes(name) 
+    const parsedValue = ['maxHp', 'currentHp', 'ac', 'initiative', 'initiativeModifier'].includes(name) 
       ? parseInt(value) || 0
       : value;
     setBossTemplate(prev => ({ ...prev, [name]: parsedValue }));
@@ -264,14 +265,50 @@ const GroupsSection = () => {
     }));
   };
 
+  // Roll initiative for boss template
+  const rollBossInitiative = () => {
+    const roll = rollD20();
+    console.log('[Boss Initiative Roll]', { roll, modifier: bossTemplate.initiativeModifier || 0, note: 'UI shows raw d20 roll only' });
+    // Set raw d20 roll (1-20). Modifier is applied at creation time only.
+    setBossTemplate(prev => ({ ...prev, initiative: roll }));
+  };
+
+  // Helper to compute a default initiative with modifier when needed
+  const getInitiativeRollWithMod = (modifier = 0) => {
+    const roll = rollD20();
+    return roll + (parseInt(modifier) || 0);
+  };
+
+  // Roll initiative for group template  
+  const rollGroupInitiative = () => {
+    const roll = rollD20();
+    const modifier = parseInt(groupTemplate.initiativeModifier) || 0;
+    console.log('[Group Initiative Roll]', { roll, modifier, note: 'UI shows raw d20 roll only' });
+    // Set raw d20 roll (1-20). Modifier is applied at creation time only.
+    updateGroupTemplate('initiative', roll);
+  };
+
   // Add a new boss
   const handleAddBoss = () => {
     if (!bossTemplate.name || bossTemplate.maxHp <= 0 || bossTemplate.ac <= 0) {
       alert('Please fill in all required fields');
       return;
     }
-    
-    addBoss({ ...bossTemplate, id: Date.now().toString(), currentHp: bossTemplate.maxHp });
+    // Ensure initiative includes modifier if not manually set/rolled
+    const initiativeInput = parseInt(bossTemplate.initiative) || 0;
+    const initiativeMod = parseInt(bossTemplate.initiativeModifier) || 0;
+    const initiativeFinal = initiativeInput > 0 
+      ? (initiativeInput + initiativeMod) 
+      : (getInitiativeRollWithMod(initiativeMod));
+    console.log('[Add Boss] before add', { name: bossTemplate.name, initiativeInput, initiativeMod, initiativeFinal });
+    addBoss({ 
+      ...bossTemplate, 
+      id: Date.now().toString(), 
+      currentHp: bossTemplate.maxHp,
+      initiative: initiativeFinal,
+      // Do not persist initiativeModifier on the created boss
+      initiativeModifier: undefined
+    });
     
     // Optionally reset form or clear some fields
     setBossTemplate(prev => ({
@@ -680,7 +717,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     }
     
     // Handle non-nested fields
-    const parsedValue = name === 'maxHp' || name === 'currentHp' || name === 'ac' || name === 'count' || name === 'attackBonus'
+    const parsedValue = ['maxHp', 'currentHp', 'ac', 'count', 'attackBonus', 'initiative', 'initiativeModifier'].includes(name)
       ? parseInt(value) || 0
       : value;
     
@@ -717,6 +754,21 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     if (!groupTemplate.name || groupTemplate.count <= 0 || groupTemplate.maxHp <= 0) {
       alert('Please fill in all group fields correctly');
       return;
+    }
+    // If initiative is 0/empty, auto-roll with modifier so modifier is applied
+    const init = parseInt(groupTemplate.initiative) || 0;
+    const mod = parseInt(groupTemplate.initiativeModifier) || 0;
+    let finalInit = init;
+    if (init > 0) {
+      finalInit = init + mod;
+      console.log('[Add Group] manual initiative + modifier', { init, mod, finalInit });
+      updateGroupTemplate('initiative', finalInit);
+    } else if (mod !== 0) {
+      const total = (rollD20() + mod);
+      console.log('[Add Group] auto roll initiative with modifier', { mod, total });
+      updateGroupTemplate('initiative', total);
+    } else {
+      console.log('[Add Group] using initiative as-is', { init });
     }
     addEnemyGroup();
   };
@@ -1302,16 +1354,36 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                     min="1"
                   />
                 </div>
-                <div className="template-field">
+                <div className="template-field initiative-field">
                   <label>Initiative:</label>
-                  <input
-                    type="number"
-                    name="initiative"
-                    value={groupTemplate.initiative || 0}
-                    onChange={handleGroupTemplateChange}
-                    min="0"
-                    placeholder="Initiative"
-                  />
+                  <div className="initiative-controls">
+                    <input
+                      type="number"
+                      name="initiative"
+                      value={groupTemplate.initiative || 0}
+                      onChange={handleGroupTemplateChange}
+                      min="0"
+                      placeholder="Roll result"
+                    />
+                    <span className="initiative-separator">+</span>
+                    <input
+                      type="number"
+                      name="initiativeModifier"
+                      value={groupTemplate.initiativeModifier || 0}
+                      onChange={handleGroupTemplateChange}
+                      placeholder="Mod"
+                      className="initiative-modifier"
+                      title="Initiative Modifier"
+                    />
+                    <button
+                      type="button"
+                      className="roll-initiative-button"
+                      onClick={rollGroupInitiative}
+                      title="Roll Initiative (1d20 + modifier)"
+                    >
+                      🎲
+                    </button>
+                  </div>
                 </div>
               </div>
               
@@ -1453,15 +1525,36 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                     min="1"
                   />
                 </div>
-                <div className="boss-field">
+                <div className="boss-field initiative-field">
                   <label>Initiative:</label>
-                  <input
-                    type="number"
-                    name="initiative"
-                    value={bossTemplate.initiative}
-                    onChange={handleBossTemplateChange}
-                    min="0"
-                  />
+                  <div className="initiative-controls">
+                    <input
+                      type="number"
+                      name="initiative"
+                      value={bossTemplate.initiative}
+                      onChange={handleBossTemplateChange}
+                      min="0"
+                      placeholder="Roll result"
+                    />
+                    <span className="initiative-separator">+</span>
+                    <input
+                      type="number"
+                      name="initiativeModifier"
+                      value={bossTemplate.initiativeModifier}
+                      onChange={handleBossTemplateChange}
+                      placeholder="Mod"
+                      className="initiative-modifier"
+                      title="Initiative Modifier"
+                    />
+                    <button
+                      type="button"
+                      className="roll-initiative-button"
+                      onClick={rollBossInitiative}
+                      title="Roll Initiative (1d20 + modifier)"
+                    >
+                      🎲
+                    </button>
+                  </div>
                 </div>
                 <div className="boss-field wide">
                   <label>Notes:</label>
