@@ -657,7 +657,10 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
       }
     } else {
       // Normal damage modifiers for non-save attacks
-      if (modifier === 'half') {
+      if (modifier === 'double') {
+        finalDamage = finalDamage * 2;
+        modifierText = ' (double damage)';
+      } else if (modifier === 'half') {
         finalDamage = Math.floor(finalDamage / 2);
         modifierText = ' (half damage)';
       } else if (modifier === 'quarter') {
@@ -895,7 +898,9 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     
     // Calculate the final damage based on the modifier
     let finalDamage = attackResult.totalDamage;
-    if (damageModifier === 'half') {
+    if (damageModifier === 'double') {
+      finalDamage = finalDamage * 2;
+    } else if (damageModifier === 'half') {
       finalDamage = Math.floor(finalDamage / 2);
     } else if (damageModifier === 'quarter') {
       finalDamage = Math.floor(finalDamage / 4);
@@ -1100,7 +1105,9 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     const modifier = damageModifiers[characterId]?.[groupId] || 'full';
     let modifiedDamage = result.damage;
     
-    if (modifier === 'half') {
+    if (modifier === 'double') {
+      modifiedDamage = modifiedDamage * 2;
+    } else if (modifier === 'half') {
       modifiedDamage = Math.floor(modifiedDamage / 2);
     } else if (modifier === 'quarter') {
       modifiedDamage = Math.floor(modifiedDamage / 4);
@@ -1141,7 +1148,9 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
       
       // Calculate modified damage based on selected modifier
       let modifiedDamage = baseDamage;
-      if (modifier === 'half') {
+      if (modifier === 'double') {
+        modifiedDamage = baseDamage * 2;
+      } else if (modifier === 'half') {
         modifiedDamage = Math.floor(baseDamage / 2);
       } else if (modifier === 'quarter') {
         modifiedDamage = Math.floor(baseDamage / 4);
@@ -1950,7 +1959,9 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                   
                                   // Calculate the modified damage based on the selected modifier
                                   let modifiedDamage = baseDamage;
-                                  if (modifier === 'half') {
+                                  if (modifier === 'double') {
+                                    modifiedDamage = baseDamage * 2;
+                                  } else if (modifier === 'half') {
                                     modifiedDamage = Math.floor(baseDamage / 2);
                                   } else if (modifier === 'quarter') {
                                     modifiedDamage = Math.floor(baseDamage / 4);
@@ -2032,6 +2043,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                   onChange={(e) => handleDamageModifierChange(character.id, result.sourceGroupId, e.target.value)}
                                   className="damage-modifier-select"
                                 >
+                                  <option value="double">Double Damage</option>
                                   <option value="full">Full Damage</option>
                                   <option value="half">Half Damage</option>
                                   <option value="quarter">Quarter Damage</option>
@@ -2384,6 +2396,12 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                                 ) : (
                                                   <>
                                                     <button 
+                                                      className="damage-button double-damage"
+                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'double')}
+                                                    >
+                                                      Double
+                                                    </button>
+                                                    <button 
                                                       className="damage-button full-damage"
                                                       onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
                                                     >
@@ -2613,6 +2631,12 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                               ))}
                             </div>
                             <div className="damage-modifier-buttons">
+                              <button
+                                className="damage-modifier-button"
+                                onClick={(e) => handleApplyDamageGroup(e, group.id, 'double')}
+                              >
+                                Double Damage
+                              </button>
                               <button
                                 className="damage-modifier-button"
                                 onClick={(e) => handleApplyDamageGroup(e, group.id, 'full')}

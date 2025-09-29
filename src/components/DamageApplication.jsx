@@ -392,7 +392,7 @@ const DamageApplication = () => {
     } else if (targetEntity.type === 'boss') {
       applyDamageToBoss(targetEntity.id, finalDamage, hitStatus);
     } else if (targetEntity.type === 'character') {
-      applyDamageToCharacter(targetEntity.id, finalDamage, hitStatus);
+      applyDamageToCharacter(targetEntity.id, finalDamage, hitStatus, '');
     }
     
     // Reset attack roll field
@@ -750,7 +750,9 @@ const DamageApplication = () => {
       let damageToApply = currentDamage;
       
       // Apply modifier
-      if (modifier === 'half') {
+      if (modifier === 'double') {
+        damageToApply = damageToApply * 2;
+      } else if (modifier === 'half') {
         damageToApply = Math.floor(damageToApply / 2);
       } else if (modifier === 'quarter') {
         damageToApply = Math.floor(damageToApply / 4);
@@ -1146,7 +1148,9 @@ const DamageApplication = () => {
                                         const currentDamage = parseInt(aoeState.damageAmount);
                                         let finalDamage = isNaN(currentDamage) ? 0 : currentDamage;
                                         
-                                        if (modifier === 'half') {
+                                        if (modifier === 'double') {
+                                          finalDamage = finalDamage * 2;
+                                        } else if (modifier === 'half') {
                                           finalDamage = Math.floor(finalDamage / 2);
                                         } else if (modifier === 'quarter') {
                                           finalDamage = Math.floor(finalDamage / 4);
@@ -1183,6 +1187,7 @@ const DamageApplication = () => {
                                         onChange={(e) => handleDamageModifierChange(entityId, e.target.value)}
                                       >
                                         <option value="default">Default Damage</option>
+                                        <option value="double">Double Damage</option>
                                         <option value="half">Half Damage</option>
                                         <option value="quarter">Quarter Damage</option>
                                         <option value="none">No Damage</option>
@@ -1264,7 +1269,9 @@ const DamageApplication = () => {
                                         const currentDamage = parseInt(aoeState.damageAmount);
                                         let finalDamage = isNaN(currentDamage) ? 0 : currentDamage;
                                         
-                                        if (modifier === 'half') {
+                                        if (modifier === 'double') {
+                                          finalDamage = finalDamage * 2;
+                                        } else if (modifier === 'half') {
                                           finalDamage = Math.floor(finalDamage / 2);
                                         } else if (modifier === 'quarter') {
                                           finalDamage = Math.floor(finalDamage / 4);
@@ -1301,6 +1308,7 @@ const DamageApplication = () => {
                                         onChange={(e) => handleDamageModifierChange(entityId, e.target.value)}
                                       >
                                         <option value="default">Default Damage</option>
+                                        <option value="double">Double Damage</option>
                                         <option value="half">Half Damage</option>
                                         <option value="quarter">Quarter Damage</option>
                                         <option value="none">No Damage</option>

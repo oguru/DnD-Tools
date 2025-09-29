@@ -1,9 +1,31 @@
 import '../styles/CharacterSection.css';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import ImportExportModal from './ImportExportModal';
 import useDnDStore from '../store/dndStore';
+
+// Damage types and icons for defenses (same as boss system)
+const DAMAGE_TYPES = [
+  'slashing', 'piercing', 'bludgeoning', 'fire', 'cold', 'lightning', 'thunder', 
+  'acid', 'poison', 'psychic', 'necrotic', 'radiant', 'force'
+];
+
+const DAMAGE_TYPE_ICONS = {
+  slashing: '🗡️',
+  piercing: '🏹', 
+  bludgeoning: '🔨',
+  fire: '🔥',
+  cold: '❄️',
+  lightning: '⚡',
+  thunder: '💥',
+  acid: '🧪',
+  poison: '☠️',
+  psychic: '🧠',
+  necrotic: '💀',
+  radiant: '✨',
+  force: '🌟'
+};
 
 const CharacterSection = () => {
   const {
@@ -101,6 +123,110 @@ const CharacterSection = () => {
         setShowEmptySlot(true);
       }
     }
+  };
+
+  // Character defense state - only one can be open at a time
+  const [characterDefenseMenus, setCharacterDefenseMenus] = useState({});
+
+  // Toggle defense editor with exclusive behavior
+  const toggleDefenseEditor = (charId) => {
+    const key = `${charId}-editor`;
+    setCharacterDefenseMenus(prev => {
+      const isCurrentlyOpen = prev[key];
+      
+      if (isCurrentlyOpen) {
+        // Close the current editor
+        return { ...prev, [key]: false };
+      } else {
+        // Close all other editors and open this one
+        const newState = {};
+        Object.keys(prev).forEach(k => {
+          newState[k] = false;
+        });
+        newState[key] = true;
+        return newState;
+      }
+    });
+  };
+
+  // Close defense editors when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Check if any defense editor is open
+      const hasOpenEditor = Object.values(characterDefenseMenus).some(isOpen => isOpen);
+      if (!hasOpenEditor) return;
+
+      // Check if the click was outside all defense sections
+      const defensesSections = document.querySelectorAll('.defenses-section');
+      let clickedInside = false;
+      
+      defensesSections.forEach(section => {
+        if (section.contains(event.target)) {
+          clickedInside = true;
+        }
+      });
+
+      if (!clickedInside) {
+        // Close all defense editors
+        setCharacterDefenseMenus(prev => {
+          const newState = {};
+          Object.keys(prev).forEach(k => {
+            newState[k] = false;
+          });
+          return newState;
+        });
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [characterDefenseMenus]);
+
+  // Toggle character defense with exclusive logic (same as boss system)
+  const handleToggleDefense = (charId, category, damageType) => {
+    const character = characters.find(c => c.id === charId);
+    if (!character) return;
+    
+    const defenses = character.defenses || { resistances: [], vulnerabilities: [], immunities: [] };
+    const currentList = defenses[category] || [];
+    const alreadySelected = currentList.includes(damageType);
+
+    // Start from existing lists
+    let resistances = [...(defenses.resistances || [])];
+    let vulnerabilities = [...(defenses.vulnerabilities || [])];
+    let immunities = [...(defenses.immunities || [])];
+
+    // If selecting in one category, ensure exclusivity by removing from the others
+    if (!alreadySelected) {
+      if (category !== 'resistances') {
+        resistances = resistances.filter(t => t !== damageType);
+      }
+      if (category !== 'vulnerabilities') {
+        vulnerabilities = vulnerabilities.filter(t => t !== damageType);
+      }
+      if (category !== 'immunities') {
+        immunities = immunities.filter(t => t !== damageType);
+      }
+    }
+
+    // Toggle in the chosen category
+    if (category === 'resistances') {
+      resistances = alreadySelected
+        ? resistances.filter(t => t !== damageType)
+        : [...resistances, damageType];
+    } else if (category === 'vulnerabilities') {
+      vulnerabilities = alreadySelected
+        ? vulnerabilities.filter(t => t !== damageType)
+        : [...vulnerabilities, damageType];
+    } else if (category === 'immunities') {
+      immunities = alreadySelected
+        ? immunities.filter(t => t !== damageType)
+        : [...immunities, damageType];
+    }
+
+    updateCharacter(charId, 'defenses', { resistances, vulnerabilities, immunities });
   };
   
   // Handle removing a character
@@ -377,6 +503,169 @@ const CharacterSection = () => {
                       </button>
                     )}
                   </div>
+                  
+                  {/* Character defenses row for non-empty characters */}
+                  {!isEmpty && (
+                    <div className="character-defenses-row">
+                      <div className="defenses-section">
+                        {/* Inline defenses display with headers */}
+                        <div className="defenses-inline">
+                          <div className="defense-content">
+                            <div className="defense-group">
+                              <button
+                                type="button"
+                                className="defense-header-button resistance"
+                                onClick={() => toggleDefenseEditor(character.id)}
+                                title="Edit defenses"
+                              >
+                                RES
+                              </button>
+                              <div className="defense-chips-inline">
+                                {(character.defenses?.resistances || []).map(type => (
+                                  <span
+                                    key={`res-${type}`}
+                                    className="defense-chip resistance"
+                                    title={`Resistance: ${type}`}
+                                  >
+                                    {DAMAGE_TYPE_ICONS[type] || type.slice(0, 3)}
+                                  </span>
+                                ))}
+                                {(character.defenses?.resistances || []).length === 0 && (
+                                  <span className="no-defenses">—</span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="defense-group">
+                              <button
+                                type="button"
+                                className="defense-header-button vulnerability"
+                                onClick={() => toggleDefenseEditor(character.id)}
+                                title="Edit defenses"
+                              >
+                                VULN
+                              </button>
+                              <div className="defense-chips-inline">
+                                {(character.defenses?.vulnerabilities || []).map(type => (
+                                  <span
+                                    key={`vuln-${type}`}
+                                    className="defense-chip vulnerability"
+                                    title={`Vulnerability: ${type}`}
+                                  >
+                                    {DAMAGE_TYPE_ICONS[type] || type.slice(0, 3)}
+                                  </span>
+                                ))}
+                                {(character.defenses?.vulnerabilities || []).length === 0 && (
+                                  <span className="no-defenses">—</span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="defense-group">
+                              <button
+                                type="button"
+                                className="defense-header-button immunity"
+                                onClick={() => toggleDefenseEditor(character.id)}
+                                title="Edit defenses"
+                              >
+                                IMM
+                              </button>
+                              <div className="defense-chips-inline">
+                                {(character.defenses?.immunities || []).map(type => (
+                                  <span
+                                    key={`imm-${type}`}
+                                    className="defense-chip immunity"
+                                    title={`Immunity: ${type}`}
+                                  >
+                                    {DAMAGE_TYPE_ICONS[type] || type.slice(0, 3)}
+                                  </span>
+                                ))}
+                                {(character.defenses?.immunities || []).length === 0 && (
+                                  <span className="no-defenses">—</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <button
+                            type="button"
+                            className="defenses-toggle-button"
+                            onClick={() => toggleDefenseEditor(character.id)}
+                            title="Toggle defenses editor"
+                          >
+                            <span className="chevron">
+                              {characterDefenseMenus[`${character.id}-editor`] ? '▲' : '▼'}
+                            </span>
+                          </button>
+                        </div>
+                        
+                        {/* Defenses editor */}
+                        {characterDefenseMenus[`${character.id}-editor`] && (
+                          <div className="defenses-editor">
+                            <div className="defense-category-header">
+                              <span>Resistances</span>
+                            </div>
+                            <div className="defense-grid">
+                              {DAMAGE_TYPES.map(type => {
+                                const selected = (character.defenses?.resistances || []).includes(type);
+                                return (
+                                  <div
+                                    key={`res-${type}`}
+                                    className={`defense-chip ${selected ? 'selected' : ''}`}
+                                    onClick={() => handleToggleDefense(character.id, 'resistances', type)}
+                                    title={`${selected ? 'Remove' : 'Add'} ${type} resistance`}
+                                  >
+                                    <span className="defense-icon">{DAMAGE_TYPE_ICONS[type]}</span>
+                                    <span className="defense-label">{type}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            
+                            <div className="defense-category-header">
+                              <span>Vulnerabilities</span>
+                            </div>
+                            <div className="defense-grid">
+                              {DAMAGE_TYPES.map(type => {
+                                const selected = (character.defenses?.vulnerabilities || []).includes(type);
+                                return (
+                                  <div
+                                    key={`vuln-${type}`}
+                                    className={`defense-chip ${selected ? 'selected' : ''}`}
+                                    onClick={() => handleToggleDefense(character.id, 'vulnerabilities', type)}
+                                    title={`${selected ? 'Remove' : 'Add'} ${type} vulnerability`}
+                                  >
+                                    <span className="defense-icon">{DAMAGE_TYPE_ICONS[type]}</span>
+                                    <span className="defense-label">{type}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            
+                            <div className="defense-category-header">
+                              <span>Immunities</span>
+                            </div>
+                            <div className="defense-grid">
+                              {DAMAGE_TYPES.map(type => {
+                                const selected = (character.defenses?.immunities || []).includes(type);
+                                return (
+                                  <div
+                                    key={`imm-${type}`}
+                                    className={`defense-chip ${selected ? 'selected' : ''}`}
+                                    onClick={() => handleToggleDefense(character.id, 'immunities', type)}
+                                    title={`${selected ? 'Remove' : 'Add'} ${type} immunity`}
+                                  >
+                                    <span className="defense-icon">{DAMAGE_TYPE_ICONS[type]}</span>
+                                    <span className="defense-label">{type}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -451,4 +451,218 @@
     grid-row: 4;
     justify-content: center;
   }
+}
+
+/* Character defenses */
+.character-defenses-row {
+  grid-column: 1 / -1;
+  padding: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8f9fa;
+}
+
+.defenses-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.defenses-inline {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  background-color: #fafafa;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto; /* Allow horizontal scroll if needed */
+}
+
+.defense-content {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  overflow-x: auto;
+}
+
+.defense-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 1 auto; /* Don't grow by default, but allow shrinking */
+  white-space: nowrap; /* Prevent wrapping within the group */
+}
+
+.defenses-toggle-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+  color: #6b7280;
+}
+
+.defenses-toggle-button:hover {
+  background-color: #e5e7eb;
+}
+
+.defenses-toggle-button .chevron {
+  font-size: 0.8rem;
+}
+
+.defense-header-button {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.defense-header-button.resistance {
+  background-color: #2c7a7b;
+  color: white;
+}
+
+.defense-header-button.resistance:hover {
+  background-color: #285e61;
+}
+
+.defense-header-button.vulnerability {
+  background-color: #c53030;
+  color: white;
+}
+
+.defense-header-button.vulnerability:hover {
+  background-color: #9c2626;
+}
+
+.defense-header-button.immunity {
+  background-color: #2f855a;
+  color: white;
+}
+
+.defense-header-button.immunity:hover {
+  background-color: #276749;
+}
+
+.defense-chips-inline {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  flex-shrink: 0; /* Don't allow the chips container to shrink */
+}
+
+.defense-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid;
+  font-weight: 600;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.defense-chip.resistance {
+  background-color: #81e6d9;
+  color: #1a365d;
+  border-color: #2c7a7b;
+}
+
+.defense-chip.vulnerability {
+  background-color: #fed7d7;
+  color: #742a2a;
+  border-color: #c53030;
+}
+
+.defense-chip.immunity {
+  background-color: #c6f6d5;
+  color: #1a365d;
+  border-color: #2f855a;
+}
+
+.no-defenses {
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 0.8rem;
+}
+
+.defenses-editor {
+  margin-left: 1rem;
+  padding: 0.5rem;
+  background-color: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.defense-category-header {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.defense-category-header:first-child {
+  margin-top: 0;
+}
+
+.defense-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.defenses-editor .defense-chip {
+  background-color: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  justify-content: flex-start;
+  padding: 0.5rem;
+}
+
+.defenses-editor .defense-chip:hover {
+  background-color: #edf2f7;
+  border-color: #cbd5e0;
+}
+
+.defenses-editor .defense-chip.selected {
+  background-color: #e6fffa;
+  border-color: #2c7a7b;
+  color: #2c7a7b;
+  position: relative;
+}
+
+.defenses-editor .defense-chip.selected::after {
+  content: '✓';
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.defense-icon {
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.2rem;
+}
+
+.defense-label {
+  text-transform: capitalize;
+  font-size: 0.7rem;
 } 

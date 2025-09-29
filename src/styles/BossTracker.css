@@ -1564,6 +1564,15 @@
   min-width: 50px;
 }
 
+.damage-button.double-damage {
+  background-color: #722ed1;
+  color: white;
+}
+
+.damage-button.double-damage:hover {
+  background-color: #531dab;
+}
+
 .damage-button.full-damage {
   background-color: #ff4d4f;
   color: white;
