@@ -61,6 +61,7 @@ const GroupsSection = () => {
     setBossAoeTarget,
     prepareBossAoeAttack,
     addBossAttackResult,
+    updateBossAttackResult,
     addBoss,
     resetBossesHealth,
     clearAllBosses,
@@ -489,6 +490,8 @@ ${attack.halfOnSave ? `On success: ${Math.floor(totalDamage/2)} damage (half dam
     // Set processing state to show visual feedback
     setAttackProcessing(true);
     
+    try {
+    
     // Add visible feedback if no target is selected
     if (!targetId) {
       // Flash the select box to draw attention
@@ -613,6 +616,9 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
       damageType: attack.damageType || 'slashing'
     };
     
+    // Add the initial attack result to the combat log
+    addBossAttackResult(boss.id, attackResult);
+    
     // Force update in next microtask to ensure React processes the state update
     setTimeout(() => {
       setPendingAttacks(prev => {
@@ -628,6 +634,10 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
         return newPending;
       });
     }, 0);
+    } catch (error) {
+      console.error('Error in handleRollAttackAgainstPlayer:', error);
+      setAttackProcessing(false);
+    }
   };
 
   // Handle applying damage with modifier
@@ -672,12 +682,23 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
       }
     }
     
-    // Update result message with modifier info
-    const updatedMessage = pendingAttack.message + saveResultText + modifierText;
+    // Update result message with final damage and modifier info
+    let updatedMessage = pendingAttack.message;
     
-    // Add the attack result to the boss's history
-    addBossAttackResult(bossId, {
-      ...pendingAttack,
+    // Replace the original damage number with the final damage in the message
+    if (finalDamage !== pendingAttack.damage) {
+      // Update the damage number in the message
+      updatedMessage = updatedMessage.replace(
+        new RegExp(`<span class="damage-number">${pendingAttack.damage}</span>`), 
+        `<span class="damage-number">${finalDamage}</span>`
+      );
+    }
+    
+    // Add modifier info to the message
+    updatedMessage += saveResultText + modifierText;
+    
+    // Update the existing attack result in the boss's history and combat log
+    updateBossAttackResult(bossId, pendingAttack.id, {
       message: updatedMessage,
       appliedDamage: finalDamage,
       savePassed: modifier === 'half' || modifier === 'none'
@@ -690,7 +711,8 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
         ` ${pendingAttack.damageType}${saveResultText || modifierText}` : 
         saveResultText || modifierText;
       
-      applyDamageToCharacter(pendingAttack.targetId, finalDamage, pendingAttack.hitStatus, damageTypeText);
+      // Skip creating a new combat log entry since we updated the existing one
+      applyDamageToCharacter(pendingAttack.targetId, finalDamage, pendingAttack.hitStatus, damageTypeText, true);
     }
     
     // Remove from pending attacks

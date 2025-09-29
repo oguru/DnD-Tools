@@ -345,6 +345,32 @@ const useDnDStore = create((set, get) => {
         };
       });
     },
+
+    updateBossAttackResult: (bossId, resultId, updates) => {
+      set(state => {
+        const updatedBosses = state.bosses.map(boss => {
+          if (boss.id === bossId) {
+            const attackResults = (boss.attackResults || []).map(result => 
+              result.id === resultId ? { ...result, ...updates } : result
+            );
+            return { ...boss, attackResults };
+          }
+          return boss;
+        });
+        
+        // Also update the global attack results
+        const updatedAttackResults = state.attackResults.map(result => 
+          result.id === resultId && result.bossId === bossId 
+            ? { ...result, ...updates } 
+            : result
+        );
+        
+        return { 
+          bosses: updatedBosses, 
+          attackResults: updatedAttackResults
+        };
+      });
+    },
     
     toggleBossSavingThrows: (bossId) => {
       set(state => {
@@ -1217,7 +1243,7 @@ const useDnDStore = create((set, get) => {
       // Don't clear AOE targets here as it's now handled in the component
     },
     
-    applyDamageToCharacter: (characterId, damage, hitStatus, modifierText = '') => {
+    applyDamageToCharacter: (characterId, damage, hitStatus, modifierText = '', skipCombatLog = false) => {
       if (damage <= 0) return;
       
       set(state => {
@@ -1258,6 +1284,16 @@ const useDnDStore = create((set, get) => {
         
         localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
         
+        // Update turn order to refresh HP information
+        setTimeout(() => get().updateTurnOrder(), 0);
+        
+        // Skip creating combat log entry if requested
+        if (skipCombatLog) {
+          return { 
+            characters: updatedCharacters
+          };
+        }
+        
         // Add to attack results
         const character = state.characters.find(c => c.id === characterId);
         const resultMessage = hitStatus === 'miss' 
@@ -1265,9 +1301,6 @@ const useDnDStore = create((set, get) => {
           : hitStatus === 'critical'
             ? `Critical hit! ${damage} damage to ${character?.name}${modifierText}`
             : `Hit! ${damage} damage to ${character?.name}${modifierText}`;
-            
-        // Update turn order to refresh HP information
-        setTimeout(() => get().updateTurnOrder(), 0);
         
         return { 
           characters: updatedCharacters,
@@ -1833,113 +1866,94 @@ const useDnDStore = create((set, get) => {
     applyDamageToMultipleCharacters: (damageDetails) => {
       set(state => {
         const updatedCharacters = state.characters.map(char => {
-          // Find if this character has any pending damage
-          const charDamage = damageDetails.find(d => d.characterId === char.id);
+          // Find all damage instances for this character
+          const charDamageInstances = damageDetails.filter(d => d.characterId === char.id);
           
-          if (!charDamage) return char;
+          if (charDamageInstances.length === 0) return char;
           
-          // Apply the damage with the specified modifier
-          let finalDamage = charDamage.damage;
+          // Calculate total damage from all instances
+          let totalDamage = 0;
+          let currentHp = char.currentHp;
+          let currentTempHp = char.tempHp || 0;
           
-          // Debug the starting point
-          console.log(`Damage calculation for ${char.name} from ${charDamage.groupName}:`, {
-            startingDamage: finalDamage,
-            acOverride: charDamage.acOverride,
-            characterAC: char.ac,
-            adjustedHitCount: charDamage.adjustedHitCount,
-            modifier: charDamage.modifier,
-            damagePreCalculated: charDamage.damagePreCalculated
+          // Process each damage instance separately
+          charDamageInstances.forEach(charDamage => {
+            let finalDamage = charDamage.damage;
+            
+            
+            // Apply AC override adjustment if needed
+            if (charDamage.acOverride !== null && 
+                charDamage.acOverride !== undefined && 
+                char.ac !== charDamage.acOverride && 
+                charDamage.attackRolls && 
+                charDamage.adjustedHitCount === undefined) {
+              
+              const newHitCount = charDamage.attackRolls.filter(roll => 
+                roll.isNatural20 || (!roll.isNatural1 && roll.attackRoll >= charDamage.acOverride)
+              ).length;
+              
+              if (charDamage.hitCount) {
+                const hitRatio = newHitCount / charDamage.hitCount;
+                const originalDamage = finalDamage;
+                finalDamage = Math.floor(finalDamage * hitRatio);
+                
+              }
+            }
+            
+            // Apply damage modifier if not pre-calculated
+            if (!charDamage.damagePreCalculated) {
+              const preModifierDamage = finalDamage;
+              if (charDamage.modifier === 'half') {
+                finalDamage = Math.floor(finalDamage / 2);
+              } else if (charDamage.modifier === 'quarter') {
+                finalDamage = Math.floor(finalDamage / 4);
+              } else if (charDamage.modifier === 'none') {
+                finalDamage = 0;
+              }
+            }
+            
+            if (finalDamage <= 0) return;
+            
+            // Apply this damage instance to the character's HP
+            let remainingDamage = finalDamage;
+            
+            // First apply to temp HP
+            if (currentTempHp > 0) {
+              if (currentTempHp >= remainingDamage) {
+                currentTempHp -= remainingDamage;
+                remainingDamage = 0;
+              } else {
+                remainingDamage -= currentTempHp;
+                currentTempHp = 0;
+              }
+            }
+            
+            // Then apply to current HP
+            currentHp = Math.max(0, currentHp - remainingDamage);
+            totalDamage += finalDamage;
+            
           });
           
-          // Check if we need to recalculate hits based on AC override
-          // ONLY if it hasn't already been adjusted in the UI (indicated by adjustedHitCount)
-          if (charDamage.acOverride !== null && 
-              charDamage.acOverride !== undefined && 
-              char.ac !== charDamage.acOverride && 
-              charDamage.attackRolls && 
-              charDamage.adjustedHitCount === undefined) {
-            
-            const newHitCount = charDamage.attackRolls.filter(roll => 
-              roll.isNatural20 || (!roll.isNatural1 && roll.attackRoll >= charDamage.acOverride)
-            ).length;
-            
-            // If we have original hit count info, adjust damage proportionally
-            if (charDamage.hitCount) {
-              const hitRatio = newHitCount / charDamage.hitCount;
-              const originalDamage = finalDamage;
-              finalDamage = Math.floor(finalDamage * hitRatio);
-              
-              console.log(`AC override recalculation (store-side):`, {
-                character: char.name,
-                originalHits: charDamage.hitCount,
-                newHits: newHitCount,
-                originalDamage,
-                newDamage: finalDamage
-              });
-            }
-          }
+          if (totalDamage === 0) return char;
           
-          // Apply damage modifier ONLY if damage hasn't been pre-calculated
-          if (!charDamage.damagePreCalculated) {
-            const preModifierDamage = finalDamage;
-            if (charDamage.modifier === 'half') {
-              finalDamage = Math.floor(finalDamage / 2);
-            } else if (charDamage.modifier === 'quarter') {
-              finalDamage = Math.floor(finalDamage / 4);
-            } else if (charDamage.modifier === 'none') {
-              finalDamage = 0;
-            }
-            
-            if (preModifierDamage !== finalDamage) {
-              console.log(`Damage modifier applied: ${charDamage.modifier}`, {
-                character: char.name,
-                before: preModifierDamage,
-                after: finalDamage
-              });
-            }
-          } else {
-            console.log(`Using pre-calculated damage for ${char.name}: ${finalDamage}`);
-          }
-          
-          if (finalDamage <= 0) return char;
-          
-          // First apply damage to temporary hit points
-          let remainingDamage = finalDamage;
-          let newTempHp = char.tempHp || 0;
-          
-          if (newTempHp > 0) {
-            if (newTempHp >= remainingDamage) {
-              // Temp HP absorbs all damage
-              newTempHp -= remainingDamage;
-              remainingDamage = 0;
-            } else {
-              // Temp HP absorbs part of the damage
-              remainingDamage -= newTempHp;
-              newTempHp = 0;
-            }
-          }
-          
-          // Apply any remaining damage to current HP
-          const newHp = Math.max(0, char.currentHp - remainingDamage);
-          console.log(`Final damage applied to ${char.name}: ${finalDamage} (HP: ${char.currentHp} -> ${newHp}, Temp HP: ${char.tempHp || 0} -> ${newTempHp})`);
           
           return { 
             ...char, 
-            currentHp: newHp,
-            tempHp: newTempHp
+            currentHp,
+            tempHp: currentTempHp
           };
         });
         
         localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
         
-        // Prepare result messages for the attack results
+        // Create separate combat log entries for each damage instance
         const resultMessages = damageDetails.map(detail => {
           if (!detail.characterId) return null;
           
           const character = state.characters.find(c => c.id === detail.characterId);
           if (!character) return null;
           
-          // Calculate final damage with modifiers
+          // Calculate final damage for this specific instance
           let finalDamage = detail.damage;
           
           // Apply AC override adjustment if needed
@@ -1988,7 +2002,7 @@ const useDnDStore = create((set, get) => {
           }
           
           return {
-            id: `${Date.now()}-${detail.characterId}`,
+            id: `${Date.now()}-${Math.random()}-${detail.characterId}-${detail.sourceGroupId}`,
             characterId: detail.characterId,
             sourceGroupId: detail.sourceGroupId,
             damage: finalDamage,
