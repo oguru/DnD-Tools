@@ -7,7 +7,7 @@ import { auth } from '../firebaseConfig';
 
 const DivinePowers = () => {
   const [view, setView] = useState('detailed'); // 'detailed', 'combined', or 'printable'
-  const [selectedLevel, setSelectedLevel] = useState(2); // Default to level 2
+  const [selectedLevel, setSelectedLevel] = useState(3); // Default to level 3
   const [user, setUser] = useState(null);
   const [showGMControls, setShowGMControls] = useState(false);
   const [printView, setPrintView] = useState('all'); // 'all', 'universal', or 'character'
@@ -20,15 +20,11 @@ const DivinePowers = () => {
         setShowGMControls(true);
       } else {
         setShowGMControls(false);
-        // Reset to level 2 if not GM and level is 3
-        if (selectedLevel > 2) {
-          setSelectedLevel(2);
-        }
       }
     });
     
     return () => unsubscribe();
-  }, [selectedLevel]);
+  }, []);
 
   const handleSignIn = () => {
     const provider = new GoogleAuthProvider();
@@ -515,7 +511,7 @@ const DivinePowers = () => {
       <div className="divine-powers-detailed">
         {/* Universal Divine Powers */}
         <h3 className="section-title">Universal Divine Abilities (All Characters)</h3>
-        {divinePowers.slice(0, showGMControls ? 3 : 2).map((level) => (
+        {divinePowers.slice(0, 3).map((level) => (
           <div key={level.level} className="divine-level">
             <h3>Level {level.level}: {level.name} <span className="level-subtitle">({level.description})</span></h3>
             <ul className="powers-list">
@@ -556,7 +552,7 @@ const DivinePowers = () => {
             <h3>{character.name}</h3>
             <ul className="powers-list">
               {(classSpecificPowers[character.id] || [])
-                .filter(power => power.level <= (showGMControls ? 3 : 2))
+                .filter(power => power.level <= 3)
                 .map((power, index) => (
                 <li key={index} className="power-item">
                   <strong>{power.name}:</strong> {power.description}
@@ -610,7 +606,7 @@ const DivinePowers = () => {
               value={selectedLevel} 
               onChange={(e) => setSelectedLevel(parseInt(e.target.value))}
             >
-              {divinePowers.slice(0, showGMControls ? 3 : 2).map(level => (
+              {divinePowers.slice(0, 3).map(level => (
                 <option key={level.level} value={level.level}>
                   {level.level} - {level.name}
                 </option>
@@ -850,7 +846,7 @@ const DivinePowers = () => {
               value={selectedLevel} 
               onChange={(e) => setSelectedLevel(parseInt(e.target.value))}
             >
-              {divinePowers.slice(0, showGMControls ? 3 : 2).map(level => (
+              {divinePowers.slice(0, 3).map(level => (
                 <option key={level.level} value={level.level}>
                   {level.level} - {level.name}
                 </option>
@@ -890,21 +886,6 @@ const DivinePowers = () => {
   return (
     <div className="divine-powers-page">
       <h2>Divine Powers</h2>
-      
-      {/* GM Authentication */}
-      <div className="gm-auth-section">
-        {!user && (
-          <button onClick={handleSignIn} className="gm-button">GM Sign In</button>
-        )}
-        {user && (
-          <div className="gm-controls">
-            <span className="gm-status">
-              {showGMControls ? 'GM Mode Active' : 'Logged in as ' + user.email}
-            </span>
-            <button onClick={handleSignOut} className="gm-button">Sign Out</button>
-          </div>
-        )}
-      </div>
       
       <div className="view-toggle">
         <button 
