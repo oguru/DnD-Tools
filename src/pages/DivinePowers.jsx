@@ -154,7 +154,7 @@ const DivinePowers = () => {
         },
         {
           god: "Mystra",
-          name: "Boon of the Weave",
+          name: "Weave Mastery",
           description: "Once per long rest, you can cast any spell of 8th level or lower that you've seen cast before without expending a spell slot. Non-spellcasters: Spell save DC = 8 + proficiency bonus + your primary modifier; Spell attack bonus = proficiency bonus + your primary modifier. Spellcasters use their normal spellcasting ability and save DC."
         }
       ]
