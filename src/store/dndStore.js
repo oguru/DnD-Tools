@@ -943,18 +943,23 @@ const useDnDStore = create((set, get) => {
             saveRoll = customEntityInfo.roll;
             totalRoll = customEntityInfo.totalRoll;
             
-            // Apply damage modifier
-            if (customEntityInfo.modifier === 'half') {
-              damageToApply = Math.floor(damage / 2);
-            } else if (customEntityInfo.modifier === 'quarter') {
-              damageToApply = Math.floor(damage / 4);
-            } else if (customEntityInfo.modifier === 'none') {
-              damageToApply = 0;
-            }
-            
-            // Apply manual adjustment
-            if (customEntityInfo.adjustment) {
-              damageToApply = Math.max(0, damageToApply + customEntityInfo.adjustment);
+            // Check if custom damage is provided (for multi-damage-type attacks)
+            if (customEntityInfo.customDamage !== undefined) {
+              damageToApply = customEntityInfo.customDamage;
+            } else {
+              // Apply damage modifier
+              if (customEntityInfo.modifier === 'half') {
+                damageToApply = Math.floor(damage / 2);
+              } else if (customEntityInfo.modifier === 'quarter') {
+                damageToApply = Math.floor(damage / 4);
+              } else if (customEntityInfo.modifier === 'none') {
+                damageToApply = 0;
+              }
+              
+              // Apply manual adjustment
+              if (customEntityInfo.adjustment) {
+                damageToApply = Math.max(0, damageToApply + customEntityInfo.adjustment);
+              }
             }
           } else {
             // Standard calculation
@@ -1151,18 +1156,23 @@ const useDnDStore = create((set, get) => {
             saveRoll = customEntityInfo.roll;
             totalRoll = customEntityInfo.totalRoll;
             
-            // Apply damage modifier
-            if (customEntityInfo.modifier === 'half') {
-              damageToApply = Math.floor(damage / 2);
-            } else if (customEntityInfo.modifier === 'quarter') {
-              damageToApply = Math.floor(damage / 4);
-            } else if (customEntityInfo.modifier === 'none') {
-              damageToApply = 0;
-            }
-            
-            // Apply manual adjustment
-            if (customEntityInfo.adjustment) {
-              damageToApply = Math.max(0, damageToApply + customEntityInfo.adjustment);
+            // Check if custom damage is provided (for multi-damage-type attacks)
+            if (customEntityInfo.customDamage !== undefined) {
+              damageToApply = customEntityInfo.customDamage;
+            } else {
+              // Apply damage modifier
+              if (customEntityInfo.modifier === 'half') {
+                damageToApply = Math.floor(damage / 2);
+              } else if (customEntityInfo.modifier === 'quarter') {
+                damageToApply = Math.floor(damage / 4);
+              } else if (customEntityInfo.modifier === 'none') {
+                damageToApply = 0;
+              }
+              
+              // Apply manual adjustment
+              if (customEntityInfo.adjustment) {
+                damageToApply = Math.max(0, damageToApply + customEntityInfo.adjustment);
+              }
             }
           } else if (saveType && saveDC) {
             // Standard calculation with saving throw
@@ -2680,18 +2690,23 @@ const useDnDStore = create((set, get) => {
             saveRoll = customEntityInfo.roll;
             totalRoll = customEntityInfo.totalRoll;
             
-            // Apply damage modifier
-            if (customEntityInfo.modifier === 'half') {
-              damageToApply = Math.floor(damage / 2);
-            } else if (customEntityInfo.modifier === 'quarter') {
-              damageToApply = Math.floor(damage / 4);
-            } else if (customEntityInfo.modifier === 'none') {
-              damageToApply = 0;
-            }
-            
-            // Apply manual adjustment
-            if (customEntityInfo.adjustment) {
-              damageToApply = Math.max(0, damageToApply + customEntityInfo.adjustment);
+            // Check if custom damage is provided (for multi-damage-type attacks)
+            if (customEntityInfo.customDamage !== undefined) {
+              damageToApply = customEntityInfo.customDamage;
+            } else {
+              // Apply damage modifier
+              if (customEntityInfo.modifier === 'half') {
+                damageToApply = Math.floor(damage / 2);
+              } else if (customEntityInfo.modifier === 'quarter') {
+                damageToApply = Math.floor(damage / 4);
+              } else if (customEntityInfo.modifier === 'none') {
+                damageToApply = 0;
+              }
+              
+              // Apply manual adjustment
+              if (customEntityInfo.adjustment) {
+                damageToApply = Math.max(0, damageToApply + customEntityInfo.adjustment);
+              }
             }
           } else if (saveType && saveDC) {
             // Standard calculation with saving throw
@@ -2797,18 +2812,23 @@ const useDnDStore = create((set, get) => {
             saveRoll = customEntityInfo.roll;
             totalRoll = customEntityInfo.totalRoll;
             
-            // Apply damage modifier
-            if (customEntityInfo.modifier === 'half') {
-              damageToApply = Math.floor(damage / 2);
-            } else if (customEntityInfo.modifier === 'quarter') {
-              damageToApply = Math.floor(damage / 4);
-            } else if (customEntityInfo.modifier === 'none') {
-              damageToApply = 0;
-            }
-            
-            // Apply manual adjustment
-            if (customEntityInfo.adjustment) {
-              damageToApply = Math.max(0, damageToApply + customEntityInfo.adjustment);
+            // Check if custom damage is provided (for multi-damage-type attacks)
+            if (customEntityInfo.customDamage !== undefined) {
+              damageToApply = customEntityInfo.customDamage;
+            } else {
+              // Apply damage modifier
+              if (customEntityInfo.modifier === 'half') {
+                damageToApply = Math.floor(damage / 2);
+              } else if (customEntityInfo.modifier === 'quarter') {
+                damageToApply = Math.floor(damage / 4);
+              } else if (customEntityInfo.modifier === 'none') {
+                damageToApply = 0;
+              }
+              
+              // Apply manual adjustment
+              if (customEntityInfo.adjustment) {
+                damageToApply = Math.max(0, damageToApply + customEntityInfo.adjustment);
+              }
             }
           } else {
             // Standard calculation

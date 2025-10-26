@@ -43,6 +43,7 @@ const DamageApplication = () => {
   // AOE damage state
   const [aoeState, setAoeState] = useState({
     damageAmount: '',
+    damageComponents: null, // Will hold array of damage components if multi-type
     saveType: 'dex',
     saveDC: 15,
     halfOnSave: true,
@@ -55,6 +56,11 @@ const DamageApplication = () => {
   const [characterSaves, setCharacterSaves] = useState({});
   const [damageModifiers, setDamageModifiers] = useState({});
   const [manualDamageAdjustments, setManualDamageAdjustments] = useState({});
+  
+  // State for per-component modifiers in AOE (for multi-damage-type attacks)
+  // Format: { entityId: { componentIndex: 'full'|'half'|'quarter'|'none' } }
+  const [aoeComponentModifiers, setAoeComponentModifiers] = useState({});
+  const [aoeComponentAdjustments, setAoeComponentAdjustments] = useState({});
 
   // Refs
   const sectionRef = useRef(null);
@@ -281,6 +287,7 @@ const DamageApplication = () => {
       setAoeState(prev => ({
         ...prev,
         damageAmount: aoeDamageParams.damage || '',
+        damageComponents: aoeDamageParams.damageComponents || null, // Add damage components support
         saveType: aoeDamageParams.saveType || 'dex',
         saveDC: aoeDamageParams.saveDC || 15,
         halfOnSave: aoeDamageParams.halfOnSave !== undefined ? aoeDamageParams.halfOnSave : true,
@@ -305,6 +312,29 @@ const DamageApplication = () => {
       }, 100);
     }
   }, [aoeDamageParams]);
+  
+  // Update component modifiers when saves change (for multi-damage attacks)
+  useEffect(() => {
+    if (!showAoeSaves || !aoeState.damageComponents || aoeState.damageComponents.length <= 1) return;
+    
+    // Update modifiers based on save results
+    setAoeComponentModifiers(prev => {
+      const updated = { ...prev };
+      Object.entries(characterSaves).forEach(([entityId, saveInfo]) => {
+        if (updated[entityId]) {
+          const defaultModifier = (saveInfo.succeeded && aoeState.halfOnSave) ? 'half' : 'full';
+          // Only update if all components are still at their default state
+          const allDefault = Object.values(updated[entityId]).every(mod => mod === 'full' || mod === 'half');
+          if (allDefault) {
+            Object.keys(updated[entityId]).forEach(idx => {
+              updated[entityId][idx] = defaultModifier;
+            });
+          }
+        }
+      });
+      return updated;
+    });
+  }, [characterSaves, showAoeSaves, aoeState.damageComponents, aoeState.halfOnSave]);
 
   // Get the currently targeted entity details
   const getTargetDetails = () => {
@@ -532,10 +562,26 @@ const DamageApplication = () => {
     
     // Set default damage modifier based on save result
     if (roll !== '') {
-      setDamageModifiers(prev => ({
-        ...prev,
-        [entityId]: succeeded && aoeState.halfOnSave ? 'half' : 'default'
-      }));
+      // Check if this is a multi-damage-type attack
+      const hasMultiDamage = aoeState.damageComponents && aoeState.damageComponents.length > 1;
+      
+      if (hasMultiDamage) {
+        // Set component modifiers for each damage type
+        const componentMods = {};
+        aoeState.damageComponents.forEach((comp, idx) => {
+          componentMods[idx] = succeeded && aoeState.halfOnSave ? 'half' : 'full';
+        });
+        setAoeComponentModifiers(prev => ({
+          ...prev,
+          [entityId]: componentMods
+        }));
+      } else {
+        // Single damage type - use old system
+        setDamageModifiers(prev => ({
+          ...prev,
+          [entityId]: succeeded && aoeState.halfOnSave ? 'half' : 'default'
+        }));
+      }
     }
   };
   
@@ -562,6 +608,7 @@ const DamageApplication = () => {
       setAoeState(prev => ({
         ...prev,
         damageAmount: aoeDamageParams.damage || '',
+        damageComponents: aoeDamageParams.damageComponents || null,
         saveType: aoeDamageParams.saveType || 'dex',
         saveDC: aoeDamageParams.saveDC || 15,
         halfOnSave: aoeDamageParams.halfOnSave !== undefined ? aoeDamageParams.halfOnSave : true
@@ -580,6 +627,39 @@ const DamageApplication = () => {
     setTimeout(() => {
       // Auto-roll all saves (this will roll for characters, bosses, and groups)
       autoRollAllSaves();
+      
+      // Initialize component modifiers if this is a multi-damage attack (after saves are rolled)
+      setTimeout(() => {
+        if (aoeState.damageComponents && aoeState.damageComponents.length > 1) {
+          // Get all affected entities
+          const affectedCharacters = aoeState.applyToAll ? characters : characters.filter(char => char.inAoe);
+          const affectedBosses = aoeState.applyToAll ? bosses : bosses.filter(boss => boss.inAoe);
+          const affectedGroups = aoeState.applyToAll ? enemyGroups : enemyGroups.filter(group => group.inAoe);
+          
+          const initialComponentModifiers = {};
+          const initialComponentAdjustments = {};
+          
+          [...affectedCharacters.map(c => `character-${c.id}`),
+           ...affectedBosses.map(b => `boss-${b.id}`),
+           ...affectedGroups.map(g => `group-${g.id}`)
+          ].forEach(entityId => {
+            initialComponentModifiers[entityId] = {};
+            initialComponentAdjustments[entityId] = {};
+            
+            // Check if entity has save info and apply half damage if they succeed (when halfOnSave is enabled)
+            const saveInfo = characterSaves[entityId];
+            const defaultModifier = (saveInfo?.succeeded && aoeState.halfOnSave) ? 'half' : 'full';
+            
+            aoeState.damageComponents.forEach((_, idx) => {
+              initialComponentModifiers[entityId][idx] = defaultModifier;
+              initialComponentAdjustments[entityId][idx] = 0;
+            });
+          });
+          
+          setAoeComponentModifiers(initialComponentModifiers);
+          setAoeComponentAdjustments(initialComponentAdjustments);
+        }
+      }, 150);
     }, 100);
   };
   
@@ -733,21 +813,49 @@ const DamageApplication = () => {
     
     // Ensure we have current values
     const currentDamage = parseInt(aoeState.damageAmount);
+    const currentDamageComponents = aoeState.damageComponents;
     const currentSaveType = aoeState.saveType;
     const currentSaveDC = aoeState.saveDC;
     const currentHalfOnSave = aoeState.halfOnSave;
     const currentPercentAffected = aoeState.percentAffected;
     const currentApplyToAll = aoeState.applyToAll;
     
+    // Check if multi-damage-type attack
+    const hasMultiDamage = currentDamageComponents && currentDamageComponents.length > 1;
+    
     Object.entries(characterSaves).forEach(([entityId, saveInfo]) => {
-      // Get modifier (half, quarter, none)
-      const modifier = damageModifiers[entityId] || 'none';
+      let damageToApply = 0;
       
-      // Get manual adjustment amount
+      if (hasMultiDamage) {
+        // Multi-damage-type: calculate each component separately
+        currentDamageComponents.forEach((comp, idx) => {
+          const compModifier = aoeComponentModifiers[entityId]?.[idx] || 'full';
+          const compAdjustment = aoeComponentAdjustments[entityId]?.[idx] || 0;
+          
+          let componentDamage = comp.total;
+          
+          // Apply modifier
+          if (compModifier === 'double') {
+            componentDamage = componentDamage * 2;
+          } else if (compModifier === 'half') {
+            componentDamage = Math.floor(componentDamage / 2);
+          } else if (compModifier === 'quarter') {
+            componentDamage = Math.floor(componentDamage / 4);
+          } else if (compModifier === 'none') {
+            componentDamage = 0;
+          }
+          
+          // Apply manual adjustment
+          componentDamage = Math.max(0, componentDamage + compAdjustment);
+          
+          damageToApply += componentDamage;
+        });
+      } else {
+        // Single damage type: use old system
+        const modifier = damageModifiers[entityId] || 'none';
       const adjustment = manualDamageAdjustments[entityId] || 0;
       
-      // Calculate damage with modifier applied
-      let damageToApply = currentDamage;
+        damageToApply = currentDamage;
       
       // Apply modifier
       if (modifier === 'double') {
@@ -762,6 +870,7 @@ const DamageApplication = () => {
       
       // Apply manual adjustment
       damageToApply = Math.max(0, damageToApply + adjustment);
+      }
       
       // Parse entity type and ID
       const [entityType, id] = entityId.split('-');
@@ -775,9 +884,13 @@ const DamageApplication = () => {
         };
       } else {
         // For bosses and groups, use the entityDamageModifiers format
+        const modifier = damageModifiers[entityId] || 'none';
+        const adjustment = manualDamageAdjustments[entityId] || 0;
+        
         entityDamageModifiers[entityId] = {
-          modifier,
+          modifier: hasMultiDamage ? 'custom' : modifier, // Mark as custom for multi-damage
           adjustment,
+          customDamage: hasMultiDamage ? damageToApply : undefined, // Pass calculated damage
           roll: saveInfo.roll === '' ? null : parseInt(saveInfo.roll),
           totalRoll: saveInfo.totalRoll,
           succeeded: saveInfo.succeeded
@@ -804,8 +917,13 @@ const DamageApplication = () => {
     setShowAoeSaves(false);
     setAoeState(prev => ({
       ...prev,
-      damageAmount: ''
+      damageAmount: '',
+      damageComponents: null
     }));
+    
+    // Clear component modifiers
+    setAoeComponentModifiers({});
+    setAoeComponentAdjustments({});
     
     // Ensure aoeDamageParams is cleared
     useDnDStore.getState().prepareAoeDamage(null);
@@ -1119,6 +1237,123 @@ const DamageApplication = () => {
                                 const modifier = damageModifiers[entityId];
                                 const adjustment = manualDamageAdjustments[entityId] || 0;
                                 
+                                // Check if multi-damage-type attack
+                                const hasMultiDamage = aoeState.damageComponents && aoeState.damageComponents.length > 1;
+                                
+                                if (hasMultiDamage) {
+                                  // Calculate total damage for this entity
+                                  let totalDamage = 0;
+                                  aoeState.damageComponents.forEach((comp, idx) => {
+                                    const compModifier = aoeComponentModifiers[entityId]?.[idx] || 'full';
+                                    const compAdjustment = aoeComponentAdjustments[entityId]?.[idx] || 0;
+                                    let componentDamage = comp.total;
+                                    if (compModifier === 'double') componentDamage *= 2;
+                                    else if (compModifier === 'half') componentDamage = Math.floor(componentDamage / 2);
+                                    else if (compModifier === 'quarter') componentDamage = Math.floor(componentDamage / 4);
+                                    else if (compModifier === 'none') componentDamage = 0;
+                                    componentDamage = Math.max(0, componentDamage + compAdjustment);
+                                    totalDamage += componentDamage;
+                                  });
+                                  
+                                  return (
+                                    <div key={entityId} className="character-saves-row">
+                                      <div>{entity.name}</div>
+                                      <div className="save-roll-cell">
+                                        <input
+                                          type="number"
+                                          value={saveInfo.roll}
+                                          onChange={(e) => handleSaveRollChange(entityId, e.target.value)}
+                                          placeholder="Roll"
+                                          min="1"
+                                          max="20"
+                                        />
+                                        <button
+                                          className="auto-roll-single"
+                                          onClick={() => autoRollSave(entityId)}
+                                          title="Auto-roll save"
+                                        >
+                                          🎲
+                                        </button>
+                                      </div>
+                                      <div className={`save-result ${saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'success' : 'failure')}`}>
+                                        {saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'Success' : 'Failure')}
+                                      </div>
+                                      <div>
+                                        {aoeState.damageComponents.map((comp, idx) => {
+                                          const compModifier = aoeComponentModifiers[entityId]?.[idx] || 'full';
+                                          const compAdjustment = aoeComponentAdjustments[entityId]?.[idx] || 0;
+                                          let componentDamage = comp.total;
+                                          if (compModifier === 'double') componentDamage *= 2;
+                                          else if (compModifier === 'half') componentDamage = Math.floor(componentDamage / 2);
+                                          else if (compModifier === 'quarter') componentDamage = Math.floor(componentDamage / 4);
+                                          else if (compModifier === 'none') componentDamage = 0;
+                                          componentDamage = Math.max(0, componentDamage + compAdjustment);
+                                          
+                                          return (
+                                            <div key={idx} style={{fontSize: '12px', marginBottom: '4px', height: '18px', display: 'flex', alignItems: 'center'}}>
+                                              {comp.total} {comp.damageType.substring(0, 4)}: <strong style={{color: '#28a745'}}>{componentDamage}</strong>
+                                            </div>
+                                          );
+                                        })}
+                                        <div style={{borderTop: '1px solid #ddd', marginTop: '4px', paddingTop: '4px', fontWeight: 'bold', fontSize: '14px'}}>
+                                          Total: {totalDamage}
+                                        </div>
+                                      </div>
+                                      <div style={{display: 'flex', flexDirection: 'column'}}>
+                                        {aoeState.damageComponents.map((comp, idx) => (
+                                          <div key={idx} style={{display: 'flex', gap: '2px', marginBottom: '4px', alignItems: 'center', height: '18px'}}>
+                                            <button onClick={() => {
+                                              setAoeComponentAdjustments(prev => ({
+                                                ...prev,
+                                                [entityId]: {
+                                                  ...prev[entityId],
+                                                  [idx]: (prev[entityId]?.[idx] || 0) - 1
+                                                }
+                                              }));
+                                            }} style={{padding: '2px 6px', fontSize: '10px'}}>-1</button>
+                                            <button onClick={() => {
+                                              setAoeComponentAdjustments(prev => ({
+                                                ...prev,
+                                                [entityId]: {
+                                                  ...prev[entityId],
+                                                  [idx]: (prev[entityId]?.[idx] || 0) + 1
+                                                }
+                                              }));
+                                            }} style={{padding: '2px 6px', fontSize: '10px'}}>+1</button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                      <div>
+                                        {aoeState.damageComponents.map((comp, idx) => {
+                                          const compModifier = aoeComponentModifiers[entityId]?.[idx] || 'full';
+                                          return (
+                                            <select
+                                              key={idx}
+                                              value={compModifier}
+                                              onChange={(e) => {
+                                                setAoeComponentModifiers(prev => ({
+                                                  ...prev,
+                                                  [entityId]: {
+                                                    ...prev[entityId],
+                                                    [idx]: e.target.value
+                                                  }
+                                                }));
+                                              }}
+                                              style={{padding: '2px', fontSize: '11px', marginBottom: '4px', display: 'block', width: '100%', height: '18px'}}
+                                            >
+                                              <option value="full">Full</option>
+                                              <option value="half">½ (Resist)</option>
+                                              <option value="quarter">¼</option>
+                                              <option value="double">2× (Vuln)</option>
+                                              <option value="none">0 (Immune)</option>
+                                            </select>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                
                                 return (
                                   <div key={entityId} className="character-saves-row">
                                     <div>{entity.name}</div>
@@ -1144,7 +1379,8 @@ const DamageApplication = () => {
                                     </div>
                                     <div>
                                       {(() => {
-                                        // Calculate damage - ensure we're using current values
+                                            const modifier = damageModifiers[entityId];
+                                            const adjustment = manualDamageAdjustments[entityId] || 0;
                                         const currentDamage = parseInt(aoeState.damageAmount);
                                         let finalDamage = isNaN(currentDamage) ? 0 : currentDamage;
                                         
@@ -1158,7 +1394,6 @@ const DamageApplication = () => {
                                           finalDamage = 0;
                                         }
                                         
-                                        // Apply manual adjustment
                                         finalDamage = Math.max(0, finalDamage + adjustment);
                                         
                                         return (
@@ -1183,7 +1418,7 @@ const DamageApplication = () => {
                                     </div>
                                     <div>
                                       <select
-                                        value={modifier}
+                                            value={damageModifiers[entityId]}
                                         onChange={(e) => handleDamageModifierChange(entityId, e.target.value)}
                                       >
                                         <option value="default">Default Damage</option>
@@ -1234,6 +1469,129 @@ const DamageApplication = () => {
                                 // Get save bonus for display
                                 const saveBonus = saveInfo.saveBonus || 0;
                                 
+                                // Check if multi-damage-type attack
+                                const hasMultiDamage = aoeState.damageComponents && aoeState.damageComponents.length > 1;
+                                
+                                if (hasMultiDamage) {
+                                  // Calculate total damage for this entity
+                                  let totalDamage = 0;
+                                  aoeState.damageComponents.forEach((comp, idx) => {
+                                    const compModifier = aoeComponentModifiers[entityId]?.[idx] || 'full';
+                                    const compAdjustment = aoeComponentAdjustments[entityId]?.[idx] || 0;
+                                    let componentDamage = comp.total;
+                                    if (compModifier === 'double') componentDamage *= 2;
+                                    else if (compModifier === 'half') componentDamage = Math.floor(componentDamage / 2);
+                                    else if (compModifier === 'quarter') componentDamage = Math.floor(componentDamage / 4);
+                                    else if (compModifier === 'none') componentDamage = 0;
+                                    componentDamage = Math.max(0, componentDamage + compAdjustment);
+                                    totalDamage += componentDamage;
+                                  });
+                                  
+                                  return (
+                                    <div key={entityId} className="character-saves-row">
+                                      <div>{entity.name}</div>
+                                      <div className="save-roll-cell">
+                                        <input
+                                          type="number"
+                                          value={saveInfo.totalRoll || saveInfo.roll}
+                                          onChange={(e) => handleSaveRollChange(entityId, e.target.value)}
+                                          placeholder="Roll"
+                                          min="1"
+                                        />
+                                        <button
+                                          className="auto-roll-single"
+                                          onClick={() => autoRollSave(entityId)}
+                                          title="Auto-roll save"
+                                        >
+                                          🎲
+                                        </button>
+                                      </div>
+                                      <div className={`save-result ${saveInfo.roll === '' ? '' : (saveInfo.succeeded ? 'success' : 'failure')}`}>
+                                        {saveInfo.roll === '' ? '' : (
+                                          <>
+                                            {saveInfo.succeeded ? 'Success' : 'Failure'}
+                                            {saveBonus !== 0 && (
+                                              <small> ({saveInfo.roll}+{saveBonus})</small>
+                                            )}
+                                          </>
+                                        )}
+                                      </div>
+                                      <div>
+                                        {aoeState.damageComponents.map((comp, idx) => {
+                                          const compModifier = aoeComponentModifiers[entityId]?.[idx] || 'full';
+                                          const compAdjustment = aoeComponentAdjustments[entityId]?.[idx] || 0;
+                                          let componentDamage = comp.total;
+                                          if (compModifier === 'double') componentDamage *= 2;
+                                          else if (compModifier === 'half') componentDamage = Math.floor(componentDamage / 2);
+                                          else if (compModifier === 'quarter') componentDamage = Math.floor(componentDamage / 4);
+                                          else if (compModifier === 'none') componentDamage = 0;
+                                          componentDamage = Math.max(0, componentDamage + compAdjustment);
+                                          
+                                          return (
+                                            <div key={idx} style={{fontSize: '12px', marginBottom: '4px', height: '18px', display: 'flex', alignItems: 'center'}}>
+                                              {comp.total} {comp.damageType.substring(0, 4)}: <strong style={{color: '#28a745'}}>{componentDamage}</strong>
+                                            </div>
+                                          );
+                                        })}
+                                        <div style={{borderTop: '1px solid #ddd', marginTop: '4px', paddingTop: '4px', fontWeight: 'bold', fontSize: '14px'}}>
+                                          Total: {totalDamage}
+                                        </div>
+                                      </div>
+                                      <div style={{display: 'flex', flexDirection: 'column'}}>
+                                        {aoeState.damageComponents.map((comp, idx) => (
+                                          <div key={idx} style={{display: 'flex', gap: '2px', marginBottom: '4px', alignItems: 'center', height: '18px'}}>
+                                            <button onClick={() => {
+                                              setAoeComponentAdjustments(prev => ({
+                                                ...prev,
+                                                [entityId]: {
+                                                  ...prev[entityId],
+                                                  [idx]: (prev[entityId]?.[idx] || 0) - 1
+                                                }
+                                              }));
+                                            }} style={{padding: '2px 6px', fontSize: '10px'}}>-1</button>
+                                            <button onClick={() => {
+                                              setAoeComponentAdjustments(prev => ({
+                                                ...prev,
+                                                [entityId]: {
+                                                  ...prev[entityId],
+                                                  [idx]: (prev[entityId]?.[idx] || 0) + 1
+                                                }
+                                              }));
+                                            }} style={{padding: '2px 6px', fontSize: '10px'}}>+1</button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                      <div>
+                                        {aoeState.damageComponents.map((comp, idx) => {
+                                          const compModifier = aoeComponentModifiers[entityId]?.[idx] || 'full';
+                                          return (
+                                            <select
+                                              key={idx}
+                                              value={compModifier}
+                                              onChange={(e) => {
+                                                setAoeComponentModifiers(prev => ({
+                                                  ...prev,
+                                                  [entityId]: {
+                                                    ...prev[entityId],
+                                                    [idx]: e.target.value
+                                                  }
+                                                }));
+                                              }}
+                                              style={{padding: '2px', fontSize: '11px', marginBottom: '4px', display: 'block', width: '100%', height: '18px'}}
+                                            >
+                                              <option value="full">Full</option>
+                                              <option value="half">½ (Resist)</option>
+                                              <option value="quarter">¼</option>
+                                              <option value="double">2× (Vuln)</option>
+                                              <option value="none">0 (Immune)</option>
+                                            </select>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                
                                 return (
                                   <div key={entityId} className="character-saves-row">
                                     <div>{entity.name}</div>
@@ -1265,7 +1623,8 @@ const DamageApplication = () => {
                                     </div>
                                     <div>
                                       {(() => {
-                                        // Calculate damage - ensure we're using current values
+                                            const modifier = damageModifiers[entityId];
+                                            const adjustment = manualDamageAdjustments[entityId] || 0;
                                         const currentDamage = parseInt(aoeState.damageAmount);
                                         let finalDamage = isNaN(currentDamage) ? 0 : currentDamage;
                                         
@@ -1279,7 +1638,6 @@ const DamageApplication = () => {
                                           finalDamage = 0;
                                         }
                                         
-                                        // Apply manual adjustment
                                         finalDamage = Math.max(0, finalDamage + adjustment);
                                         
                                         return (
