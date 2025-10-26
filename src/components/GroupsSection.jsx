@@ -108,16 +108,27 @@ const GroupsSection = () => {
     id: Date.now().toString(),
     name: '',
     type: 'melee',
-    numDice: 2,
-    diceType: 6,
-    modifier: 3,
     hitBonus: 5,
     attackMethod: 'attackRoll', // 'attackRoll', 'save', or 'auto'
     saveType: 'dex',
     saveDC: 13,
     halfOnSave: true,
     isAoE: false,
-    damageType: 'slashing' // Default damage type
+    damageComponents: [{
+      id: Date.now().toString(),
+      numDice: 2,
+      diceType: 6,
+      modifier: 3,
+      damageType: 'slashing'
+    }]
+  });
+  
+  // State for temporary damage component when adding
+  const [tempDamageComponent, setTempDamageComponent] = useState({
+    numDice: 2,
+    diceType: 6,
+    modifier: 0,
+    damageType: 'slashing'
   });
 
   // State for number of groups to add
@@ -144,6 +155,14 @@ const GroupsSection = () => {
   // State for boss targets and pending attacks
   const [bossTargets, setBossTargets] = useState({});
   const [pendingAttacks, setPendingAttacks] = useState({});
+  
+  // State to track per-component damage modifiers for each pending attack
+  // Format: { attackId: { componentIndex: 'full'|'half'|'quarter'|'none' } }
+  const [componentModifiers, setComponentModifiers] = useState({});
+  
+  // State to track manual damage adjustments per component
+  // Format: { attackId: { componentIndex: adjustmentAmount } }
+  const [componentAdjustments, setComponentAdjustments] = useState({});
 
   // Add a new state to track pending processing
   const [attackProcessing, setAttackProcessing] = useState(false);
@@ -328,6 +347,11 @@ const GroupsSection = () => {
       return;
     }
     
+    if (!attackTemplate.damageComponents || attackTemplate.damageComponents.length === 0) {
+      alert('Please add at least one damage component');
+      return;
+    }
+    
     const newAttack = { ...attackTemplate, id: Date.now().toString() };
     
     setBossTemplate(prev => ({
@@ -335,11 +359,18 @@ const GroupsSection = () => {
       attacks: [...prev.attacks, newAttack]
     }));
     
-    // Reset attack name but keep other values
+    // Reset attack template with fresh damage component
     setAttackTemplate(prev => ({ 
       ...prev, 
       name: '',
-      id: Date.now().toString()
+      id: Date.now().toString(),
+      damageComponents: [{
+        id: Date.now().toString() + '-1',
+        numDice: 2,
+        diceType: 6,
+        modifier: 3,
+        damageType: 'slashing'
+      }]
     }));
   };
 
@@ -348,6 +379,61 @@ const GroupsSection = () => {
     setBossTemplate(prev => ({
       ...prev,
       attacks: prev.attacks.filter(attack => attack.id !== attackId)
+    }));
+  };
+
+  // Add damage component to attack template
+  const handleAddDamageComponent = () => {
+    if (!tempDamageComponent.numDice || !tempDamageComponent.diceType) {
+      alert('Please enter valid damage dice');
+      return;
+    }
+    
+    const newComponent = {
+      ...tempDamageComponent,
+      id: Date.now().toString()
+    };
+    
+    setAttackTemplate(prev => ({
+      ...prev,
+      damageComponents: [...prev.damageComponents, newComponent]
+    }));
+    
+    // Reset temp component with modifier 0
+    setTempDamageComponent({
+      numDice: 2,
+      diceType: 6,
+      modifier: 0,
+      damageType: 'slashing'
+    });
+  };
+
+  // Remove damage component from attack template
+  const handleRemoveDamageComponent = (componentId) => {
+    setAttackTemplate(prev => ({
+      ...prev,
+      damageComponents: prev.damageComponents.filter(comp => comp.id !== componentId)
+    }));
+  };
+
+  // Update specific damage component in attack template
+  const handleUpdateDamageComponent = (componentId, field, value) => {
+    setAttackTemplate(prev => ({
+      ...prev,
+      damageComponents: prev.damageComponents.map(comp =>
+        comp.id === componentId
+          ? { ...comp, [field]: field === 'damageType' ? value : (parseInt(value) || 0) }
+          : comp
+      )
+    }));
+  };
+
+  // Handle changes to temp damage component
+  const handleTempDamageComponentChange = (e) => {
+    const { name, value } = e.target;
+    setTempDamageComponent(prev => ({
+      ...prev,
+      [name]: name === 'damageType' ? value : (parseInt(value) || 0)
     }));
   };
 
@@ -552,43 +638,80 @@ ${attack.halfOnSave ? `On success: ${Math.floor(totalDamage/2)} damage (half dam
       }
     }
     
-    // Roll damage
-    let damageRoll = rollDice(attack.numDice, attack.diceType);
-    let critDamageRoll = 0;
-    let totalDamage = damageRoll + attack.modifier;
+    // Roll damage for each component
+    let damageComponents = [];
+    let totalDamage = 0;
     
-    // Adjust damage based on attack method and results
-    if (attack.attackMethod === 'attackRoll' && criticalHit) {
-      // Double damage dice on critical hit
-      critDamageRoll = rollDice(attack.numDice, attack.diceType);
-      totalDamage = damageRoll + critDamageRoll + attack.modifier;
-    }
+    // Support both new damageComponents array and old single damage structure
+    const componentsToRoll = attack.damageComponents && attack.damageComponents.length > 0
+      ? attack.damageComponents
+      : [{
+          numDice: attack.numDice,
+          diceType: attack.diceType,
+          modifier: attack.modifier,
+          damageType: attack.damageType || 'slashing'
+        }];
+    
+    componentsToRoll.forEach(component => {
+      let damageRoll = rollDice(component.numDice, component.diceType);
+      let critDamageRoll = 0;
+      let componentTotal = damageRoll + component.modifier;
+      
+      // Adjust damage based on attack method and results
+      if (attack.attackMethod === 'attackRoll' && criticalHit) {
+        // Double damage dice on critical hit
+        critDamageRoll = rollDice(component.numDice, component.diceType);
+        componentTotal = damageRoll + critDamageRoll + component.modifier;
+      }
+      
+      damageComponents.push({
+        damageType: component.damageType,
+        numDice: component.numDice,
+        diceType: component.diceType,
+        modifier: component.modifier,
+        damageRoll: damageRoll,
+        critDamageRoll: critDamageRoll,
+        total: componentTotal
+      });
+      
+      totalDamage += componentTotal;
+    });
     
     // Generate result message
     let resultMessage;
+    
+    // Helper to format damage component details
+    const formatDamageDetails = (isCrit = false) => {
+      return damageComponents.map(comp => {
+        let detail = isCrit && comp.critDamageRoll > 0
+          ? `${comp.damageRoll} + ${comp.critDamageRoll}${comp.modifier !== 0 ? ` + ${comp.modifier}` : ''} = ${comp.total} ${comp.damageType}`
+          : `${comp.damageRoll}${comp.modifier !== 0 ? ` + ${comp.modifier}` : ''} = ${comp.total} ${comp.damageType}`;
+        return detail;
+      }).join(', ');
+    };
     
     if (attack.attackMethod === 'attackRoll') {
       if (criticalMiss) {
         resultMessage = `Critical Miss against ${targetCharacter.name} (AC ${targetCharacter.ac})!`;
       } else if (criticalHit) {
-        resultMessage = `Critical Hit against ${targetCharacter.name}! <span class="damage-number">${totalDamage}</span> ${attack.damageType || 'slashing'} damage (${damageRoll} + ${critDamageRoll} + ${attack.modifier})`;
+        resultMessage = `Critical Hit against ${targetCharacter.name}! Total: <span class="damage-number">${totalDamage}</span> damage (${formatDamageDetails(true)})`;
       } else if (hits) {
-        resultMessage = `Hit ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})! Damage: <span class="damage-number">${totalDamage}</span> ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
+        resultMessage = `Hit ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})! Total: <span class="damage-number">${totalDamage}</span> damage (${formatDamageDetails()})`;
       } else {
         resultMessage = `Miss against ${targetCharacter.name} (AC ${targetCharacter.ac}) with ${totalHit} (${rollResult} + ${attack.hitBonus})`;
       }
     } else if (attack.attackMethod === 'save') {
       resultMessage = `${targetCharacter.name} needs to make a ${attack.saveType.toUpperCase()} save (DC ${attack.saveDC}). 
-Potential damage: <span class="damage-number">${totalDamage}</span> ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})
+Potential damage: <span class="damage-number">${totalDamage}</span> total (${formatDamageDetails()})
 ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successful save'}`;
     } else { // auto hit
       if (attack.saveType && attack.saveDC) {
         resultMessage = `Automatic hit on ${targetCharacter.name}! 
 ${targetCharacter.name} needs to make a ${attack.saveType.toUpperCase()} save (DC ${attack.saveDC}).
-Potential damage: <span class="damage-number">${totalDamage}</span> ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})
+Potential damage: <span class="damage-number">${totalDamage}</span> total (${formatDamageDetails()})
 ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successful save'}`;
       } else {
-        resultMessage = `Automatic hit on ${targetCharacter.name}! <span class="damage-number">${totalDamage}</span> ${attack.damageType || 'slashing'} damage (${damageRoll} + ${attack.modifier})`;
+        resultMessage = `Automatic hit on ${targetCharacter.name}! <span class="damage-number">${totalDamage}</span> total damage (${formatDamageDetails()})`;
       }
     }
     
@@ -599,6 +722,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
       attackName: attack.name,
       message: resultMessage,
       damage: totalDamage,
+      damageComponents: damageComponents, // Add damage components array
       rollToHit: totalHit,
       criticalHit,
       criticalMiss,
@@ -613,7 +737,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
       targetName: targetCharacter.name,
       hitStatus,
       timestamp: Date.now(),
-      damageType: attack.damageType || 'slashing'
+      damageType: attack.damageType || 'slashing' // Keep for backwards compatibility
     };
     
     // Add the initial attack result to the combat log
@@ -633,6 +757,24 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
         setAttackProcessing(false);
         return newPending;
       });
+      
+      // Initialize component modifiers for multi-damage attacks
+      if (damageComponents && damageComponents.length > 0) {
+        const initialModifiers = {};
+        const initialAdjustments = {};
+        damageComponents.forEach((comp, idx) => {
+          initialModifiers[idx] = 'full';
+          initialAdjustments[idx] = 0;
+        });
+        setComponentModifiers(prev => ({
+          ...prev,
+          [uniqueId]: initialModifiers
+        }));
+        setComponentAdjustments(prev => ({
+          ...prev,
+          [uniqueId]: initialAdjustments
+        }));
+      }
     }, 0);
     } catch (error) {
       console.error('Error in handleRollAttackAgainstPlayer:', error);
@@ -645,40 +787,82 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     const pendingAttack = pendingAttacks[attackResultId];
     if (!pendingAttack) return;
     
-    // Get the original damage
-    let finalDamage = pendingAttack.damage;
+    let finalDamage = 0;
     let modifierText = '';
     let saveResultText = '';
+    let damageByType = [];
     
-    // Apply damage modifier based on attack type and save status
-    if (pendingAttack.hitStatus === 'save-pending' || pendingAttack.hitStatus === 'auto-save-pending') {
-      // For saving throw attacks, modifier represents save result
-      if (modifier === 'full') {
-        // Failed save - full damage
-        saveResultText = ` (Failed ${pendingAttack.saveType.toUpperCase()} save)`;
-      } else if (modifier === 'half') {
-        // Passed save, half damage
-        finalDamage = Math.floor(finalDamage / 2);
-        saveResultText = ` (Passed ${pendingAttack.saveType.toUpperCase()} save, half damage)`;
-      } else if (modifier === 'none') {
-        // Passed save, no damage
-        finalDamage = 0;
-        saveResultText = ` (Passed ${pendingAttack.saveType.toUpperCase()} save, no damage)`;
+    // Check if this is a multi-component attack
+    if (pendingAttack.damageComponents && pendingAttack.damageComponents.length > 0) {
+      // Multi-damage component system
+      const attackComponentModifiers = componentModifiers[attackResultId] || {};
+      const attackComponentAdjustments = componentAdjustments[attackResultId] || {};
+      
+      // Apply modifiers to each component
+      pendingAttack.damageComponents.forEach((comp, idx) => {
+        let componentDamage = comp.total;
+        const compModifier = attackComponentModifiers[idx] || 'full';
+        const compAdjustment = attackComponentAdjustments[idx] || 0;
+        
+        // Apply damage modifier for this component
+        if (compModifier === 'double') {
+          componentDamage = componentDamage * 2;
+        } else if (compModifier === 'half') {
+          componentDamage = Math.floor(componentDamage / 2);
+        } else if (compModifier === 'quarter') {
+          componentDamage = Math.floor(componentDamage / 4);
+        } else if (compModifier === 'none') {
+          componentDamage = 0;
+        }
+        
+        // Apply manual adjustment
+        componentDamage = Math.max(0, componentDamage + compAdjustment);
+        
+        if (componentDamage > 0) {
+          damageByType.push({
+            type: comp.damageType,
+            amount: componentDamage
+          });
+        }
+        
+        finalDamage += componentDamage;
+      });
+      
+      // Create damage type text
+      if (damageByType.length > 0) {
+        modifierText = ' (' + damageByType.map(d => `${d.amount} ${d.type}`).join(' + ') + ')';
       }
     } else {
-      // Normal damage modifiers for non-save attacks
-      if (modifier === 'double') {
-        finalDamage = finalDamage * 2;
-        modifierText = ' (double damage)';
-      } else if (modifier === 'half') {
-        finalDamage = Math.floor(finalDamage / 2);
-        modifierText = ' (half damage)';
-      } else if (modifier === 'quarter') {
-        finalDamage = Math.floor(finalDamage / 4);
-        modifierText = ' (quarter damage)';
-      } else if (modifier === 'none') {
-        finalDamage = 0;
-        modifierText = ' (no damage)';
+      // Legacy single-damage system
+      finalDamage = pendingAttack.damage;
+      
+      // Apply damage modifier based on attack type and save status
+      if (pendingAttack.hitStatus === 'save-pending' || pendingAttack.hitStatus === 'auto-save-pending') {
+        // For saving throw attacks, modifier represents save result
+        if (modifier === 'full') {
+          saveResultText = ` (Failed ${pendingAttack.saveType.toUpperCase()} save)`;
+        } else if (modifier === 'half') {
+          finalDamage = Math.floor(finalDamage / 2);
+          saveResultText = ` (Passed ${pendingAttack.saveType.toUpperCase()} save, half damage)`;
+        } else if (modifier === 'none') {
+          finalDamage = 0;
+          saveResultText = ` (Passed ${pendingAttack.saveType.toUpperCase()} save, no damage)`;
+        }
+      } else {
+        // Normal damage modifiers for non-save attacks
+        if (modifier === 'double') {
+          finalDamage = finalDamage * 2;
+          modifierText = ' (double damage)';
+        } else if (modifier === 'half') {
+          finalDamage = Math.floor(finalDamage / 2);
+          modifierText = ' (half damage)';
+        } else if (modifier === 'quarter') {
+          finalDamage = Math.floor(finalDamage / 4);
+          modifierText = ' (quarter damage)';
+        } else if (modifier === 'none') {
+          finalDamage = 0;
+          modifierText = ' (no damage)';
+        }
       }
     }
     
@@ -687,7 +871,6 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     
     // Replace the original damage number with the final damage in the message
     if (finalDamage !== pendingAttack.damage) {
-      // Update the damage number in the message
       updatedMessage = updatedMessage.replace(
         new RegExp(`<span class="damage-number">${pendingAttack.damage}</span>`), 
         `<span class="damage-number">${finalDamage}</span>`
@@ -715,11 +898,23 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
       applyDamageToCharacter(pendingAttack.targetId, finalDamage, pendingAttack.hitStatus, damageTypeText, true);
     }
     
-    // Remove from pending attacks
+    // Remove from pending attacks and cleanup component modifiers
     setPendingAttacks(prev => {
       const newPending = { ...prev };
       delete newPending[attackResultId];
       return newPending;
+    });
+    
+    setComponentModifiers(prev => {
+      const newModifiers = { ...prev };
+      delete newModifiers[attackResultId];
+      return newModifiers;
+    });
+    
+    setComponentAdjustments(prev => {
+      const newAdjustments = { ...prev };
+      delete newAdjustments[attackResultId];
+      return newAdjustments;
     });
   };
 
@@ -1801,57 +1996,143 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                       </div>
                     </>
                   )}
-                  <div className="attack-field dice-field">
-                    <label>Damage:</label>
-                    <div className="dice-inputs">
-                      <input
-                        type="number"
-                        name="numDice"
-                        value={attackTemplate.numDice}
-                        onChange={handleAttackTemplateChange}
-                        min="1"
-                        className="num-dice"
-                      />
-                      <span>d</span>
-                      <input
-                        type="number"
-                        name="diceType"
-                        value={attackTemplate.diceType}
-                        onChange={handleAttackTemplateChange}
-                        min="1"
-                        className="dice-type"
-                      />
-                      <span>+</span>
-                      <input
-                        type="number"
-                        name="modifier"
-                        value={attackTemplate.modifier}
-                        onChange={handleAttackTemplateChange}
-                        className="modifier"
-                      />
+                  
+                  {/* Damage Components Section */}
+                  <div className="damage-components-section">
+                    <h5 style={{marginTop: '15px', marginBottom: '10px'}}>Damage Components:</h5>
+                    
+                    {/* Existing damage components */}
+                    {attackTemplate.damageComponents && attackTemplate.damageComponents.length > 0 && (
+                      <div className="damage-components-list">
+                        {attackTemplate.damageComponents.map((component, index) => (
+                          <div key={component.id} className="damage-component-item">
+                            <div className="damage-component-inputs">
+                              <input
+                                type="number"
+                                value={component.numDice}
+                                onChange={(e) => handleUpdateDamageComponent(component.id, 'numDice', e.target.value)}
+                                min="1"
+                                className="num-dice-small"
+                                style={{width: '50px'}}
+                              />
+                              <span>d</span>
+                              <input
+                                type="number"
+                                value={component.diceType}
+                                onChange={(e) => handleUpdateDamageComponent(component.id, 'diceType', e.target.value)}
+                                min="1"
+                                className="dice-type-small"
+                                style={{width: '50px'}}
+                              />
+                              <span>+</span>
+                              <input
+                                type="number"
+                                value={component.modifier}
+                                onChange={(e) => handleUpdateDamageComponent(component.id, 'modifier', e.target.value)}
+                                className="modifier-small"
+                                style={{width: '50px'}}
+                              />
+                              <select
+                                value={component.damageType}
+                                onChange={(e) => handleUpdateDamageComponent(component.id, 'damageType', e.target.value)}
+                                className="damage-type-select"
+                                style={{marginLeft: '8px', width: '120px'}}
+                              >
+                                <option value="slashing">Slashing</option>
+                                <option value="piercing">Piercing</option>
+                                <option value="bludgeoning">Bludgeoning</option>
+                                <option value="acid">Acid</option>
+                                <option value="cold">Cold</option>
+                                <option value="fire">Fire</option>
+                                <option value="force">Force</option>
+                                <option value="lightning">Lightning</option>
+                                <option value="necrotic">Necrotic</option>
+                                <option value="poison">Poison</option>
+                                <option value="psychic">Psychic</option>
+                                <option value="radiant">Radiant</option>
+                                <option value="thunder">Thunder</option>
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDamageComponent(component.id)}
+                                className="remove-damage-component-btn"
+                                style={{marginLeft: '8px', padding: '4px 8px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}
+                                disabled={attackTemplate.damageComponents.length === 1}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Add new damage component form */}
+                    <div className="add-damage-component-form" style={{marginTop: '10px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '4px'}}>
+                      <div style={{marginBottom: '8px', fontWeight: 'bold', fontSize: '14px'}}>Add Another Damage Type:</div>
+                      <div className="damage-component-inputs">
+                        <input
+                          type="number"
+                          name="numDice"
+                          value={tempDamageComponent.numDice}
+                          onChange={handleTempDamageComponentChange}
+                          min="1"
+                          placeholder="Dice"
+                          className="num-dice-small"
+                          style={{width: '50px'}}
+                        />
+                        <span>d</span>
+                        <input
+                          type="number"
+                          name="diceType"
+                          value={tempDamageComponent.diceType}
+                          onChange={handleTempDamageComponentChange}
+                          min="1"
+                          placeholder="Type"
+                          className="dice-type-small"
+                          style={{width: '50px'}}
+                        />
+                        <span>+</span>
+                        <input
+                          type="number"
+                          name="modifier"
+                          value={tempDamageComponent.modifier}
+                          onChange={handleTempDamageComponentChange}
+                          placeholder="Mod"
+                          className="modifier-small"
+                          style={{width: '50px'}}
+                        />
+                        <select
+                          name="damageType"
+                          value={tempDamageComponent.damageType}
+                          onChange={handleTempDamageComponentChange}
+                          className="damage-type-select"
+                          style={{marginLeft: '8px', width: '120px'}}
+                        >
+                          <option value="slashing">Slashing</option>
+                          <option value="piercing">Piercing</option>
+                          <option value="bludgeoning">Bludgeoning</option>
+                          <option value="acid">Acid</option>
+                          <option value="cold">Cold</option>
+                          <option value="fire">Fire</option>
+                          <option value="force">Force</option>
+                          <option value="lightning">Lightning</option>
+                          <option value="necrotic">Necrotic</option>
+                          <option value="poison">Poison</option>
+                          <option value="psychic">Psychic</option>
+                          <option value="radiant">Radiant</option>
+                          <option value="thunder">Thunder</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={handleAddDamageComponent}
+                          className="add-component-btn"
+                          style={{marginLeft: '8px', padding: '4px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}
+                        >
+                          + Add
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="attack-field">
-                    <label>Damage Type:</label>
-                    <select
-                      name="damageType"
-                      value={attackTemplate.damageType}
-                      onChange={handleAttackTemplateChange}
-                    >
-                      <option value="slashing">Slashing</option>
-                      <option value="piercing">Piercing</option>
-                      <option value="bludgeoning">Bludgeoning</option>
-                      <option value="acid">Acid</option>
-                      <option value="cold">Cold</option>
-                      <option value="fire">Fire</option>
-                      <option value="force">Force</option>
-                      <option value="lightning">Lightning</option>
-                      <option value="necrotic">Necrotic</option>
-                      <option value="poison">Poison</option>
-                      <option value="psychic">Psychic</option>
-                      <option value="radiant">Radiant</option>
-                      <option value="thunder">Thunder</option>
-                    </select>
                   </div>
                 </div>
                 
@@ -1868,27 +2149,40 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                 <div className="template-attacks-list">
                   <h5>Attacks:</h5>
                   <ul>
-                    {bossTemplate.attacks.map(attack => (
-                      <li key={attack.id} className="template-attack-item">
-                        <span className="attack-name">{attack.name}</span>
-                        <span className="attack-details">
-                          {attack.isAoE ? 'AoE - ' : ''}
-                          {attack.numDice}d{attack.diceType}+{attack.modifier} {attack.damageType || 'slashing'}
-                          {attack.attackMethod === 'attackRoll' && !attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
-                          {(attack.attackMethod === 'save' || attack.isAoE || 
-                            (attack.attackMethod === 'auto' && attack.saveType && attack.saveDC)) && 
-                            ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
-                          {attack.attackMethod === 'auto' && !attack.isAoE && 
-                            !(attack.saveType && attack.saveDC) && ' (auto hit)'}
-                        </span>
-                        <button 
-                          className="remove-attack-button"
-                          onClick={() => handleRemoveAttack(attack.id)}
-                        >
-                          ×
-                        </button>
-                      </li>
-                    ))}
+                    {bossTemplate.attacks.map(attack => {
+                      // Helper function to format damage components
+                      const formatDamageComponents = (components) => {
+                        if (!components || components.length === 0) {
+                          // Fallback for old format attacks
+                          return `${attack.numDice}d${attack.diceType}+${attack.modifier} ${attack.damageType || 'slashing'}`;
+                        }
+                        return components.map((comp, idx) => 
+                          `${comp.numDice}d${comp.diceType}${comp.modifier > 0 ? '+' + comp.modifier : comp.modifier < 0 ? comp.modifier : ''} ${comp.damageType}`
+                        ).join(' + ');
+                      };
+                      
+                      return (
+                        <li key={attack.id} className="template-attack-item">
+                          <span className="attack-name">{attack.name}</span>
+                          <span className="attack-details">
+                            {attack.isAoE ? 'AoE - ' : ''}
+                            {formatDamageComponents(attack.damageComponents)}
+                            {attack.attackMethod === 'attackRoll' && !attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
+                            {(attack.attackMethod === 'save' || attack.isAoE || 
+                              (attack.attackMethod === 'auto' && attack.saveType && attack.saveDC)) && 
+                              ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
+                            {attack.attackMethod === 'auto' && !attack.isAoE && 
+                              !(attack.saveType && attack.saveDC) && ' (auto hit)'}
+                          </span>
+                          <button 
+                            className="remove-attack-button"
+                            onClick={() => handleRemoveAttack(attack.id)}
+                          >
+                            ×
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -2306,21 +2600,33 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                             {showAttacks[boss.id] && (
                               <div className="boss-attacks">
                                 <ul>
-                                  {boss.attacks.map(attack => (
-                                    <li key={attack.id} className="boss-attack-item">
-                                      <div className="attack-info">
-                                        <span className="attack-name">{attack.name}</span>
-                                        <span className="attack-details">
-                                          {attack.isAoE ? 'AoE - ' : ''}
-                                          {attack.numDice}d{attack.diceType}+{attack.modifier} {attack.damageType || 'slashing'}
-                                          {attack.attackMethod === 'attackRoll' && !attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
-                                          {(attack.attackMethod === 'save' || attack.isAoE || 
-                                            (attack.attackMethod === 'auto' && attack.saveType && attack.saveDC)) && 
-                                            ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
-                                          {attack.attackMethod === 'auto' && !attack.isAoE && 
-                                            !(attack.saveType && attack.saveDC) && ' (auto hit)'}
-                                        </span>
-                                      </div>
+                                  {boss.attacks.map(attack => {
+                                    // Helper function to format damage components
+                                    const formatDamageComponents = (components) => {
+                                      if (!components || components.length === 0) {
+                                        // Fallback for old format attacks
+                                        return `${attack.numDice}d${attack.diceType}+${attack.modifier} ${attack.damageType || 'slashing'}`;
+                                      }
+                                      return components.map((comp, idx) => 
+                                        `${comp.numDice}d${comp.diceType}${comp.modifier > 0 ? '+' + comp.modifier : comp.modifier < 0 ? comp.modifier : ''} ${comp.damageType}`
+                                      ).join(' + ');
+                                    };
+                                    
+                                    return (
+                                      <li key={attack.id} className="boss-attack-item">
+                                        <div className="attack-info">
+                                          <span className="attack-name">{attack.name}</span>
+                                          <span className="attack-details">
+                                            {attack.isAoE ? 'AoE - ' : ''}
+                                            {formatDamageComponents(attack.damageComponents)}
+                                            {attack.attackMethod === 'attackRoll' && !attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
+                                            {(attack.attackMethod === 'save' || attack.isAoE || 
+                                              (attack.attackMethod === 'auto' && attack.saveType && attack.saveDC)) && 
+                                              ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
+                                            {attack.attackMethod === 'auto' && !attack.isAoE && 
+                                              !(attack.saveType && attack.saveDC) && ' (auto hit)'}
+                                          </span>
+                                        </div>
                                       
                                       <div className="attack-controls">
                                         {attack.isAoE ? (
@@ -2389,72 +2695,162 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                             
                                             {/* Only show damage buttons for hits or save-based attacks */}
                                             {(attackResult.hitStatus !== 'miss' && attackResult.hitStatus !== 'critical-miss') && (
-                                              <div className="damage-modifier-controls">
-                                                {attackResult.hitStatus === 'save-pending' || attackResult.hitStatus === 'auto-save-pending' ? (
-                                                  <>
-                                                    <span className="save-result-label">Apply based on save result:</span>
-                                                    <button 
+                                              <>
+                                                {/* Multi-component damage controls */}
+                                                {attackResult.damageComponents && attackResult.damageComponents.length > 1 ? (
+                                                  <div className="damage-components-controls" style={{padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '4px', marginTop: '10px'}}>
+                                                    <div style={{marginBottom: '10px', fontWeight: 'bold'}}>Damage by Type (adjust for resistances/vulnerabilities):</div>
+                                                    {attackResult.damageComponents.map((comp, idx) => {
+                                                      const modifier = componentModifiers[attackResult.id]?.[idx] || 'full';
+                                                      const adjustment = componentAdjustments[attackResult.id]?.[idx] || 0;
+                                                      
+                                                      // Calculate preview damage
+                                                      let previewDamage = comp.total;
+                                                      if (modifier === 'double') previewDamage *= 2;
+                                                      else if (modifier === 'half') previewDamage = Math.floor(previewDamage / 2);
+                                                      else if (modifier === 'quarter') previewDamage = Math.floor(previewDamage / 4);
+                                                      else if (modifier === 'none') previewDamage = 0;
+                                                      previewDamage = Math.max(0, previewDamage + adjustment);
+                                                      
+                                                      return (
+                                                        <div key={idx} style={{marginBottom: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #ddd'}}>
+                                                          <div style={{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'}}>
+                                                            <span style={{fontWeight: 'bold', minWidth: '80px'}}>{comp.total} {comp.damageType}:</span>
+                                                            <select
+                                                              value={modifier}
+                                                              onChange={(e) => {
+                                                                setComponentModifiers(prev => ({
+                                                                  ...prev,
+                                                                  [attackResult.id]: {
+                                                                    ...prev[attackResult.id],
+                                                                    [idx]: e.target.value
+                                                                  }
+                                                                }));
+                                                              }}
+                                                              style={{padding: '4px', borderRadius: '4px'}}
+                                                            >
+                                                              <option value="full">Full</option>
+                                                              <option value="half">Half (Resist)</option>
+                                                              <option value="quarter">Quarter</option>
+                                                              <option value="double">Double (Vuln)</option>
+                                                              <option value="none">None (Immune)</option>
+                                                            </select>
+                                                            <div style={{display: 'flex', gap: '4px'}}>
+                                                              <button
+                                                                onClick={() => {
+                                                                  setComponentAdjustments(prev => ({
+                                                                    ...prev,
+                                                                    [attackResult.id]: {
+                                                                      ...prev[attackResult.id],
+                                                                      [idx]: (prev[attackResult.id]?.[idx] || 0) - 1
+                                                                    }
+                                                                  }));
+                                                                }}
+                                                                style={{padding: '2px 6px', fontSize: '12px'}}
+                                                              >
+                                                                -1
+                                                              </button>
+                                                              <button
+                                                                onClick={() => {
+                                                                  setComponentAdjustments(prev => ({
+                                                                    ...prev,
+                                                                    [attackResult.id]: {
+                                                                      ...prev[attackResult.id],
+                                                                      [idx]: (prev[attackResult.id]?.[idx] || 0) + 1
+                                                                    }
+                                                                  }));
+                                                                }}
+                                                                style={{padding: '2px 6px', fontSize: '12px'}}
+                                                              >
+                                                                +1
+                                                              </button>
+                                                            </div>
+                                                            <span style={{marginLeft: 'auto', fontWeight: 'bold', color: '#28a745'}}>
+                                                              → {previewDamage}
+                                                            </span>
+                                                          </div>
+                                                        </div>
+                                                      );
+                                                    })}
+                                                    <button
                                                       className="damage-button full-damage"
                                                       onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
-                                                      title="Apply full damage (failed save)"
+                                                      style={{marginTop: '10px', width: '100%'}}
                                                     >
-                                                      Failed Save (Full)
+                                                      Apply Damage
                                                     </button>
-                                                    <button 
-                                                      className="damage-button half-damage"
-                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
-                                                      title="Apply half damage (passed save with half damage)"
-                                                    >
-                                                      Passed Save (Half)
-                                                    </button>
-                                                    <button 
-                                                      className="damage-button no-damage"
-                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
-                                                      title="Apply no damage (passed save with no damage)"
-                                                    >
-                                                      Passed Save (None)
-                                                    </button>
-                                                  </>
+                                                  </div>
                                                 ) : (
-                                                  <>
-                                                    <button 
-                                                      className="damage-button double-damage"
-                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'double')}
-                                                    >
-                                                      Double
-                                                    </button>
-                                                    <button 
-                                                      className="damage-button full-damage"
-                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
-                                                    >
-                                                      Full
-                                                    </button>
-                                                    <button 
-                                                      className="damage-button half-damage"
-                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
-                                                    >
-                                                      Half
-                                                    </button>
-                                                    <button 
-                                                      className="damage-button quarter-damage"
-                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'quarter')}
-                                                    >
-                                                      Quarter
-                                                    </button>
-                                                    <button 
-                                                      className="damage-button no-damage"
-                                                      onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
-                                                    >
-                                                      None
-                                                    </button>
-                                                  </>
+                                                  /* Single damage type - use simple buttons */
+                                                  <div className="damage-modifier-controls">
+                                                    {attackResult.hitStatus === 'save-pending' || attackResult.hitStatus === 'auto-save-pending' ? (
+                                                      <>
+                                                        <span className="save-result-label">Apply based on save result:</span>
+                                                        <button 
+                                                          className="damage-button full-damage"
+                                                          onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
+                                                          title="Apply full damage (failed save)"
+                                                        >
+                                                          Failed Save (Full)
+                                                        </button>
+                                                        <button 
+                                                          className="damage-button half-damage"
+                                                          onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
+                                                          title="Apply half damage (passed save with half damage)"
+                                                        >
+                                                          Passed Save (Half)
+                                                        </button>
+                                                        <button 
+                                                          className="damage-button no-damage"
+                                                          onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
+                                                          title="Apply no damage (passed save with no damage)"
+                                                        >
+                                                          Passed Save (None)
+                                                        </button>
+                                                      </>
+                                                    ) : (
+                                                      <>
+                                                        <button 
+                                                          className="damage-button double-damage"
+                                                          onClick={() => handleApplyDamage(boss.id, attackResult.id, 'double')}
+                                                        >
+                                                          Double
+                                                        </button>
+                                                        <button 
+                                                          className="damage-button full-damage"
+                                                          onClick={() => handleApplyDamage(boss.id, attackResult.id, 'full')}
+                                                        >
+                                                          Full
+                                                        </button>
+                                                        <button 
+                                                          className="damage-button half-damage"
+                                                          onClick={() => handleApplyDamage(boss.id, attackResult.id, 'half')}
+                                                        >
+                                                          Half
+                                                        </button>
+                                                        <button 
+                                                          className="damage-button quarter-damage"
+                                                          onClick={() => handleApplyDamage(boss.id, attackResult.id, 'quarter')}
+                                                        >
+                                                          Quarter
+                                                        </button>
+                                                        <button 
+                                                          className="damage-button no-damage"
+                                                          onClick={() => handleApplyDamage(boss.id, attackResult.id, 'none')}
+                                                        >
+                                                          None
+                                                        </button>
+                                                      </>
+                                                    )}
+                                                  </div>
                                                 )}
-                                              </div>
+                                              </>
                                             )}
                                           </div>
                                         ))}
-                                    </li>
-                                  ))}
+                                      </li>
+                                    );
+                                  })}
                                 </ul>
                               </div>
                             )}

@@ -2488,16 +2488,39 @@ const useDnDStore = create((set, get) => {
       const boss = get().bosses.find(b => b.id === bossId);
       if (!boss || !attack) return;
       
-      // Roll the damage dice
-      const damageRoll = get().rollDice(attack.numDice, attack.diceType);
-      const totalDamage = damageRoll + attack.modifier;
+      let totalDamage = 0;
+      
+      // Support both new damageComponents array and old single damage structure
+      const componentsToRoll = attack.damageComponents && attack.damageComponents.length > 0
+        ? attack.damageComponents
+        : [{
+            numDice: attack.numDice,
+            diceType: attack.diceType,
+            modifier: attack.modifier,
+            damageType: attack.damageType || 'slashing'
+          }];
+      
+      // Roll damage for each component
+      const rolledComponents = componentsToRoll.map(component => {
+        const damageRoll = get().rollDice(component.numDice, component.diceType);
+        const componentTotal = damageRoll + component.modifier;
+        totalDamage += componentTotal;
+        
+        return {
+          damageType: component.damageType,
+          damageRoll: damageRoll,
+          modifier: component.modifier,
+          total: componentTotal
+        };
+      });
       
       // Set this boss as the target entity
       get().setTargetEntity({ type: 'boss', id: bossId });
       
       // Prepare the AOE fields
       const aoeParams = {
-        damage: totalDamage.toString(), // Use the actual rolled damage
+        damage: totalDamage.toString(), // Use the total rolled damage
+        damageComponents: rolledComponents, // Include damage components for multi-type support
         saveType: attack.saveType,
         saveDC: attack.saveDC,
         halfOnSave: attack.halfOnSave
