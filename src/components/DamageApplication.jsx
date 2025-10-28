@@ -4,6 +4,27 @@ import { useEffect, useRef, useState } from 'react';
 
 import useDnDStore from '../store/dndStore';
 
+// Damage types and compact icon mapping (reused style from Groups/Characters sections)
+const DAMAGE_TYPES = [
+  { key: 'slashing', label: 'Slashing', icon: '🪓' },
+  { key: 'piercing', label: 'Piercing', icon: '🗡️' },
+  { key: 'bludgeoning', label: 'Bludgeoning', icon: '🔨' },
+  { key: 'fire', label: 'Fire', icon: '🔥' },
+  { key: 'cold', label: 'Cold', icon: '❄️' },
+  { key: 'lightning', label: 'Lightning', icon: '⚡' },
+  { key: 'thunder', label: 'Thunder', icon: '🌩️' },
+  { key: 'acid', label: 'Acid', icon: '🧪' },
+  { key: 'poison', label: 'Poison', icon: '☠️' },
+  { key: 'psychic', label: 'Psychic', icon: '🧠' },
+  { key: 'necrotic', label: 'Necrotic', icon: '💀' },
+  { key: 'radiant', label: 'Radiant', icon: '✨' },
+  { key: 'force', label: 'Force', icon: '💥' }
+];
+
+const DAMAGE_TYPE_LOOKUP = DAMAGE_TYPES.reduce((acc, dt) => {
+  acc[dt.key] = dt; return acc;
+}, {});
+
 const DamageApplication = () => {
   const {
     characters,
@@ -351,7 +372,8 @@ const DamageApplication = () => {
         return {
           name: `${group.name} (x${group.count})`,
           type: 'group',
-          ac: group.ac
+          ac: group.ac,
+          defenses: group.defenses
         };
       }
     } else if (targetEntity.type === 'boss') {
@@ -360,7 +382,8 @@ const DamageApplication = () => {
         return {
           name: boss.name,
           type: 'boss',
-          ac: boss.ac
+          ac: boss.ac,
+          defenses: boss.defenses
         };
       }
     } else if (targetEntity.type === 'character') {
@@ -369,7 +392,8 @@ const DamageApplication = () => {
         return {
           name: character.name,
           type: 'character',
-          ac: character.ac
+          ac: character.ac,
+          defenses: character.defenses
         };
       }
     }
@@ -774,6 +798,38 @@ const DamageApplication = () => {
   // Get healable entities
   const healableEntities = getHealableEntities();
 
+  // Render compact defense icons for an entity (immunities/resistances/vulnerabilities)
+  const renderDefenseIcons = (defenses) => {
+    if (!defenses) return null;
+    const { immunities = [], resistances = [], vulnerabilities = [] } = defenses;
+    if (immunities.length === 0 && resistances.length === 0 && vulnerabilities.length === 0) return null;
+    return (
+      <div className="defense-icons" style={{ marginTop: '4px', gap: '4px', flexWrap: 'wrap' }}>
+        {immunities.map((key) => {
+          const dt = DAMAGE_TYPE_LOOKUP[key];
+          if (!dt) return null;
+          return (
+            <span key={`imm-${key}`} className="defense-icon immunity" title={`Immune: ${dt.label}`}>{dt.icon}</span>
+          );
+        })}
+        {resistances.map((key) => {
+          const dt = DAMAGE_TYPE_LOOKUP[key];
+          if (!dt) return null;
+          return (
+            <span key={`res-${key}`} className="defense-icon resistance" title={`Resistant: ${dt.label}`}>{dt.icon}</span>
+          );
+        })}
+        {vulnerabilities.map((key) => {
+          const dt = DAMAGE_TYPE_LOOKUP[key];
+          if (!dt) return null;
+          return (
+            <span key={`vuln-${key}`} className="defense-icon vulnerability" title={`Vulnerable: ${dt.label}`}>{dt.icon}</span>
+          );
+        })}
+      </div>
+    );
+  };
+
   // Apply healing or temp HP to multiple entities
   const handleApplyMultiHealing = () => {
     // Parse amount
@@ -1012,6 +1068,16 @@ const DamageApplication = () => {
                       <span className="target-ac">AC: {targetDetails.ac}</span>
                     )}
                   </div>
+                  {(targetDetails.defenses && (
+                    (targetDetails.defenses.immunities && targetDetails.defenses.immunities.length) ||
+                    (targetDetails.defenses.resistances && targetDetails.defenses.resistances.length) ||
+                    (targetDetails.defenses.vulnerabilities && targetDetails.defenses.vulnerabilities.length)
+                  )) ? (
+                    <div className="target-defenses">
+                      <span className="defense-label-inline">Defenses:</span>
+                      {renderDefenseIcons(targetDetails.defenses)}
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <div className="no-target-message">
@@ -1216,7 +1282,18 @@ const DamageApplication = () => {
                 // AoE Saves Configuration UI
                 <div className="aoe-saves-container">
                   <div className="aoe-saves-header">
-                    <h5>{aoeState.saveType.toUpperCase()} Save DC {aoeState.saveDC} - {aoeState.damageAmount} Damage</h5>
+                    <h5>
+                      {aoeState.saveType.toUpperCase()} Save DC {aoeState.saveDC} - {aoeState.damageAmount} Damage
+                      {aoeState.damageComponents && aoeState.damageComponents.length === 1 && (
+                        (() => {
+                          const dtKey = aoeState.damageComponents[0]?.damageType;
+                          const dt = dtKey ? DAMAGE_TYPE_LOOKUP[dtKey] : null;
+                          return dt ? (
+                            <span title={dt.label} style={{ marginLeft: '8px' }}>{dt.icon}</span>
+                          ) : null;
+                        })()
+                      )}
+                    </h5>
                     <div className="aoe-saves-actions">
                       <button
                         className="auto-roll-button"
@@ -1240,7 +1317,7 @@ const DamageApplication = () => {
                         {/* Players Table */}
                         {playerEntities.length > 0 && (
                           <>
-                            <h5 className="entity-table-header">Player Characters</h5>
+                    <h5 className="entity-table-header">Player Characters</h5>
                             <div className="character-saves-table">
                               <div className="character-saves-header">
                                 <div>Character</div>
@@ -1253,14 +1330,13 @@ const DamageApplication = () => {
                               
                               {playerEntities.map(([entityId, saveInfo]) => {
                                 // Parse entity type and ID
-                                const [_, id] = entityId.split('-');
+                                const [, id] = entityId.split('-');
                                 
                                 // Get the entity
                                 const entity = characters.find(c => c.id === id);
                                 if (!entity) return null;
                                 
-                                const modifier = damageModifiers[entityId];
-                                const adjustment = manualDamageAdjustments[entityId] || 0;
+                                
                                 
                                 // Check if multi-damage-type attack
                                 const hasMultiDamage = aoeState.damageComponents && aoeState.damageComponents.length > 1;
@@ -1282,7 +1358,10 @@ const DamageApplication = () => {
                                   
                                   return (
                                     <div key={entityId} className="character-saves-row">
-                                      <div>{entity.name}</div>
+                                      <div>
+                                        {entity.name}
+                                        {renderDefenseIcons(entity.defenses)}
+                                      </div>
                                       <div className="save-roll-cell">
                                         <input
                                           type="number"
@@ -1315,8 +1394,12 @@ const DamageApplication = () => {
                                           componentDamage = Math.max(0, componentDamage + compAdjustment);
                                           
                                           return (
-                                            <div key={idx} style={{fontSize: '12px', marginBottom: '4px', height: '18px', display: 'flex', alignItems: 'center'}}>
-                                              {comp.total} {comp.damageType.substring(0, 4)}: <strong style={{color: '#28a745'}}>{componentDamage}</strong>
+                                            <div key={idx} style={{fontSize: '12px', marginBottom: '4px', height: '18px', display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                              <span title={(DAMAGE_TYPE_LOOKUP[comp.damageType]?.label) || comp.damageType} style={{lineHeight: 1}}>
+                                                {DAMAGE_TYPE_LOOKUP[comp.damageType]?.icon || comp.damageType.substring(0, 3)}
+                                              </span>
+                                              <span>{comp.total}</span>
+                                              <strong style={{color: '#28a745'}}>{componentDamage}</strong>
                                             </div>
                                           );
                                         })}
@@ -1381,7 +1464,10 @@ const DamageApplication = () => {
                                 
                                 return (
                                   <div key={entityId} className="character-saves-row">
-                                    <div>{entity.name}</div>
+                                    <div>
+                                      {entity.name}
+                                      {renderDefenseIcons(entity.defenses)}
+                                    </div>
                                     <div className="save-roll-cell">
                                       <input
                                         type="number"
@@ -1404,25 +1490,23 @@ const DamageApplication = () => {
                                     </div>
                                     <div>
                                       {(() => {
-                                            const modifier = damageModifiers[entityId];
-                                            const adjustment = manualDamageAdjustments[entityId] || 0;
+                                        const modifier = damageModifiers[entityId];
+                                        const adjustment = manualDamageAdjustments[entityId] || 0;
                                         const currentDamage = parseInt(aoeState.damageAmount);
                                         let finalDamage = isNaN(currentDamage) ? 0 : currentDamage;
-                                        
-                                        if (modifier === 'double') {
-                                          finalDamage = finalDamage * 2;
-                                        } else if (modifier === 'half') {
-                                          finalDamage = Math.floor(finalDamage / 2);
-                                        } else if (modifier === 'quarter') {
-                                          finalDamage = Math.floor(finalDamage / 4);
-                                        } else if (modifier === 'none') {
-                                          finalDamage = 0;
-                                        }
-                                        
+                                        if (modifier === 'double') finalDamage = finalDamage * 2;
+                                        else if (modifier === 'half') finalDamage = Math.floor(finalDamage / 2);
+                                        else if (modifier === 'quarter') finalDamage = Math.floor(finalDamage / 4);
+                                        else if (modifier === 'none') finalDamage = 0;
                                         finalDamage = Math.max(0, finalDamage + adjustment);
-                                        
+                                        const singleDt = (aoeState.damageComponents && aoeState.damageComponents.length === 1)
+                                          ? DAMAGE_TYPE_LOOKUP[aoeState.damageComponents[0]?.damageType]
+                                          : null;
                                         return (
                                           <>
+                                            {singleDt && (
+                                              <span title={singleDt.label} style={{ marginRight: '6px' }}>{singleDt.icon}</span>
+                                            )}
                                             <span className="damage-value">{finalDamage}</span>
                                             {(modifier !== 'default' || adjustment !== 0) && (
                                               <small className="damage-details">
@@ -1463,7 +1547,7 @@ const DamageApplication = () => {
                         {/* Bosses and Groups Table */}
                         {nonPlayerEntities.length > 0 && (
                           <>
-                            <h5 className="entity-table-header">Bosses & Enemy Groups</h5>
+                    <h5 className="entity-table-header">Bosses & Enemy Groups</h5>
                             <div className="character-saves-table">
                               <div className="character-saves-header">
                                 <div>Name</div>
@@ -1488,8 +1572,7 @@ const DamageApplication = () => {
                                 
                                 if (!entity) return null;
                                 
-                                const modifier = damageModifiers[entityId];
-                                const adjustment = manualDamageAdjustments[entityId] || 0;
+                                
                                 
                                 // Get save bonus for display
                                 const saveBonus = saveInfo.saveBonus || 0;
@@ -1514,7 +1597,10 @@ const DamageApplication = () => {
                                   
                                   return (
                                     <div key={entityId} className="character-saves-row">
-                                      <div>{entity.name}</div>
+                                      <div>
+                                        {entity.name}
+                                        {renderDefenseIcons(entity.defenses)}
+                                      </div>
                                       <div className="save-roll-cell">
                                         <input
                                           type="number"
@@ -1553,8 +1639,12 @@ const DamageApplication = () => {
                                           componentDamage = Math.max(0, componentDamage + compAdjustment);
                                           
                                           return (
-                                            <div key={idx} style={{fontSize: '12px', marginBottom: '4px', height: '18px', display: 'flex', alignItems: 'center'}}>
-                                              {comp.total} {comp.damageType.substring(0, 4)}: <strong style={{color: '#28a745'}}>{componentDamage}</strong>
+                                            <div key={idx} style={{fontSize: '12px', marginBottom: '4px', height: '18px', display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                              <span title={(DAMAGE_TYPE_LOOKUP[comp.damageType]?.label) || comp.damageType} style={{lineHeight: 1}}>
+                                                {DAMAGE_TYPE_LOOKUP[comp.damageType]?.icon || comp.damageType.substring(0, 3)}
+                                              </span>
+                                              <span>{comp.total}</span>
+                                              <strong style={{color: '#28a745'}}>{componentDamage}</strong>
                                             </div>
                                           );
                                         })}
@@ -1648,25 +1738,23 @@ const DamageApplication = () => {
                                     </div>
                                     <div>
                                       {(() => {
-                                            const modifier = damageModifiers[entityId];
-                                            const adjustment = manualDamageAdjustments[entityId] || 0;
+                                        const modifier = damageModifiers[entityId];
+                                        const adjustment = manualDamageAdjustments[entityId] || 0;
                                         const currentDamage = parseInt(aoeState.damageAmount);
                                         let finalDamage = isNaN(currentDamage) ? 0 : currentDamage;
-                                        
-                                        if (modifier === 'double') {
-                                          finalDamage = finalDamage * 2;
-                                        } else if (modifier === 'half') {
-                                          finalDamage = Math.floor(finalDamage / 2);
-                                        } else if (modifier === 'quarter') {
-                                          finalDamage = Math.floor(finalDamage / 4);
-                                        } else if (modifier === 'none') {
-                                          finalDamage = 0;
-                                        }
-                                        
+                                        if (modifier === 'double') finalDamage = finalDamage * 2;
+                                        else if (modifier === 'half') finalDamage = Math.floor(finalDamage / 2);
+                                        else if (modifier === 'quarter') finalDamage = Math.floor(finalDamage / 4);
+                                        else if (modifier === 'none') finalDamage = 0;
                                         finalDamage = Math.max(0, finalDamage + adjustment);
-                                        
+                                        const singleDt = (aoeState.damageComponents && aoeState.damageComponents.length === 1)
+                                          ? DAMAGE_TYPE_LOOKUP[aoeState.damageComponents[0]?.damageType]
+                                          : null;
                                         return (
                                           <>
+                                            {singleDt && (
+                                              <span title={singleDt.label} style={{ marginRight: '6px' }}>{singleDt.icon}</span>
+                                            )}
                                             <span className="damage-value">{finalDamage}</span>
                                             {(modifier !== 'default' || adjustment !== 0) && (
                                               <small className="damage-details">
@@ -1687,7 +1775,7 @@ const DamageApplication = () => {
                                     </div>
                                     <div>
                                       <select
-                                        value={modifier}
+                                        value={damageModifiers[entityId]}
                                         onChange={(e) => handleDamageModifierChange(entityId, e.target.value)}
                                       >
                                         <option value="default">Default Damage</option>

@@ -297,7 +297,7 @@
 
 @media (max-width: 480px) {
   .damage-application {
-    padding: 0.5rem;
+    padding: 0.25rem;
   }
   
   .damage-section {
@@ -714,8 +714,8 @@
 
 .character-saves-header {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 0.8fr 1.2fr 1.5fr 0.8fr;
-  gap: 0.5rem;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1fr;
+  gap: 0.4rem;
   background-color: #edf2f7;
   padding: 0.5rem;
   font-weight: 600;
@@ -726,8 +726,8 @@
 
 .character-saves-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 0.8fr 1.2fr 1.5fr 0.8fr;
-  gap: 0.5rem;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1fr;
+  gap: 0.4rem;
   padding: 0.5rem;
   border-top: 1px solid #e2e8f0;
   align-items: center;
@@ -741,7 +741,7 @@
 .save-roll-cell {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   min-width: 100px;
 }
 
@@ -754,8 +754,8 @@
 }
 
 .auto-roll-single {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   background-color: #edf2f7;
   border: 1px solid #cbd5e0;
   border-radius: 4px;
@@ -763,7 +763,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .auto-roll-single:hover {
@@ -815,6 +815,18 @@
 
 .damage-adjustment-controls button:hover {
   background-color: #edf2f7;
+}
+
+.target-defenses {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.defense-label-inline {
+  font-size: 0.85rem;
+  color: #4a5568;
 }
 
 .character-saves-row select,
@@ -1411,8 +1423,8 @@
 
 .entity-saves-header {
   display: grid;
-  grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.8fr;
-  gap: 0.5rem;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1fr;
+  gap: 0.4rem;
   font-weight: 600;
   font-size: 0.8rem;
   color: #4a5568;
@@ -1423,8 +1435,8 @@
 
 .entity-saves-row {
   display: grid;
-  grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.8fr;
-  gap: 0.5rem;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1fr;
+  gap: 0.4rem;
   padding: 0.5rem;
   align-items: center;
   border-bottom: 1px solid #f7fafc;
@@ -1659,7 +1671,7 @@
 .character-saves-header,
 .character-saves-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 0.8fr 1.2fr 1.5fr 0.8fr;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1fr;
   min-width: 700px; /* Reduced minimum width */
   align-items: center;
 }
@@ -1667,7 +1679,7 @@
 .entity-saves-header,
 .entity-saves-row {
   display: grid;
-  grid-template-columns: 1.5fr 0.8fr 0.8fr 1fr 0.8fr 0.8fr 0.8fr 1.2fr 1.2fr 0.8fr;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1fr;
   min-width: 800px; /* Reasonable minimum width */
   align-items: center;
 }
@@ -1706,6 +1718,40 @@
     width: 45px;
     min-width: 45px;
   }
+}
+
+/* Compact, color-coded defense icons inline with names */
+.defense-icons {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.defense-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.defense-icon.immunity {
+  background-color: #c6f6d5;
+  color: #22543d;
+}
+
+.defense-icon.resistance {
+  background-color: #81e6d9;
+  color: #1a365d;
+}
+
+.defense-icon.vulnerability {
+  background-color: #fed7d7;
+  color: #742a2a;
 }
 
 /* Style for damage details (modifiers, adjustments) */

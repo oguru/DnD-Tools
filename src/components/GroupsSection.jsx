@@ -918,6 +918,25 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     });
   };
 
+  // Small helper to render a compact, colored defense badge for a given damage type
+  const renderDefenseBadge = (defenses, damageTypeKey) => {
+    if (!defenses || !damageTypeKey) return null;
+    const dt = DAMAGE_TYPES.find(d => d.key === damageTypeKey);
+    if (!dt) return null;
+    const isImmune = (defenses.immunities || []).includes(damageTypeKey);
+    const isResist = (defenses.resistances || []).includes(damageTypeKey);
+    const isVuln = (defenses.vulnerabilities || []).includes(damageTypeKey);
+    if (!isImmune && !isResist && !isVuln) return null;
+    const styleBase = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '3px', fontSize: '14px', lineHeight: 1 };
+    const style = isImmune
+      ? { ...styleBase, backgroundColor: '#c6f6d5', color: '#22543d' }
+      : isResist
+      ? { ...styleBase, backgroundColor: '#81e6d9', color: '#1a365d' }
+      : { ...styleBase, backgroundColor: '#fed7d7', color: '#742a2a' };
+    const title = isImmune ? `Immune: ${dt.label}` : isResist ? `Resistant: ${dt.label}` : `Vulnerable: ${dt.label}`;
+    return <span title={title} style={style}>{dt.icon}</span>;
+  };
+
   // Handle changes to the group template
   const handleGroupTemplateChange = (e) => {
     const { name, value } = e.target;
@@ -2703,6 +2722,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                                     {attackResult.damageComponents.map((comp, idx) => {
                                                       const modifier = componentModifiers[attackResult.id]?.[idx] || 'full';
                                                       const adjustment = componentAdjustments[attackResult.id]?.[idx] || 0;
+                                                      const targetChar = characters.find(c => c.id === attackResult.targetId);
                                                       
                                                       // Calculate preview damage
                                                       let previewDamage = comp.total;
@@ -2716,6 +2736,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                                         <div key={idx} style={{marginBottom: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #ddd'}}>
                                                           <div style={{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'}}>
                                                             <span style={{fontWeight: 'bold', minWidth: '80px'}}>{comp.total} {comp.damageType}:</span>
+                                                            {renderDefenseBadge(targetChar?.defenses, comp.damageType)}
                                                             <select
                                                               value={modifier}
                                                               onChange={(e) => {
@@ -2783,6 +2804,19 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                                 ) : (
                                                   /* Single damage type - use simple buttons */
                                                   <div className="damage-modifier-controls">
+                                                    {(() => {
+                                                      const targetChar = characters.find(c => c.id === attackResult.targetId);
+                                                      const dtKey = (attackResult.damageComponents && attackResult.damageComponents.length === 1)
+                                                        ? attackResult.damageComponents[0]?.damageType
+                                                        : attackResult.damageType;
+                                                      if (!dtKey) return null;
+                                                      return (
+                                                        <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
+                                                          <span style={{fontWeight: 600}}>Target Defense:</span>
+                                                          {renderDefenseBadge(targetChar?.defenses, dtKey) || <span style={{fontSize: '0.9rem', color: '#718096'}}>None</span>}
+                                                        </div>
+                                                      );
+                                                    })()}
                                                     {attackResult.hitStatus === 'save-pending' || attackResult.hitStatus === 'auto-save-pending' ? (
                                                       <>
                                                         <span className="save-result-label">Apply based on save result:</span>
