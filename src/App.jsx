@@ -17,7 +17,7 @@ import GroupAttackCalculator from './components/GroupAttackCalculator';
 import LimboInfo from './pages/LimboInfo';
 import SecretMessages from './pages/SecretMessages';
 import SwarmAttackPage from './pages/SwarmAttackPage';
-import WildSurgeInfo from './pages/WildSurgeInfo';
+import RandomTables from './pages/RandomTablesPage';
 
 function App() {
   return (
@@ -62,7 +62,7 @@ function App() {
                   value=""
                 >
                   <option style={{fontWeight: "bold"}} disabled value="">Tools</option>
-                  <option value="/player-info/wild-surges">Wild Surges</option>
+                  <option value="/player-info/wild-surges">Random Tables</option>
                   <option value="/swarm-attack">Swarm Attack</option>
                   <option value="/group-attack">Group Attack</option>
                 </select>
@@ -79,7 +79,7 @@ function App() {
           <Route path="/discovered-aspects" element={<DiscoveredAspects />} />
           <Route path="/all-aspects" element={<AllAspects />} />
           <Route path="/divine-powers" element={<DivinePowers />} />
-          <Route path="/player-info/wild-surges" element={<WildSurgeInfo />} />
+          <Route path="/player-info/wild-surges" element={<RandomTables />} />
           <Route path="/swarm-attack" element={<SwarmAttackPage />} />
           <Route path="/group-attack" element={<GroupAttackCalculator />} />
         </Routes>
