@@ -202,18 +202,54 @@ const useDnDStore = create((set, get) => {
       });
     },
     
-    setTemporaryHitPoints: (characterId, amount) => {
+    setTemporaryHitPoints: (characterId, amount, replace = true) => {
       if (amount < 0) amount = 0;
       
       set(state => {
         const updatedCharacters = state.characters.map(char => {
           if (char.id === characterId) {
-            return { ...char, tempHp: amount };
+            const currentTempHp = char.tempHp || 0;
+            const newTempHp = replace ? amount : currentTempHp + amount;
+            return { ...char, tempHp: Math.max(0, newTempHp) };
           }
           return char;
         });
         localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
         return { characters: updatedCharacters };
+      });
+    },
+    
+    setTemporaryHitPointsBoss: (bossId, amount, replace = true) => {
+      if (amount < 0) amount = 0;
+      
+      set(state => {
+        const updatedBosses = state.bosses.map(boss => {
+          if (boss.id === bossId) {
+            const currentTempHp = boss.tempHp || 0;
+            const newTempHp = replace ? amount : currentTempHp + amount;
+            return { ...boss, tempHp: Math.max(0, newTempHp) };
+          }
+          return boss;
+        });
+        localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+        return { bosses: updatedBosses };
+      });
+    },
+    
+    setTemporaryHitPointsGroup: (groupId, amount, replace = true) => {
+      if (amount < 0) amount = 0;
+      
+      set(state => {
+        const updatedGroups = state.enemyGroups.map(group => {
+          if (group.id === groupId) {
+            const currentTempHp = group.tempHp || 0;
+            const newTempHp = replace ? amount : currentTempHp + amount;
+            return { ...group, tempHp: Math.max(0, newTempHp) };
+          }
+          return group;
+        });
+        localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
+        return { enemyGroups: updatedGroups };
       });
     },
     

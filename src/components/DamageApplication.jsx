@@ -21,6 +21,9 @@ const DamageApplication = () => {
     applyHealingToGroup,
     applyHealingToBoss,
     applyHealingToCharacter,
+    setTemporaryHitPoints,
+    setTemporaryHitPointsBoss,
+    setTemporaryHitPointsGroup,
     calculateHealthPercentage,
     getHealthColor
   } = useDnDStore();
@@ -34,10 +37,12 @@ const DamageApplication = () => {
     disadvantage: false
   });
 
-  // Healing state
+  // Healing and Temp HP state (combined)
   const [healingState, setHealingState] = useState({
-    healingAmount: '',
-    selectedEntities: []
+    amount: '',
+    selectedEntities: [],
+    mode: 'healing', // 'healing' or 'tempHp'
+    replaceExisting: true // Only used for tempHp mode
   });
 
   // AOE damage state
@@ -769,38 +774,58 @@ const DamageApplication = () => {
   // Get healable entities
   const healableEntities = getHealableEntities();
 
-  // Apply healing to multiple entities
+  // Apply healing or temp HP to multiple entities
   const handleApplyMultiHealing = () => {
-    // Parse healing amount
-    const healing = parseInt(healingState.healingAmount);
-    if (isNaN(healing) || healing <= 0) {
+    // Parse amount
+    const amount = parseInt(healingState.amount);
+    const isHealing = healingState.mode === 'healing';
+    
+    if (isNaN(amount) || amount < 0) {
+      alert(`Please enter a valid ${isHealing ? 'healing' : 'temporary hit points'} amount`);
+      return;
+    }
+    
+    if (isHealing && amount === 0) {
       alert('Please enter a valid healing amount');
       return;
     }
     
     if (healingState.selectedEntities.length === 0) {
-      alert('Please select at least one entity to heal');
+      alert('Please select at least one entity');
       return;
     }
     
-    // Generate a single transaction ID for all healing operations in this batch
-    const batchTransactionId = `healing-${Date.now()}`;
+    if (isHealing) {
+      // Generate a single transaction ID for all healing operations in this batch
+      const batchTransactionId = `healing-${Date.now()}`;
+      
+      // Apply healing to each selected entity
+      healingState.selectedEntities.forEach(entity => {
+        if (entity.type === 'group') {
+          applyHealingToGroup(entity.id, amount, batchTransactionId);
+        } else if (entity.type === 'boss') {
+          applyHealingToBoss(entity.id, amount, batchTransactionId);
+        } else if (entity.type === 'character') {
+          applyHealingToCharacter(entity.id, amount, batchTransactionId);
+        }
+      });
+    } else {
+      // Apply temp HP to each selected entity
+      healingState.selectedEntities.forEach(entity => {
+        if (entity.type === 'character') {
+          setTemporaryHitPoints(entity.id, amount, healingState.replaceExisting);
+        } else if (entity.type === 'boss') {
+          setTemporaryHitPointsBoss(entity.id, amount, healingState.replaceExisting);
+        } else if (entity.type === 'group') {
+          setTemporaryHitPointsGroup(entity.id, amount, healingState.replaceExisting);
+        }
+      });
+    }
     
-    // Apply healing to each selected entity
-    healingState.selectedEntities.forEach(entity => {
-      if (entity.type === 'group') {
-        applyHealingToGroup(entity.id, healing, batchTransactionId);
-      } else if (entity.type === 'boss') {
-        applyHealingToBoss(entity.id, healing, batchTransactionId);
-      } else if (entity.type === 'character') {
-        applyHealingToCharacter(entity.id, healing, batchTransactionId);
-      }
-    });
-    
-    // Reset healing amount AND clear selected entities
+    // Reset amount AND clear selected entities
     setHealingState(prev => ({
       ...prev,
-      healingAmount: '',
+      amount: '',
       selectedEntities: []
     }));
   };
@@ -1720,37 +1745,71 @@ const DamageApplication = () => {
               </div>
             </div>
 
-            {/* Healing Section */}
-            <div className="damage-section healing-section">
-              <h4>Healing</h4>
+            {/* Healing / Temp HP Section */}
+            <div className={`damage-section ${healingState.mode === 'healing' ? 'healing-section' : 'temp-hp-section'}`}>
+              <h4>Healing & Temporary HP</h4>
               
               <div className="healing-controls">
+                <div className="mode-toggle-container">
+                  <label>Mode:</label>
+                  <div className="mode-toggle-buttons">
+                    <button
+                      type="button"
+                      className={`mode-toggle-button ${healingState.mode === 'healing' ? 'active' : ''}`}
+                      onClick={() => setHealingState(prev => ({ ...prev, mode: 'healing' }))}
+                    >
+                      Healing
+                    </button>
+                    <button
+                      type="button"
+                      className={`mode-toggle-button ${healingState.mode === 'tempHp' ? 'active' : ''}`}
+                      onClick={() => setHealingState(prev => ({ ...prev, mode: 'tempHp' }))}
+                    >
+                      Temporary HP
+                    </button>
+                  </div>
+                </div>
+                
                 <div className="control-row">
                   <div className="control-field">
-                    <label>Healing Amount:</label>
+                    <label>{healingState.mode === 'healing' ? 'Healing Amount:' : 'Temp HP Amount:'}</label>
                     <input
                       type="number"
-                      name="healingAmount"
-                      value={healingState.healingAmount}
+                      name="amount"
+                      value={healingState.amount}
                       onChange={handleHealingChange}
-                      placeholder="Healing amount"
+                      placeholder={healingState.mode === 'healing' ? 'Healing amount' : 'Temporary hit points'}
                       min="0"
                       required
                     />
                   </div>
                 </div>
                 
+                {healingState.mode === 'tempHp' && (
+                  <div className="control-checkbox wide">
+                    <input
+                      type="checkbox"
+                      id="replaceExisting"
+                      name="replaceExisting"
+                      checked={healingState.replaceExisting}
+                      onChange={handleHealingChange}
+                    />
+                    <label htmlFor="replaceExisting">Replace existing temporary HP (uncheck to add to existing)</label>
+                  </div>
+                )}
+                
                 <div className="multi-select-container compact">
-                  <h5>Select Entities to Heal</h5>
+                  <h5>Select Entities</h5>
                   
                   {/* Characters section */}
-                  {healableEntities.characters.length > 0 && (
+                  {(healingState.mode === 'healing' ? healableEntities.characters : characters).length > 0 && (
                     <div className="entity-select-section">
                       <h6>Characters</h6>
                       <div className="entity-select-grid">
-                        {healableEntities.characters.map(character => {
+                        {(healingState.mode === 'healing' ? healableEntities.characters : characters).map(character => {
                           const healthPercentage = calculateHealthPercentage(character.currentHp, character.maxHp);
                           const healthColor = getHealthColor(healthPercentage);
+                          const currentTempHp = character.tempHp || 0;
                           return (
                             <div 
                               key={`character-${character.id}`}
@@ -1760,7 +1819,10 @@ const DamageApplication = () => {
                               <div className="entity-header">
                                 <span className="entity-name">{character.name}</span>
                               </div>
-                              <span className="entity-hp">{character.currentHp}/{character.maxHp} HP</span>
+                              <span className="entity-hp">
+                                {character.currentHp}/{character.maxHp} HP
+                                {currentTempHp > 0 && <span className="temp-hp-badge"> (+{currentTempHp} temp)</span>}
+                              </span>
                               <div className="health-bar-container">
                                 <div 
                                   className="health-bar" 
@@ -1792,12 +1854,13 @@ const DamageApplication = () => {
                   )}
                   
                   {/* Enemy Groups section */}
-                  {healableEntities.groups.length > 0 && (
+                  {(healingState.mode === 'healing' ? healableEntities.groups : enemyGroups).length > 0 && (
                     <div className="entity-select-section">
                       <h6>Enemy Groups</h6>
                       <div className="entity-select-grid">
-                        {healableEntities.groups.map(group => {
+                        {(healingState.mode === 'healing' ? healableEntities.groups : enemyGroups).map(group => {
                           const groupDetails = getGroupDetails(group);
+                          const currentTempHp = group.tempHp || 0;
                           return (
                             <div 
                               key={`group-${group.id}`}
@@ -1813,6 +1876,7 @@ const DamageApplication = () => {
                                   {/* Show total HP of all creatures */}
                                   <span className="entity-hp">
                                     {groupDetails.totalCurrentHP}/{groupDetails.totalMaxHP} HP (Total)
+                                    {currentTempHp > 0 && <span className="temp-hp-badge"> (+{currentTempHp} temp)</span>}
                                   </span>
                                   <div className="creature-hp-list">
                                     {groupDetails.creatureDetails.map((creature, idx) => (
@@ -1831,7 +1895,10 @@ const DamageApplication = () => {
                                   </div>
                                 </>
                               ) : (
-                                <span className="entity-hp">{group.currentHp}/{group.maxHp} HP</span>
+                                <span className="entity-hp">
+                                  {group.currentHp}/{group.maxHp} HP
+                                  {currentTempHp > 0 && <span className="temp-hp-badge"> (+{currentTempHp} temp)</span>}
+                                </span>
                               )}
                             </div>
                           );
@@ -1841,13 +1908,14 @@ const DamageApplication = () => {
                   )}
                   
                   {/* Bosses section */}
-                  {healableEntities.bosses.length > 0 && (
+                  {(healingState.mode === 'healing' ? healableEntities.bosses : bosses).length > 0 && (
                     <div className="entity-select-section">
                       <h6>Bosses</h6>
                       <div className="entity-select-grid">
-                        {healableEntities.bosses.map(boss => {
+                        {(healingState.mode === 'healing' ? healableEntities.bosses : bosses).map(boss => {
                           const healthPercentage = calculateHealthPercentage(boss.currentHp, boss.maxHp);
                           const healthColor = getHealthColor(healthPercentage);
+                          const currentTempHp = boss.tempHp || 0;
                           return (
                             <div 
                               key={`boss-${boss.id}`}
@@ -1857,7 +1925,10 @@ const DamageApplication = () => {
                               <div className="entity-header">
                                 <span className="entity-name">{boss.name}</span>
                               </div>
-                              <span className="entity-hp">{boss.currentHp}/{boss.maxHp} HP</span>
+                              <span className="entity-hp">
+                                {boss.currentHp}/{boss.maxHp} HP
+                                {currentTempHp > 0 && <span className="temp-hp-badge"> (+{currentTempHp} temp)</span>}
+                              </span>
                               <div className="health-bar-container">
                                 <div 
                                   className="health-bar" 
@@ -1903,18 +1974,27 @@ const DamageApplication = () => {
                 </div>
                 
                 <button
-                  className="apply-healing-button"
+                  className={healingState.mode === 'healing' ? 'apply-healing-button' : 'apply-temp-hp-button'}
                   onClick={handleApplyMultiHealing}
-                  disabled={!healingState.healingAmount || healingState.selectedEntities.length === 0}
+                  disabled={!healingState.amount || healingState.selectedEntities.length === 0}
                 >
-                  Apply Healing to {healingState.selectedEntities.length} {healingState.selectedEntities.length === 1 ? 'Entity' : 'Entities'}
+                  {healingState.mode === 'healing' ? 'Apply Healing' : 'Apply Temp HP'} to {healingState.selectedEntities.length} {healingState.selectedEntities.length === 1 ? 'Entity' : 'Entities'}
                 </button>
               </div>
               
-              <div className="healing-help">
+              <div className={healingState.mode === 'healing' ? 'healing-help' : 'temp-hp-help'}>
                 <p>
-                  <strong>Note:</strong> Healing is applied to the most damaged creatures first. For groups, 
-                  multi-target healing will distribute healing among all damaged creatures.
+                  {healingState.mode === 'healing' ? (
+                    <>
+                      <strong>Note:</strong> Healing is applied to the most damaged creatures first. For groups, 
+                      multi-target healing will distribute healing among all damaged creatures.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Note:</strong> Temporary hit points don&apos;t stack - by default, new temp HP replaces existing temp HP. 
+                      Uncheck the toggle above to add to existing temp HP instead.
+                    </>
+                  )}
                 </p>
               </div>
             </div>
