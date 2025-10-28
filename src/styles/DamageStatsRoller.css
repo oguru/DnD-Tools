@@ -1,0 +1,133 @@
+.damage-stats-section {
+  background-color: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.damage-stats-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.damage-stats-controls.row {
+  align-items: end;
+  grid-template-columns: repeat(3, minmax(120px, 1fr)) auto;
+}
+
+.damage-stats-controls .field label {
+  display: block;
+  font-size: 0.85rem;
+  color: #4a5568;
+  margin-bottom: 0.25rem;
+}
+
+.damage-stats-controls .field input {
+  width: 100%;
+  padding: 0.45rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  background-color: white;
+}
+
+.row-actions { display: flex; justify-content: flex-end; }
+.remove-row {
+  height: 32px;
+  width: 32px;
+  border: 1px solid #e2e8f0;
+  background: #fff5f5;
+  color: #c53030;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.remove-row:hover { background: #fee2e2; }
+
+.row-expression {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+.add-row-container { margin-top: 0.25rem; }
+.add-row {
+  border: 1px solid #cbd5e0;
+  background: #f7fafc;
+  color: #2d3748;
+  padding: 0.45rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.add-row:hover { background: #edf2f7; }
+
+.save-controls { display: flex; gap: 0.5rem; align-items: center; }
+.calc-name-input {
+  padding: 0.45rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  min-width: 220px;
+  height: 36px;
+}
+.save-calc-button {
+  border: 1px solid #68d391;
+  background: #c6f6d5;
+  color: #22543d;
+  padding: 0.45rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.save-calc-button:hover { background: #9ae6b4; }
+
+.saved-calcs { margin-top: 1rem; }
+.saved-list { display: grid; gap: 0.5rem; }
+.saved-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+.saved-title { font-weight: 700; color: #2d3748; }
+.saved-exprs { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.85rem; color: #4a5568; margin-bottom: 0.4rem; }
+
+/* Slightly compact saved summary tiles */
+.damage-stats-summary.saved-card .tiles { gap: 0.4rem; }
+.damage-stats-summary.saved-card .tile { padding: 0.6rem; }
+.damage-stats-summary.saved-card .tile .label { font-size: 0.78rem; }
+.damage-stats-summary.saved-card .tile .value { font-size: 1.15rem; }
+
+.damage-stats-summary .expr {
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+}
+
+.damage-stats-summary .tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+}
+
+.damage-stats-summary .tile {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.damage-stats-summary .tile .label {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-bottom: 0.25rem;
+}
+
+.damage-stats-summary .tile .value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+
