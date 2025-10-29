@@ -269,6 +269,16 @@ const useDnDStore = create((set, get) => {
           wis: 0,
           cha: 0
         },
+        attacks: Array.isArray(boss.attacks)
+          ? boss.attacks.map(att => {
+              if (att && att.usesCharges) {
+                const max = Math.min(5, Math.max(1, att.maxCharges || 1));
+                const remaining = (typeof att.chargesRemaining === 'number') ? att.chargesRemaining : max;
+                return { ...att, maxCharges: max, chargesRemaining: Math.max(0, Math.min(max, remaining)), isRemoved: !!att.isRemoved };
+              }
+              return { ...att, isRemoved: !!att?.isRemoved };
+            })
+          : [],
         attackResults: []
       };
       
@@ -281,6 +291,39 @@ const useDnDStore = create((set, get) => {
       
       // Update turn order after adding a boss
       setTimeout(() => get().updateTurnOrder(), 0);
+    },
+
+    setBossAttackCharges: (bossId, attackId, chargesRemaining) => {
+      set(state => {
+        const updatedBosses = state.bosses.map(boss => {
+          if (boss.id !== bossId) return boss;
+          const updatedAttacks = (boss.attacks || []).map(att => {
+            if (att.id !== attackId) return att;
+            const max = Math.min(5, Math.max(0, att.maxCharges || 0));
+            const clamped = Math.max(0, Math.min(max, typeof chargesRemaining === 'number' ? chargesRemaining : 0));
+            return { ...att, chargesRemaining: clamped };
+          });
+          const updatedBoss = { ...boss, attacks: updatedAttacks };
+          return updatedBoss;
+        });
+        localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+        return { bosses: updatedBosses };
+      });
+    },
+
+    setBossAttackRemoved: (bossId, attackId, isRemoved) => {
+      set(state => {
+        const updatedBosses = state.bosses.map(boss => {
+          if (boss.id !== bossId) return boss;
+          const updatedAttacks = (boss.attacks || []).map(att =>
+            att.id === attackId ? { ...att, isRemoved: !!isRemoved } : att
+          );
+        
+          return { ...boss, attacks: updatedAttacks };
+        });
+        localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+        return { bosses: updatedBosses };
+      });
     },
     
     removeBoss: (id) => {

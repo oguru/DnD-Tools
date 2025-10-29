@@ -62,6 +62,8 @@ const GroupsSection = () => {
     prepareBossAoeAttack,
     addBossAttackResult,
     updateBossAttackResult,
+    setBossAttackCharges,
+    setBossAttackRemoved,
     addBoss,
     resetBossesHealth,
     clearAllBosses,
@@ -114,6 +116,8 @@ const GroupsSection = () => {
     saveDC: 13,
     halfOnSave: true,
     isAoE: false,
+    usesCharges: false,
+    maxCharges: 1,
     damageComponents: [{
       id: Date.now().toString(),
       numDice: 2,
@@ -364,6 +368,8 @@ const GroupsSection = () => {
       ...prev, 
       name: '',
       id: Date.now().toString(),
+      usesCharges: false,
+      maxCharges: 1,
       damageComponents: [{
         id: Date.now().toString() + '-1',
         numDice: 2,
@@ -445,7 +451,7 @@ const GroupsSection = () => {
     let parsedValue;
     if (type === 'checkbox') {
       parsedValue = checked;
-    } else if (['numDice', 'diceType', 'modifier', 'hitBonus', 'saveDC'].includes(name)) {
+    } else if (['numDice', 'diceType', 'modifier', 'hitBonus', 'saveDC', 'maxCharges'].includes(name)) {
       parsedValue = parseInt(value) || 0;
     } else {
       parsedValue = value;
@@ -1967,6 +1973,32 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                       onChange={handleAttackTemplateChange}
                     />
                   </div>
+                  {/* Charges configuration */}
+                  <div className="attack-field">
+                    <label>Has Charges:</label>
+                    <input
+                      type="checkbox"
+                      name="usesCharges"
+                      checked={attackTemplate.usesCharges}
+                      onChange={handleAttackTemplateChange}
+                    />
+                  </div>
+                  {attackTemplate.usesCharges && (
+                    <div className="attack-field">
+                      <label>Charges:</label>
+                      <select
+                        name="maxCharges"
+                        value={Math.min(5, Math.max(1, attackTemplate.maxCharges || 1))}
+                        onChange={handleAttackTemplateChange}
+                      >
+                        <option value={1}>1</option>
+                        <option value={2}>2</option>
+                        <option value={3}>3</option>
+                        <option value={4}>4</option>
+                        <option value={5}>5</option>
+                      </select>
+                    </div>
+                  )}
                   {(attackTemplate.attackMethod === 'save' || attackTemplate.isAoE || attackTemplate.attackMethod === 'auto') && (
                     <>
                       <div className="attack-field">
@@ -2023,7 +2055,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                     {/* Existing damage components */}
                     {attackTemplate.damageComponents && attackTemplate.damageComponents.length > 0 && (
                       <div className="damage-components-list">
-                        {attackTemplate.damageComponents.map((component, index) => (
+                        {attackTemplate.damageComponents.map((component) => (
                           <div key={component.id} className="damage-component-item">
                             <div className="damage-component-inputs">
                               <input
@@ -2142,14 +2174,15 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                           <option value="radiant">Radiant</option>
                           <option value="thunder">Thunder</option>
                         </select>
+                      <div className="add-component-actions">
                         <button
                           type="button"
                           onClick={handleAddDamageComponent}
                           className="add-component-btn"
-                          style={{marginLeft: '8px', padding: '4px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}
                         >
                           + Add
                         </button>
+                      </div>
                       </div>
                     </div>
                   </div>
@@ -2175,7 +2208,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                           // Fallback for old format attacks
                           return `${attack.numDice}d${attack.diceType}+${attack.modifier} ${attack.damageType || 'slashing'}`;
                         }
-                        return components.map((comp, idx) => 
+                        return components.map((comp) => 
                           `${comp.numDice}d${comp.diceType}${comp.modifier > 0 ? '+' + comp.modifier : comp.modifier < 0 ? comp.modifier : ''} ${comp.damageType}`
                         ).join(' + ');
                       };
@@ -2192,6 +2225,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                               ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
                             {attack.attackMethod === 'auto' && !attack.isAoE && 
                               !(attack.saveType && attack.saveDC) && ' (auto hit)'}
+                            {attack.usesCharges && ` — Charges: ${attack.maxCharges}`}
                           </span>
                           <button 
                             className="remove-attack-button"
@@ -2626,16 +2660,48 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                         // Fallback for old format attacks
                                         return `${attack.numDice}d${attack.diceType}+${attack.modifier} ${attack.damageType || 'slashing'}`;
                                       }
-                                      return components.map((comp, idx) => 
+                                      return components.map((comp) => 
                                         `${comp.numDice}d${comp.diceType}${comp.modifier > 0 ? '+' + comp.modifier : comp.modifier < 0 ? comp.modifier : ''} ${comp.damageType}`
                                       ).join(' + ');
                                     };
                                     
                                     return (
-                                      <li key={attack.id} className="boss-attack-item">
-                                        <div className="attack-info">
+                                      <li key={attack.id} className={`boss-attack-item ${attack.isRemoved ? 'removed' : ''}`}>
+                                        <div className="attack-header">
                                           <span className="attack-name">{attack.name}</span>
-                                          <span className="attack-details">
+                                          <div className="attack-meta-actions">
+                                            {attack.isRemoved ? (
+                                              <button
+                                                type="button"
+                                                className="restore-attack-icon"
+                                                title="Restore attack"
+                                                aria-label="Restore attack"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setBossAttackRemoved(boss.id, attack.id, false);
+                                                }}
+                                              >
+                                                ▲
+                                              </button>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                className="remove-attack-icon"
+                                                title="Remove attack"
+                                                aria-label="Remove attack"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setBossAttackRemoved(boss.id, attack.id, true);
+                                                }}
+                                              >
+                                                ×
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {!attack.isRemoved && (
+                                          <div className="attack-details">
                                             {attack.isAoE ? 'AoE - ' : ''}
                                             {formatDamageComponents(attack.damageComponents)}
                                             {attack.attackMethod === 'attackRoll' && !attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
@@ -2644,10 +2710,64 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                               ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
                                             {attack.attackMethod === 'auto' && !attack.isAoE && 
                                               !(attack.saveType && attack.saveDC) && ' (auto hit)'}
-                                          </span>
-                                        </div>
+                                          </div>
+                                        )}
+
+                                        {/* Charges UI */}
+                                        {!attack.isRemoved && attack.usesCharges && (
+                                          <div className="attack-charges">
+                                            <div className="charge-pips">
+                                              {Array.from({ length: Math.min(5, attack.maxCharges || 0) }, (_, idx) => {
+                                                const remaining = (typeof attack.chargesRemaining === 'number') ? attack.chargesRemaining : Math.min(5, attack.maxCharges || 0);
+                                                const isActive = idx < remaining;
+                                                return (
+                                                  <span
+                                                    key={`pip-${attack.id}-${idx}`}
+                                                    className={`charge-pip ${isActive ? 'active' : ''}`}
+                                                    title={`Set remaining to ${idx + 1}`}
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      const newRemaining = idx + 1;
+                                                      setBossAttackCharges(boss.id, attack.id, newRemaining);
+                                                    }}
+                                                  />
+                                                );
+                                              })}
+                                            </div>
+                                            <div className="charge-controls">
+                                              <button
+                                                type="button"
+                                                className="charge-btn"
+                                                title="Use one charge"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  const current = (typeof attack.chargesRemaining === 'number') ? attack.chargesRemaining : Math.min(5, attack.maxCharges || 0);
+                                                  const next = Math.max(0, current - 1);
+                                                  setBossAttackCharges(boss.id, attack.id, next);
+                                                }}
+                                              >
+                                                −
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className="charge-btn"
+                                                title="Restore one charge"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  const max = Math.min(5, attack.maxCharges || 0);
+                                                  const current = (typeof attack.chargesRemaining === 'number') ? attack.chargesRemaining : max;
+                                                  const next = Math.min(max, current + 1);
+                                                  setBossAttackCharges(boss.id, attack.id, next);
+                                                }}
+                                              >
+                                                +
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
                                       
-                                      <div className="attack-controls">
+                                        {!attack.isRemoved && (
+                                        <div className="attack-controls">
                                         {attack.isAoE ? (
                                           <button 
                                             className="roll-attack-button aoe-attack"
@@ -2683,10 +2803,11 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                             </button>
                                           </div>
                                         )}
-                                      </div>
+                                        </div>
+                                        )}
                                       
                                       {/* Display pending attack results with damage options */}
-                                      {Object.values(pendingAttacks)
+                                        {!attack.isRemoved && Object.values(pendingAttacks)
                                         .filter(pendingAttack => 
                                           pendingAttack.targetId === bossTargets[boss.id] && 
                                           pendingAttack.attackName === attack.name
