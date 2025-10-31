@@ -701,10 +701,10 @@ const DivinePowers = () => {
     if (printView === 'all' || printView === 'character') {
       // Custom order for character cards to optimize space
       const characterOrder = [
-        'kalmia',
         'khada',
         'pyre',
-        'pamykos'
+        'pamykos',
+        'kalmia'
       ];
       
       // Add character-specific cards in the custom order
