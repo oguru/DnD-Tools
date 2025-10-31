@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { auth } from '../firebaseConfig';
 
 const DivinePowers = () => {
-  const [view, setView] = useState('detailed'); // 'detailed', 'combined', or 'printable'
+  const [view, setView] = useState('detailed'); // 'detailed', 'combined', 'printable', 'sidekicks'
   const [selectedLevel, setSelectedLevel] = useState(3); // Default to level 3
   const [user, setUser] = useState(null);
   const [showGMControls, setShowGMControls] = useState(false);
@@ -42,7 +42,6 @@ const DivinePowers = () => {
   const characters = [
     { id: 'universal', name: 'Universal Powers' },
     { id: 'kalmia', name: 'Kalmia (Rogue)' },
-    { id: 'okurak', name: 'Okurak (Cleric)' },
     { id: 'pyre', name: 'Pyre (Sorcerer)' },
     { id: 'khada', name: 'Khada (Fighter)' },
     { id: 'pamykos', name: 'Pamykos (Bard/Warlock)' }
@@ -166,8 +165,8 @@ const DivinePowers = () => {
       { level: 2, name: "Divine Momentum (Level 2)", description: "(2x per day) - You can choose for an attack to damage all enemies in a 10ft line from your target" },
       { level: 3, name: "Divine Momentum (Level 3)", description: "(3x per day) - You can choose for an attack to damage all enemies in a 15ft sphere from your target" }
     ],
-    okurak: [
-      { level: 2, name: "Divine Aura (Level 2)", description: "You gain a Divine Aura that adds temporary hit points equal to 10x your Wisdom modifier to you and conscious allies within 10 feet at the start of each of your turns" },
+    yrsa: [
+      { level: 2, name: "Divine Aura (Level 2)", description: "Your Divine Aura gives temporary hit points equal to 10x your Wisdom modifier to you and conscious allies within 10 feet at the start of each of your turns" },
       { level: 3, name: "Divine Aura (Level 3)", description: "Your Divine Aura also reduces enemy saving throws by half your Wisdom modifier (rounded down)" }
     ],
     pyre: [
@@ -262,7 +261,7 @@ const DivinePowers = () => {
         ]
       }
     ],
-    okurak: [
+    yrsa: [
       {
         name: "Radiant Soul Weapon",
         description: "A mighty weapon with a central diamond that glows with inner divine light",
@@ -480,7 +479,7 @@ const DivinePowers = () => {
     // Characters with powers that are upgrades (only show highest level)
     const upgradeCharacters = ['kalmia', 'pyre', 'khada'];
     // Characters with powers that are separate abilities (show all)
-    const separateCharacters = ['okurak', 'pamykos'];
+    const separateCharacters = ['yrsa', 'pamykos'];
     
     if (upgradeCharacters.includes(characterId)) {
       // For characters with upgradable powers, only show highest level
@@ -504,6 +503,10 @@ const DivinePowers = () => {
   // Get item summaries for a character
   const getItemSummaries = (characterId) => {
     return itemSummaries[characterId] || [];
+  };
+
+  const characterHasItems = (characterId) => {
+    return Array.isArray(itemSummaries[characterId]) && itemSummaries[characterId].length > 0 && characterId !== 'yrsa';
   };
 
   const renderDetailedView = () => {
@@ -547,7 +550,7 @@ const DivinePowers = () => {
 
         {/* Class-Specific Divine Powers */}
         <h3 className="section-title">Class-Specific Divine Abilities</h3>
-        {characters.filter(char => char.id !== 'universal').map((character) => (
+        {characters.filter(char => char.id !== 'universal' && char.id !== 'yrsa').map((character) => (
           <div key={character.id} className="divine-level">
             <h3>{character.name}</h3>
             <ul className="powers-list">
@@ -571,7 +574,7 @@ const DivinePowers = () => {
 
         {/* Item Summaries */}
         <h3 className="section-title">Item Summaries</h3>
-        {characters.filter(char => char.id !== 'universal' && itemSummaries[char.id]).map((character) => (
+        {characters.filter(char => char.id !== 'universal' && characterHasItems(char.id)).map((character) => (
           <div key={character.id} className="divine-level">
             <h3>{character.name} Items</h3>
             {(itemSummaries[character.id] || []).map((item, itemIndex) => (
@@ -699,9 +702,8 @@ const DivinePowers = () => {
       // Custom order for character cards to optimize space
       const characterOrder = [
         'kalmia',
-        'khada', // Swapped with Okurak
+        'khada',
         'pyre',
-        'okurak',  // Swapped with Khada
         'pamykos'
       ];
       
@@ -746,8 +748,8 @@ const DivinePowers = () => {
                   </div>
                 )}
                 
-                {/* Special handling for Okurak - show both abilities without level indicators */}
-                {character.id === 'okurak' && (
+                {/* Special handling for Yrsa - show both abilities without level indicators */}
+                {character.id === 'yrsa' && (
                   <div>
                     <ul className="printable-summary">
                       {classPowers.map((power, index) => (
@@ -760,7 +762,7 @@ const DivinePowers = () => {
                 )}
                 
                 {/* For all other characters with upgradable powers */}
-                {(character.id !== 'okurak' && character.id !== 'pamykos') && (
+                {(character.id !== 'yrsa' && character.id !== 'pamykos') && (
                   <ul className="printable-summary">
                     {classPowers.map((power, index) => (
                       <li key={index}>
@@ -801,32 +803,6 @@ const DivinePowers = () => {
           </div>
         );
       }).filter(Boolean);
-
-      // Add Okurak's Hybrid Werebear Form printable card
-      const okurakWerebearCard = (
-        <div key={`character-okurak-werebear`} className="printable-card character-card specific-card">
-          <h4>Okurak — Hybrid Werebear Form</h4>
-          <div className="card-section">
-            <ul className="printable-summary">
-              <li>Can transform (voluntarily) to hybrid form to use weapons and cast spells</li>
-              <li>Attacks get bonuses from items and class-specific abilities</li>
-              <li>Divine Strike on every attack</li>
-              <li>Powerful: Count as 1 size larger for carrying, pushing, dragging, lifting</li>
-              <li>Charge: After moving 15ft straight, natural weapon hit deals +3d6; target STR save vs. your STR Save DC or be knocked prone or pushed 5ft (DM choice)</li>
-              <li>DC 18 CHA save to gain control</li>
-              <li>Advantage on saves to not transform and to gain control during combat</li>
-              <li>
-                <strong>Save to transform when</strong>
-                <ul className="printable-summary">
-                  <li className="sub-item">DC17 — You are reduced below half your maximum HP. Ally ¼</li>
-                  <li className="sub-item">DC21 — Ally falls unconscious or dies</li>
-                </ul>
-              </li>
-            </ul>
-          </div>
-        </div>
-      );
-      characterCards.push(okurakWerebearCard);
       
       // Distribute character cards across columns
       characterCards.forEach((card, index) => {
@@ -883,6 +859,120 @@ const DivinePowers = () => {
     );
   };
 
+  const renderChargeBoxes = (count) => (
+    <span className="charge-boxes" aria-hidden="true">
+      {Array.from({ length: count }, (_, index) => (
+        <span key={index} className="charge-box" />
+      ))}
+    </span>
+  );
+
+  const renderSidekicksView = () => {
+    const sizeClass = 'a4-sheet';
+    return (
+      <div className="sidekicks-container">
+        <div className="sidekicks-controls">
+          <button onClick={() => window.print()} className="print-button">Print</button>
+        </div>
+        <div className={`sidekick-sheet ${sizeClass}`}>
+          <h3 className="sheet-title">Yrsa, Champion of Tyr</h3>
+          <div className="sheet-stats-row">
+            <div style={{fontSize: "14px"}}><strong>Armor Class:</strong> 28</div>
+            <div style={{fontSize: "14px"}}><strong>Hit Points:</strong> 550</div>
+            <div style={{fontSize: "14px"}}><strong>Speed:</strong> 50 ft., fly 25 ft.</div>
+          </div>
+          <table className="abilities-table">
+            <thead>
+              <tr>
+                <th>STR</th><th>DEX</th><th>CON</th><th>INT</th><th>WIS</th><th>CHA</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>20 (+5)</td><td>18 (+4)</td><td>18 (+4)</td><td>12 (+1)</td><td>26 (+8)</td><td>19 (+4)</td>
+              </tr>
+              <tr className="saves-row">
+                <td>Save +10</td><td>Save +9</td><td>Save +15</td><td>Save +6</td><td>Save +13</td><td>Save +15</td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="defenses-inline"><strong>Resist:</strong> Fire; <strong>Immune:</strong> Psychic; <strong>Cond. Immune:</strong> Disease</div>
+          <div className="skills-line"><strong>Skills:</strong> Athletics +11; Insight +14; Perception +8; Religion +7; Arcana +1</div>
+          <h4>Divine Abilities</h4>
+          <div className="traits compact">
+            <div><strong>Tyr&rsquo;s Champion:</strong> Advantage on effects forcing actions against justice/moral code.</div>
+            <div><strong>Divine Aura (10 ft):</strong> Allies +4 saves, 40 temp HP at start of turn; enemies −2 saves.</div>
+            <div><strong>Divine Spellcasting:</strong> DC 22, +14 to hit.</div>
+          </div>
+          <h4>Actions</h4>
+          <div className="actions compact">
+            <div><strong>Radiant Soul Greatsword:</strong> Melee Weapon Attack 2d6 + 8 slashing +14 to hit.</div>
+            <div className="spell-line">
+              <div className='spell-text'><strong>Divine Smite:</strong> On hit, can add 6d8 radiant (Divine Smite 3/Day)</div>
+              {renderChargeBoxes(3)}
+            </div>
+            <div className="spell-line">
+              <div className='spell-text'><strong>Divine Intervention:</strong> Roll percentile higher than cleric level (12) for Tyr to intervene</div>
+              {renderChargeBoxes(1)}
+            </div>
+          </div>
+          <div className="spells">
+            <h4>Spells</h4>
+              <div className="spell-section">
+                <div className="spell-line"><div className="spell-text"><strong>Sacred Flame</strong> - 60 ft., 1 target, DC 22 Dex save, 6d8 radiant</div></div>
+                <div className="spell-line"><div className="spell-text"><strong>Fire Bolt</strong> - 120 ft., +10 to hit, 1 target, 4d10 fire</div></div>
+                <div className="spell-line"><div className="spell-text"><strong>Guidance</strong> - Touch, add 1d4 to one ability check</div></div>
+              </div>
+              <div className="spell-section">
+                <div className="spell-line">
+                  <div className="spell-text"><strong>Cure Wounds</strong> - Touch, heal 3d8 + 16</div>
+                  {renderChargeBoxes(5)}
+                </div>
+              </div>
+              <div className="spell-section">
+                <div className="spell-line">
+                  <div className="spell-text"><strong>Healing Word</strong> - Bonus action, 60 ft., heal 1d4 + 10</div>
+                  {renderChargeBoxes(3)}
+                </div>
+                <div className="spell-line">
+                  <div className="spell-text"><strong>Mass Healing Word</strong> - Bonus action, 60 ft., up to 6 creatures heal 3d4 + 20</div>
+                  {renderChargeBoxes(3)}
+                </div>
+              </div>
+              <div className="spell-section">
+                <div className="spell-line">
+                  <div className="spell-text"><strong>Greater Restoration</strong> - End one debilitating effect (per spell)</div>
+                  {renderChargeBoxes(2)}
+                </div>
+                <div className="spell-line">
+                  <div className="spell-text"><strong>Beacon of Hope (C)</strong> - 1 minute; allies gain adv. on Wis/death saves; healing is maximized</div>
+                  {renderChargeBoxes(2)}
+                </div>
+                <div className="spell-line">
+                  <div className="spell-text"><strong>Shield of Faith (C):</strong> +2 AC for 10 minutes</div>
+                  {renderChargeBoxes(2)}
+                </div>
+              </div>
+              <div className="spell-section">
+                <div className="spell-line">
+                  <div className="spell-text"><strong>Flame Strike</strong> - 60 ft., 10‑ft radius, DC 22 Dex, 4d6 fire + 4d6 radiant + 2d8 radiant (half on save)</div>
+                  {renderChargeBoxes(1)}
+                </div>
+                <div className="spell-line">
+                  <div className="spell-text"><strong>Death Ward</strong> - Protective ward for 8 hours</div>
+                  {renderChargeBoxes(1)}
+                </div>
+                <div className="spell-line">
+                  <div className="spell-text"><strong>Revivify</strong> - Return a creature that died within the last minute (consumes material component)</div>
+                  {renderChargeBoxes(1)}
+                </div>
+              </div>
+            </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="divine-powers-page">
       <h2>Divine Powers</h2>
@@ -906,15 +996,22 @@ const DivinePowers = () => {
         >
           Printable View
         </button>
+        <button 
+          className={view === 'sidekicks' ? 'active' : ''}
+          onClick={() => setView('sidekicks')}
+        >
+          Sidekicks
+        </button>
       </div>
       
       {view === 'detailed' && renderDetailedView()}
       {view === 'combined' && renderCombinedView()}
       {view === 'printable' && renderPrintableView()}
+      {view === 'sidekicks' && renderSidekicksView()}
       
-      {view === 'printable' && (
+      {(view === 'printable' || view === 'sidekicks') && (
         <div className="print-instructions">
-          <p>Print this page for all character reference cards.</p>
+          <p>{view === 'sidekicks' ? 'Print this sidekick sheet.' : 'Print this page for all character reference cards.'}</p>
           <button onClick={() => window.print()} className="print-button">Print Page</button>
         </div>
       )}
