@@ -24,12 +24,14 @@ const useDnDStore = create((set, get) => {
         return {
           ...group,
           creatures,
-          originalCount
+          originalCount,
+          defenses: group.defenses || { resistances: [], vulnerabilities: [], immunities: [] }
         };
       }
       return {
         ...group,
-        originalCount
+        originalCount,
+        defenses: group.defenses || { resistances: [], vulnerabilities: [], immunities: [] }
       };
     });
   };
@@ -73,6 +75,7 @@ const useDnDStore = create((set, get) => {
       count: 4,
       initiative: 0,
       initiativeModifier: 0,
+      showDefenses: false,
       showSavingThrows: false,
       savingThrows: {
         str: 0,
@@ -82,6 +85,7 @@ const useDnDStore = create((set, get) => {
         wis: 0,
         cha: 0
       },
+      defenses: { resistances: [], vulnerabilities: [], immunities: [] },
       creatures: [], // Will hold individual creature HPs
       attackBonus: 3, // Attack bonus for the group
       damage: {      // Damage configuration
@@ -538,6 +542,7 @@ const useDnDStore = create((set, get) => {
         // Do not persist initiativeModifier in created group
         inAoe: false,
         showSavingThrows: false,
+        defenses: { ...(groupTemplate.defenses || { resistances: [], vulnerabilities: [], immunities: [] }) },
         savingThrows: { ...groupTemplate.savingThrows },
         creatures: creatures,
         attackBonus: groupTemplate.attackBonus || 3,
@@ -573,6 +578,7 @@ const useDnDStore = create((set, get) => {
           // Do not persist initiativeModifier in created group
           inAoe: false,
           showSavingThrows: false,
+          defenses: { ...(groupTemplate.defenses || { resistances: [], vulnerabilities: [], immunities: [] }) },
           savingThrows: { ...groupTemplate.savingThrows },
           creatures: Array(groupTemplate.count).fill().map(() => ({
             hp: groupTemplate.maxHp
@@ -667,6 +673,15 @@ const useDnDStore = create((set, get) => {
         groupTemplate: { 
           ...state.groupTemplate,
           showSavingThrows: !state.groupTemplate.showSavingThrows 
+        }
+      }));
+    },
+    
+    toggleGroupTemplateDefenses: () => {
+      set(state => ({
+        groupTemplate: {
+          ...state.groupTemplate,
+          showDefenses: !state.groupTemplate.showDefenses
         }
       }));
     },
@@ -2602,9 +2617,6 @@ const useDnDStore = create((set, get) => {
           total: componentTotal
         };
       });
-      
-      // Set this boss as the target entity
-      get().setTargetEntity({ type: 'boss', id: bossId });
       
       // Prepare the AOE fields
       const aoeParams = {

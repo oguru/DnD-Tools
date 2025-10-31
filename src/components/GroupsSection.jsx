@@ -969,6 +969,50 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     updateGroupTemplate(name, parsedValue);
   };
 
+  // Toggle defenses section in group template
+  const handleToggleGroupTemplateDefenses = () => {
+    updateGroupTemplate('showDefenses', !groupTemplate.showDefenses);
+  };
+
+  // Toggle a damage type inside defenses for the group template
+  const toggleGroupTemplateDefense = (category, typeKey) => {
+    const currentList = groupTemplate.defenses?.[category] || [];
+    const alreadySelected = currentList.includes(typeKey);
+
+    let resistances = [...(groupTemplate.defenses?.resistances || [])];
+    let vulnerabilities = [...(groupTemplate.defenses?.vulnerabilities || [])];
+    let immunities = [...(groupTemplate.defenses?.immunities || [])];
+
+    // Ensure exclusivity across categories when selecting
+    if (!alreadySelected) {
+      if (category !== 'resistances') {
+        resistances = resistances.filter(t => t !== typeKey);
+      }
+      if (category !== 'vulnerabilities') {
+        vulnerabilities = vulnerabilities.filter(t => t !== typeKey);
+      }
+      if (category !== 'immunities') {
+        immunities = immunities.filter(t => t !== typeKey);
+      }
+    }
+
+    if (category === 'resistances') {
+      resistances = alreadySelected
+        ? resistances.filter(t => t !== typeKey)
+        : [...resistances, typeKey];
+    } else if (category === 'vulnerabilities') {
+      vulnerabilities = alreadySelected
+        ? vulnerabilities.filter(t => t !== typeKey)
+        : [...vulnerabilities, typeKey];
+    } else if (category === 'immunities') {
+      immunities = alreadySelected
+        ? immunities.filter(t => t !== typeKey)
+        : [...immunities, typeKey];
+    }
+
+    updateGroupTemplate('defenses', { resistances, vulnerabilities, immunities });
+  };
+
   // Handle changes to saving throws in template
   const handleSavingThrowChange = (ability, value) => {
     updateGroupTemplate(`savingThrows.${ability}`, parseInt(value) || 0);
@@ -1713,6 +1757,86 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                 
                 {groupTemplate.showSavingThrows && renderSavingThrows(groupTemplate.savingThrows)}
               </div>
+            
+            {/* Defenses (Resistances, Vulnerabilities, Immunities) */}
+            <div className="defenses-container">
+              <div 
+                className="defenses-header" 
+                onClick={handleToggleGroupTemplateDefenses}
+              >
+                <h5>Defenses {groupTemplate.showDefenses ? '▼' : '►'}</h5>
+              </div>
+
+              {groupTemplate.showDefenses && (
+                <div className="defenses-grid">
+                  {/* Resistances */}
+                  <div className="defense-column">
+                    <div className="defense-title">Resistances</div>
+                    <div className="defense-chips-select">
+                      {DAMAGE_TYPES.map(dt => {
+                        const selected = groupTemplate.defenses?.resistances?.includes(dt.key);
+                        return (
+                          <button
+                            key={`group-res-${dt.key}`}
+                            type="button"
+                            className={`defense-chip ${selected ? 'selected' : ''}`}
+                            title={`${dt.label} (Resistance)`}
+                            onClick={() => toggleGroupTemplateDefense('resistances', dt.key)}
+                          >
+                            <span className="chip-icon" aria-hidden>{dt.icon}</span>
+                            <span className="chip-label">{dt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Vulnerabilities */}
+                  <div className="defense-column">
+                    <div className="defense-title">Vulnerabilities</div>
+                    <div className="defense-chips-select">
+                      {DAMAGE_TYPES.map(dt => {
+                        const selected = groupTemplate.defenses?.vulnerabilities?.includes(dt.key);
+                        return (
+                          <button
+                            key={`group-vuln-${dt.key}`}
+                            type="button"
+                            className={`defense-chip vuln ${selected ? 'selected' : ''}`}
+                            title={`${dt.label} (Vulnerability)`}
+                            onClick={() => toggleGroupTemplateDefense('vulnerabilities', dt.key)}
+                          >
+                            <span className="chip-icon" aria-hidden>{dt.icon}</span>
+                            <span className="chip-label">{dt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Immunities */}
+                  <div className="defense-column">
+                    <div className="defense-title">Immunities</div>
+                    <div className="defense-chips-select">
+                      {DAMAGE_TYPES.map(dt => {
+                        const selected = groupTemplate.defenses?.immunities?.includes(dt.key);
+                        return (
+                          <button
+                            key={`group-imm-${dt.key}`}
+                            type="button"
+                            className={`defense-chip imm ${selected ? 'selected' : ''}`}
+                            title={`${dt.label} (Immunity)`}
+                            onClick={() => toggleGroupTemplateDefense('immunities', dt.key)}
+                          >
+                            <span className="chip-icon" aria-hidden>{dt.icon}</span>
+                            <span className="chip-label">{dt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
               
               <div className="group-template-actions">
                 <button

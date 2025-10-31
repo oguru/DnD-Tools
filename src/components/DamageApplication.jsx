@@ -325,9 +325,9 @@ const DamageApplication = () => {
       if (sectionRef.current) {
         sectionRef.current.scrollIntoView({ behavior: 'smooth' });
         
-        // Focus on the damage input to make it clear where we are
+        // Focus on the AoE damage input specifically to ensure the view lands on AoE section
         setTimeout(() => {
-          const damageInput = sectionRef.current.querySelector('input[name="damageAmount"]');
+          const damageInput = sectionRef.current.querySelector('.aoe-section input[name="damageAmount"]');
           if (damageInput) damageInput.focus();
         }, 500);
       }
@@ -1709,7 +1709,10 @@ const DamageApplication = () => {
                                 
                                 return (
                                   <div key={entityId} className="character-saves-row">
-                                    <div>{entity.name}</div>
+                                    <div>
+                                      {entity.name}
+                                      {renderDefenseIcons(entity.defenses)}
+                                    </div>
                                     <div className="save-roll-cell">
                                       <input
                                         type="number"
