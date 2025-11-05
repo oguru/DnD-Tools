@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "knip": "knip",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -18,13 +19,70 @@
     "zustand": "^5.0.5"
   },
   "devDependencies": {
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.10.0",
+    "@types/react": "^18.3.26",
+    "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.3.1",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.9",
-    "vite": "^5.3.4"
+    "knip": "^5.67.1",
+    "sweepy": "^1.2.2",
+    "typescript": "^5.9.3",
+    "vite": "^5.3.4",
+    "vitest": "^4.0.7"
+  },
+  "sweepy": {
+    "ignore": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/coverage/**",
+      "**/.next/**",
+      "**/.vercel/**",
+      "**/.turbo/**",
+      "**/.parcel-cache/**",
+      "**/.cache/**",
+      "**/.vite/**",
+      "**/*.d.ts",
+      ".sweepy-trash/**",
+      "**/test/**",
+      "**/tests/**",
+      "**/__tests__/**",
+      "**/__mocks__/**",
+      "**/*.spec.*",
+      "**/*.test.*",
+      "**/*.snap",
+      "**/*.log",
+      "**/*.tmp",
+      "**/.sweepy-report.*",
+      "**/package-lock.json",
+      "**/pnpm-lock.yaml",
+      "**/yarn.lock",
+      "**/cypress/**",
+      "**/playwright/**",
+      "**/.eslintcache",
+      "**/.stylelintcache",
+      "**/.DS_Store",
+      "**/Thumbs.db"
+    ],
+    "output": "json",
+    "types": [
+      "js",
+      "css",
+      "assets"
+    ],
+    "customAliases": {
+      "@components": "src/components",
+      "@utils": "src/utils"
+    },
+    "customCssSafelist": [
+      "^\\.status$",
+      "^\\.active$",
+      "^\\.suspended$"
+    ]
   }
 }
