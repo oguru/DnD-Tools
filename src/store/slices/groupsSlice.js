@@ -5,6 +5,13 @@ const migrateGroupData = (groups) => {
 
   return groups.map((group) => {
     const originalCount = group.originalCount || group.count;
+    const defenses =
+      group.defenses || {
+        resistances: [],
+        vulnerabilities: [],
+        immunities: [],
+      };
+    const tempHp = group.tempHp || 0;
 
     if (!group.creatures || !Array.isArray(group.creatures)) {
       const creatures = Array(group.count || 0)
@@ -17,12 +24,16 @@ const migrateGroupData = (groups) => {
         ...group,
         creatures,
         originalCount,
+        defenses,
+          tempHp,
       };
     }
 
     return {
       ...group,
       originalCount,
+      defenses,
+        tempHp,
     };
   });
 };
@@ -42,6 +53,7 @@ const defaultGroupTemplate = {
   count: 4,
   initiative: 0,
   initiativeModifier: 0,
+  showDefenses: false,
   showSavingThrows: false,
   savingThrows: {
     str: 0,
@@ -51,6 +63,11 @@ const defaultGroupTemplate = {
     wis: 0,
     cha: 0,
   },
+  defenses: {
+    resistances: [],
+    vulnerabilities: [],
+    immunities: [],
+  },
   creatures: [],
   attackBonus: 3,
   damage: {
@@ -59,6 +76,7 @@ const defaultGroupTemplate = {
     modifier: 2,
     damageType: 'slashing',
   },
+  tempHp: 0,
 };
 
 export const createGroupsSlice = (set, get) => ({
@@ -111,9 +129,16 @@ export const createGroupsSlice = (set, get) => ({
       inAoe: false,
       showSavingThrows: false,
       savingThrows: { ...groupTemplate.savingThrows },
+      showDefenses: groupTemplate.showDefenses || false,
+      defenses: {
+        resistances: [...(groupTemplate.defenses?.resistances || [])],
+        vulnerabilities: [...(groupTemplate.defenses?.vulnerabilities || [])],
+        immunities: [...(groupTemplate.defenses?.immunities || [])],
+      },
       creatures,
       attackBonus: groupTemplate.attackBonus || 3,
       damage: { ...groupTemplate.damage },
+      tempHp: groupTemplate.tempHp || 0,
     };
 
     set((state) => {
@@ -144,6 +169,12 @@ export const createGroupsSlice = (set, get) => ({
         inAoe: false,
         showSavingThrows: false,
         savingThrows: { ...groupTemplate.savingThrows },
+        showDefenses: groupTemplate.showDefenses || false,
+        defenses: {
+          resistances: [...(groupTemplate.defenses?.resistances || [])],
+          vulnerabilities: [...(groupTemplate.defenses?.vulnerabilities || [])],
+          immunities: [...(groupTemplate.defenses?.immunities || [])],
+        },
         creatures: Array(groupTemplate.count)
           .fill()
           .map(() => ({
@@ -151,6 +182,7 @@ export const createGroupsSlice = (set, get) => ({
           })),
         attackBonus: groupTemplate.attackBonus || 3,
         damage: { ...groupTemplate.damage },
+        tempHp: groupTemplate.tempHp || 0,
       });
     }
 
@@ -200,6 +232,18 @@ export const createGroupsSlice = (set, get) => ({
           diceType: 8,
           modifier: 2,
         },
+      defenses: group.defenses
+        ? {
+            resistances: [...(group.defenses.resistances || [])],
+            vulnerabilities: [...(group.defenses.vulnerabilities || [])],
+            immunities: [...(group.defenses.immunities || [])],
+          }
+        : {
+            resistances: [],
+            vulnerabilities: [],
+            immunities: [],
+          },
+      tempHp: group.tempHp || 0,
     };
 
     set((state) => {
@@ -236,6 +280,36 @@ export const createGroupsSlice = (set, get) => ({
         showSavingThrows: !state.groupTemplate.showSavingThrows,
       },
     }));
+  },
+
+  toggleGroupTemplateDefenses: () => {
+    set((state) => ({
+      groupTemplate: {
+        ...state.groupTemplate,
+        showDefenses: !state.groupTemplate.showDefenses,
+      },
+    }));
+  },
+
+  setTemporaryHitPointsGroup: (groupId, amount, replace = true) => {
+    if (amount < 0) amount = 0;
+
+    set((state) => {
+      const updatedGroups = state.enemyGroups.map((group) => {
+        if (group.id !== groupId) return group;
+
+        const existingTempHp = group.tempHp || 0;
+        const newTempHp = replace ? amount : existingTempHp + amount;
+
+        return {
+          ...group,
+          tempHp: Math.max(0, newTempHp),
+        };
+      });
+
+      localStorage.setItem('dnd-enemy-groups', JSON.stringify(updatedGroups));
+      return { enemyGroups: updatedGroups };
+    });
   },
 
   updateGroupSavingThrow: (groupId, ability, value) => {

@@ -62,6 +62,8 @@ const GroupsSection = () => {
     prepareBossAoeAttack,
     addBossAttackResult,
     updateBossAttackResult,
+    setBossAttackCharges,
+    setBossAttackRemoved,
     addBoss,
     resetBossesHealth,
     clearAllBosses,
@@ -114,6 +116,8 @@ const GroupsSection = () => {
     saveDC: 13,
     halfOnSave: true,
     isAoE: false,
+    usesCharges: false,
+    maxCharges: 1,
     damageComponents: [{
       id: Date.now().toString(),
       numDice: 2,
@@ -364,6 +368,8 @@ const GroupsSection = () => {
       ...prev, 
       name: '',
       id: Date.now().toString(),
+      usesCharges: false,
+      maxCharges: 1,
       damageComponents: [{
         id: Date.now().toString() + '-1',
         numDice: 2,
@@ -445,7 +451,7 @@ const GroupsSection = () => {
     let parsedValue;
     if (type === 'checkbox') {
       parsedValue = checked;
-    } else if (['numDice', 'diceType', 'modifier', 'hitBonus', 'saveDC'].includes(name)) {
+    } else if (['numDice', 'diceType', 'modifier', 'hitBonus', 'saveDC', 'maxCharges'].includes(name)) {
       parsedValue = parseInt(value) || 0;
     } else {
       parsedValue = value;
@@ -918,6 +924,25 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
     });
   };
 
+  // Small helper to render a compact, colored defense badge for a given damage type
+  const renderDefenseBadge = (defenses, damageTypeKey) => {
+    if (!defenses || !damageTypeKey) return null;
+    const dt = DAMAGE_TYPES.find(d => d.key === damageTypeKey);
+    if (!dt) return null;
+    const isImmune = (defenses.immunities || []).includes(damageTypeKey);
+    const isResist = (defenses.resistances || []).includes(damageTypeKey);
+    const isVuln = (defenses.vulnerabilities || []).includes(damageTypeKey);
+    if (!isImmune && !isResist && !isVuln) return null;
+    const styleBase = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '3px', fontSize: '14px', lineHeight: 1 };
+    const style = isImmune
+      ? { ...styleBase, backgroundColor: '#c6f6d5', color: '#22543d' }
+      : isResist
+      ? { ...styleBase, backgroundColor: '#81e6d9', color: '#1a365d' }
+      : { ...styleBase, backgroundColor: '#fed7d7', color: '#742a2a' };
+    const title = isImmune ? `Immune: ${dt.label}` : isResist ? `Resistant: ${dt.label}` : `Vulnerable: ${dt.label}`;
+    return <span title={title} style={style}>{dt.icon}</span>;
+  };
+
   // Handle changes to the group template
   const handleGroupTemplateChange = (e) => {
     const { name, value } = e.target;
@@ -942,6 +967,50 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
       : value;
     
     updateGroupTemplate(name, parsedValue);
+  };
+
+  // Toggle defenses section in group template
+  const handleToggleGroupTemplateDefenses = () => {
+    updateGroupTemplate('showDefenses', !groupTemplate.showDefenses);
+  };
+
+  // Toggle a damage type inside defenses for the group template
+  const toggleGroupTemplateDefense = (category, typeKey) => {
+    const currentList = groupTemplate.defenses?.[category] || [];
+    const alreadySelected = currentList.includes(typeKey);
+
+    let resistances = [...(groupTemplate.defenses?.resistances || [])];
+    let vulnerabilities = [...(groupTemplate.defenses?.vulnerabilities || [])];
+    let immunities = [...(groupTemplate.defenses?.immunities || [])];
+
+    // Ensure exclusivity across categories when selecting
+    if (!alreadySelected) {
+      if (category !== 'resistances') {
+        resistances = resistances.filter(t => t !== typeKey);
+      }
+      if (category !== 'vulnerabilities') {
+        vulnerabilities = vulnerabilities.filter(t => t !== typeKey);
+      }
+      if (category !== 'immunities') {
+        immunities = immunities.filter(t => t !== typeKey);
+      }
+    }
+
+    if (category === 'resistances') {
+      resistances = alreadySelected
+        ? resistances.filter(t => t !== typeKey)
+        : [...resistances, typeKey];
+    } else if (category === 'vulnerabilities') {
+      vulnerabilities = alreadySelected
+        ? vulnerabilities.filter(t => t !== typeKey)
+        : [...vulnerabilities, typeKey];
+    } else if (category === 'immunities') {
+      immunities = alreadySelected
+        ? immunities.filter(t => t !== typeKey)
+        : [...immunities, typeKey];
+    }
+
+    updateGroupTemplate('defenses', { resistances, vulnerabilities, immunities });
   };
 
   // Handle changes to saving throws in template
@@ -1688,6 +1757,86 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                 
                 {groupTemplate.showSavingThrows && renderSavingThrows(groupTemplate.savingThrows)}
               </div>
+            
+            {/* Defenses (Resistances, Vulnerabilities, Immunities) */}
+            <div className="defenses-container">
+              <div 
+                className="defenses-header" 
+                onClick={handleToggleGroupTemplateDefenses}
+              >
+                <h5>Defenses {groupTemplate.showDefenses ? '▼' : '►'}</h5>
+              </div>
+
+              {groupTemplate.showDefenses && (
+                <div className="defenses-grid">
+                  {/* Resistances */}
+                  <div className="defense-column">
+                    <div className="defense-title">Resistances</div>
+                    <div className="defense-chips-select">
+                      {DAMAGE_TYPES.map(dt => {
+                        const selected = groupTemplate.defenses?.resistances?.includes(dt.key);
+                        return (
+                          <button
+                            key={`group-res-${dt.key}`}
+                            type="button"
+                            className={`defense-chip ${selected ? 'selected' : ''}`}
+                            title={`${dt.label} (Resistance)`}
+                            onClick={() => toggleGroupTemplateDefense('resistances', dt.key)}
+                          >
+                            <span className="chip-icon" aria-hidden>{dt.icon}</span>
+                            <span className="chip-label">{dt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Vulnerabilities */}
+                  <div className="defense-column">
+                    <div className="defense-title">Vulnerabilities</div>
+                    <div className="defense-chips-select">
+                      {DAMAGE_TYPES.map(dt => {
+                        const selected = groupTemplate.defenses?.vulnerabilities?.includes(dt.key);
+                        return (
+                          <button
+                            key={`group-vuln-${dt.key}`}
+                            type="button"
+                            className={`defense-chip vuln ${selected ? 'selected' : ''}`}
+                            title={`${dt.label} (Vulnerability)`}
+                            onClick={() => toggleGroupTemplateDefense('vulnerabilities', dt.key)}
+                          >
+                            <span className="chip-icon" aria-hidden>{dt.icon}</span>
+                            <span className="chip-label">{dt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Immunities */}
+                  <div className="defense-column">
+                    <div className="defense-title">Immunities</div>
+                    <div className="defense-chips-select">
+                      {DAMAGE_TYPES.map(dt => {
+                        const selected = groupTemplate.defenses?.immunities?.includes(dt.key);
+                        return (
+                          <button
+                            key={`group-imm-${dt.key}`}
+                            type="button"
+                            className={`defense-chip imm ${selected ? 'selected' : ''}`}
+                            title={`${dt.label} (Immunity)`}
+                            onClick={() => toggleGroupTemplateDefense('immunities', dt.key)}
+                          >
+                            <span className="chip-icon" aria-hidden>{dt.icon}</span>
+                            <span className="chip-label">{dt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
               
               <div className="group-template-actions">
                 <button
@@ -1948,6 +2097,32 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                       onChange={handleAttackTemplateChange}
                     />
                   </div>
+                  {/* Charges configuration */}
+                  <div className="attack-field">
+                    <label>Has Charges:</label>
+                    <input
+                      type="checkbox"
+                      name="usesCharges"
+                      checked={attackTemplate.usesCharges}
+                      onChange={handleAttackTemplateChange}
+                    />
+                  </div>
+                  {attackTemplate.usesCharges && (
+                    <div className="attack-field">
+                      <label>Charges:</label>
+                      <select
+                        name="maxCharges"
+                        value={Math.min(5, Math.max(1, attackTemplate.maxCharges || 1))}
+                        onChange={handleAttackTemplateChange}
+                      >
+                        <option value={1}>1</option>
+                        <option value={2}>2</option>
+                        <option value={3}>3</option>
+                        <option value={4}>4</option>
+                        <option value={5}>5</option>
+                      </select>
+                    </div>
+                  )}
                   {(attackTemplate.attackMethod === 'save' || attackTemplate.isAoE || attackTemplate.attackMethod === 'auto') && (
                     <>
                       <div className="attack-field">
@@ -2004,7 +2179,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                     {/* Existing damage components */}
                     {attackTemplate.damageComponents && attackTemplate.damageComponents.length > 0 && (
                       <div className="damage-components-list">
-                        {attackTemplate.damageComponents.map((component, index) => (
+                        {attackTemplate.damageComponents.map((component) => (
                           <div key={component.id} className="damage-component-item">
                             <div className="damage-component-inputs">
                               <input
@@ -2123,14 +2298,15 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                           <option value="radiant">Radiant</option>
                           <option value="thunder">Thunder</option>
                         </select>
+                      <div className="add-component-actions">
                         <button
                           type="button"
                           onClick={handleAddDamageComponent}
                           className="add-component-btn"
-                          style={{marginLeft: '8px', padding: '4px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}
                         >
                           + Add
                         </button>
+                      </div>
                       </div>
                     </div>
                   </div>
@@ -2156,7 +2332,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                           // Fallback for old format attacks
                           return `${attack.numDice}d${attack.diceType}+${attack.modifier} ${attack.damageType || 'slashing'}`;
                         }
-                        return components.map((comp, idx) => 
+                        return components.map((comp) => 
                           `${comp.numDice}d${comp.diceType}${comp.modifier > 0 ? '+' + comp.modifier : comp.modifier < 0 ? comp.modifier : ''} ${comp.damageType}`
                         ).join(' + ');
                       };
@@ -2173,6 +2349,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                               ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
                             {attack.attackMethod === 'auto' && !attack.isAoE && 
                               !(attack.saveType && attack.saveDC) && ' (auto hit)'}
+                            {attack.usesCharges && ` — Charges: ${attack.maxCharges}`}
                           </span>
                           <button 
                             className="remove-attack-button"
@@ -2607,16 +2784,48 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                         // Fallback for old format attacks
                                         return `${attack.numDice}d${attack.diceType}+${attack.modifier} ${attack.damageType || 'slashing'}`;
                                       }
-                                      return components.map((comp, idx) => 
+                                      return components.map((comp) => 
                                         `${comp.numDice}d${comp.diceType}${comp.modifier > 0 ? '+' + comp.modifier : comp.modifier < 0 ? comp.modifier : ''} ${comp.damageType}`
                                       ).join(' + ');
                                     };
                                     
                                     return (
-                                      <li key={attack.id} className="boss-attack-item">
-                                        <div className="attack-info">
+                                      <li key={attack.id} className={`boss-attack-item ${attack.isRemoved ? 'removed' : ''}`}>
+                                        <div className="attack-header">
                                           <span className="attack-name">{attack.name}</span>
-                                          <span className="attack-details">
+                                          <div className="attack-meta-actions">
+                                            {attack.isRemoved ? (
+                                              <button
+                                                type="button"
+                                                className="restore-attack-icon"
+                                                title="Restore attack"
+                                                aria-label="Restore attack"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setBossAttackRemoved(boss.id, attack.id, false);
+                                                }}
+                                              >
+                                                ▲
+                                              </button>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                className="remove-attack-icon"
+                                                title="Remove attack"
+                                                aria-label="Remove attack"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setBossAttackRemoved(boss.id, attack.id, true);
+                                                }}
+                                              >
+                                                ×
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {!attack.isRemoved && (
+                                          <div className="attack-details">
                                             {attack.isAoE ? 'AoE - ' : ''}
                                             {formatDamageComponents(attack.damageComponents)}
                                             {attack.attackMethod === 'attackRoll' && !attack.isAoE && ` (${attack.hitBonus >= 0 ? '+' : ''}${attack.hitBonus} to hit)`}
@@ -2625,10 +2834,64 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                               ` (DC ${attack.saveDC} ${attack.saveType.toUpperCase()}, ${attack.halfOnSave ? 'half' : 'no'} damage on save)`}
                                             {attack.attackMethod === 'auto' && !attack.isAoE && 
                                               !(attack.saveType && attack.saveDC) && ' (auto hit)'}
-                                          </span>
-                                        </div>
+                                          </div>
+                                        )}
+
+                                        {/* Charges UI */}
+                                        {!attack.isRemoved && attack.usesCharges && (
+                                          <div className="attack-charges">
+                                            <div className="charge-pips">
+                                              {Array.from({ length: Math.min(5, attack.maxCharges || 0) }, (_, idx) => {
+                                                const remaining = (typeof attack.chargesRemaining === 'number') ? attack.chargesRemaining : Math.min(5, attack.maxCharges || 0);
+                                                const isActive = idx < remaining;
+                                                return (
+                                                  <span
+                                                    key={`pip-${attack.id}-${idx}`}
+                                                    className={`charge-pip ${isActive ? 'active' : ''}`}
+                                                    title={`Set remaining to ${idx + 1}`}
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      const newRemaining = idx + 1;
+                                                      setBossAttackCharges(boss.id, attack.id, newRemaining);
+                                                    }}
+                                                  />
+                                                );
+                                              })}
+                                            </div>
+                                            <div className="charge-controls">
+                                              <button
+                                                type="button"
+                                                className="charge-btn"
+                                                title="Use one charge"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  const current = (typeof attack.chargesRemaining === 'number') ? attack.chargesRemaining : Math.min(5, attack.maxCharges || 0);
+                                                  const next = Math.max(0, current - 1);
+                                                  setBossAttackCharges(boss.id, attack.id, next);
+                                                }}
+                                              >
+                                                −
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className="charge-btn"
+                                                title="Restore one charge"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  const max = Math.min(5, attack.maxCharges || 0);
+                                                  const current = (typeof attack.chargesRemaining === 'number') ? attack.chargesRemaining : max;
+                                                  const next = Math.min(max, current + 1);
+                                                  setBossAttackCharges(boss.id, attack.id, next);
+                                                }}
+                                              >
+                                                +
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
                                       
-                                      <div className="attack-controls">
+                                        {!attack.isRemoved && (
+                                        <div className="attack-controls">
                                         {attack.isAoE ? (
                                           <button 
                                             className="roll-attack-button aoe-attack"
@@ -2664,10 +2927,11 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                             </button>
                                           </div>
                                         )}
-                                      </div>
+                                        </div>
+                                        )}
                                       
                                       {/* Display pending attack results with damage options */}
-                                      {Object.values(pendingAttacks)
+                                        {!attack.isRemoved && Object.values(pendingAttacks)
                                         .filter(pendingAttack => 
                                           pendingAttack.targetId === bossTargets[boss.id] && 
                                           pendingAttack.attackName === attack.name
@@ -2703,6 +2967,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                                     {attackResult.damageComponents.map((comp, idx) => {
                                                       const modifier = componentModifiers[attackResult.id]?.[idx] || 'full';
                                                       const adjustment = componentAdjustments[attackResult.id]?.[idx] || 0;
+                                                      const targetChar = characters.find(c => c.id === attackResult.targetId);
                                                       
                                                       // Calculate preview damage
                                                       let previewDamage = comp.total;
@@ -2716,6 +2981,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                                         <div key={idx} style={{marginBottom: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #ddd'}}>
                                                           <div style={{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'}}>
                                                             <span style={{fontWeight: 'bold', minWidth: '80px'}}>{comp.total} {comp.damageType}:</span>
+                                                            {renderDefenseBadge(targetChar?.defenses, comp.damageType)}
                                                             <select
                                                               value={modifier}
                                                               onChange={(e) => {
@@ -2783,6 +3049,19 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                                 ) : (
                                                   /* Single damage type - use simple buttons */
                                                   <div className="damage-modifier-controls">
+                                                    {(() => {
+                                                      const targetChar = characters.find(c => c.id === attackResult.targetId);
+                                                      const dtKey = (attackResult.damageComponents && attackResult.damageComponents.length === 1)
+                                                        ? attackResult.damageComponents[0]?.damageType
+                                                        : attackResult.damageType;
+                                                      if (!dtKey) return null;
+                                                      return (
+                                                        <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
+                                                          <span style={{fontWeight: 600}}>Target Defense:</span>
+                                                          {renderDefenseBadge(targetChar?.defenses, dtKey) || <span style={{fontSize: '0.9rem', color: '#718096'}}>None</span>}
+                                                        </div>
+                                                      );
+                                                    })()}
                                                     {attackResult.hitStatus === 'save-pending' || attackResult.hitStatus === 'auto-save-pending' ? (
                                                       <>
                                                         <span className="save-result-label">Apply based on save result:</span>

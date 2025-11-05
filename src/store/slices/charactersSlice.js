@@ -14,6 +14,11 @@ export const createCharactersSlice = (set, get) => ({
       ac: character.ac || 0,
       initiative: character.initiative || 0,
       inAoe: false,
+      defenses: character.defenses || {
+        resistances: [],
+        vulnerabilities: [],
+        immunities: [],
+      },
     };
 
     set((state) => {
@@ -85,13 +90,21 @@ export const createCharactersSlice = (set, get) => ({
     });
   },
 
-  setTemporaryHitPoints: (characterId, amount) => {
+  setTemporaryHitPoints: (characterId, amount, replace = true) => {
     if (amount < 0) amount = 0;
 
     set((state) => {
-      const updatedCharacters = state.characters.map((char) =>
-        char.id === characterId ? { ...char, tempHp: amount } : char
-      );
+      const updatedCharacters = state.characters.map((char) => {
+        if (char.id !== characterId) return char;
+
+        const existingTempHp = char.tempHp || 0;
+        const newTempHp = replace ? amount : existingTempHp + amount;
+
+        return {
+          ...char,
+          tempHp: Math.max(0, newTempHp),
+        };
+      });
 
       localStorage.setItem('dnd-characters', JSON.stringify(updatedCharacters));
       return { characters: updatedCharacters };

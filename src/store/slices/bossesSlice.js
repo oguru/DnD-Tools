@@ -1,5 +1,55 @@
 const savedBosses = localStorage.getItem('dnd-bosses');
-const initialBosses = savedBosses ? JSON.parse(savedBosses) : [];
+
+const sanitizeBosses = (bosses) => {
+  if (!Array.isArray(bosses)) return [];
+
+  return bosses.map((boss) => {
+    const sanitizedAttacks = Array.isArray(boss.attacks)
+      ? boss.attacks.map((attack) => {
+          if (!attack) return attack;
+
+          if (attack.usesCharges) {
+            const maxCharges = Math.min(5, Math.max(1, attack.maxCharges || 1));
+            const remaining =
+              typeof attack.chargesRemaining === 'number'
+                ? Math.max(0, Math.min(maxCharges, attack.chargesRemaining))
+                : maxCharges;
+
+            return {
+              ...attack,
+              maxCharges,
+              chargesRemaining: remaining,
+              isRemoved: !!attack.isRemoved,
+            };
+          }
+
+          return {
+            ...attack,
+            isRemoved: !!attack?.isRemoved,
+          };
+        })
+      : [];
+
+    return {
+      ...boss,
+      attacks: sanitizedAttacks,
+      tempHp: boss.tempHp || 0,
+      defenses:
+        boss.defenses || {
+          resistances: [],
+          vulnerabilities: [],
+          immunities: [],
+        },
+      showDefenses: boss.showDefenses || false,
+    };
+  });
+};
+
+const initialBosses = sanitizeBosses(savedBosses ? JSON.parse(savedBosses) : []);
+
+if (savedBosses) {
+  localStorage.setItem('dnd-bosses', JSON.stringify(initialBosses));
+}
 
 const defaultBossTemplate = {
   name: '',
@@ -11,6 +61,7 @@ const defaultBossTemplate = {
   notes: '',
   attacks: [],
   showSavingThrows: false,
+  showDefenses: false,
   savingThrows: {
     str: 0,
     dex: 0,
@@ -18,6 +69,11 @@ const defaultBossTemplate = {
     int: 0,
     wis: 0,
     cha: 0,
+  },
+  defenses: {
+    resistances: [],
+    vulnerabilities: [],
+    immunities: [],
   },
 };
 
@@ -27,6 +83,30 @@ export const createBossesSlice = (set, get) => ({
 
   addBoss: (boss) => {
     console.log('[Store.addBoss] incoming', boss);
+    const sanitizedAttacks = Array.isArray(boss.attacks)
+      ? boss.attacks.map((attack) => {
+          if (!attack) return attack;
+          if (attack.usesCharges) {
+            const maxCharges = Math.min(5, Math.max(1, attack.maxCharges || 1));
+            const remaining =
+              typeof attack.chargesRemaining === 'number'
+                ? Math.max(0, Math.min(maxCharges, attack.chargesRemaining))
+                : maxCharges;
+            return {
+              ...attack,
+              maxCharges,
+              chargesRemaining: remaining,
+              isRemoved: !!attack.isRemoved,
+            };
+          }
+
+          return {
+            ...attack,
+            isRemoved: !!attack.isRemoved,
+          };
+        })
+      : [];
+
     const newBoss = {
       ...boss,
       id: boss.id || Date.now().toString(),
@@ -41,6 +121,14 @@ export const createBossesSlice = (set, get) => ({
           wis: 0,
           cha: 0,
         },
+      showDefenses: boss.showDefenses || false,
+      defenses: boss.defenses || {
+        resistances: [],
+        vulnerabilities: [],
+        immunities: [],
+      },
+      tempHp: boss.tempHp || 0,
+      attacks: sanitizedAttacks,
       attackResults: [],
     };
 
@@ -86,6 +174,27 @@ export const createBossesSlice = (set, get) => ({
     });
   },
 
+  setTemporaryHitPointsBoss: (bossId, amount, replace = true) => {
+    if (amount < 0) amount = 0;
+
+    set((state) => {
+      const updatedBosses = state.bosses.map((boss) => {
+        if (boss.id !== bossId) return boss;
+
+        const existingTempHp = boss.tempHp || 0;
+        const newTempHp = replace ? amount : existingTempHp + amount;
+
+        return {
+          ...boss,
+          tempHp: Math.max(0, newTempHp),
+        };
+      });
+
+      localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+      return { bosses: updatedBosses };
+    });
+  },
+
   updateBossHp: (id, change) => {
     set((state) => {
       const updatedBosses = state.bosses.map((boss) => {
@@ -117,6 +226,65 @@ export const createBossesSlice = (set, get) => ({
   clearAllBosses: () => {
     localStorage.removeItem('dnd-bosses');
     set({ bosses: [] });
+  },
+
+  setBossAttackCharges: (bossId, attackId, chargesRemaining) => {
+    set((state) => {
+      const updatedBosses = state.bosses.map((boss) => {
+        if (boss.id !== bossId) return boss;
+
+        const updatedAttacks = (boss.attacks || []).map((attack) => {
+          if (!attack || attack.id !== attackId) return attack;
+
+          if (!attack.usesCharges) {
+            return attack;
+          }
+
+          const maxCharges = Math.min(5, Math.max(0, attack.maxCharges || 0));
+          const clamped = Math.max(
+            0,
+            Math.min(
+              maxCharges,
+              typeof chargesRemaining === 'number' ? chargesRemaining : maxCharges
+            )
+          );
+
+          return {
+            ...attack,
+            maxCharges,
+            chargesRemaining: clamped,
+          };
+        });
+
+        return {
+          ...boss,
+          attacks: updatedAttacks,
+        };
+      });
+
+      localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+      return { bosses: updatedBosses };
+    });
+  },
+
+  setBossAttackRemoved: (bossId, attackId, isRemoved) => {
+    set((state) => {
+      const updatedBosses = state.bosses.map((boss) => {
+        if (boss.id !== bossId) return boss;
+
+        const updatedAttacks = (boss.attacks || []).map((attack) =>
+          attack && attack.id === attackId ? { ...attack, isRemoved: !!isRemoved } : attack
+        );
+
+        return {
+          ...boss,
+          attacks: updatedAttacks,
+        };
+      });
+
+      localStorage.setItem('dnd-bosses', JSON.stringify(updatedBosses));
+      return { bosses: updatedBosses };
+    });
   },
 
   toggleBossAoeTarget: (id) => {
@@ -531,10 +699,25 @@ export const createBossesSlice = (set, get) => ({
     get().prepareAoeDamage(aoeParams);
     get().scrollToDamageSection();
 
+    const componentSummary = rolledComponents
+      .map((component) => {
+        const modifierPart = component.modifier
+          ? `${component.modifier >= 0 ? '+' : ''}${component.modifier}`
+          : '';
+        const typePart = component.damageType ? ` ${component.damageType}` : '';
+        return `${component.damageRoll}${modifierPart}${typePart}`;
+      })
+      .join(', ');
+
+    const saveTypeLabel = attack.saveType ? attack.saveType.toUpperCase() : 'SAVE';
+    const message = `AOE Attack: ${attack.name} - ${totalDamage} damage${
+      componentSummary ? ` (${componentSummary})` : ''
+    } - DC ${attack.saveDC} ${saveTypeLabel} save, ${attack.halfOnSave ? 'half' : 'no'} damage on save`;
+
     get().addBossAttackResult(bossId, {
       id: Date.now().toString(),
       attackName: attack.name,
-      message: `AOE Attack: ${attack.name} - ${totalDamage} damage (${damageRoll} + ${attack.modifier}) - DC ${attack.saveDC} ${attack.saveType.toUpperCase()} save, ${attack.halfOnSave ? 'half' : 'no'} damage on save`,
+      message,
       damage: totalDamage,
       isAoE: true,
       saveType: attack.saveType,

@@ -54,6 +54,14 @@ button {
   border: 1px solid #e2e8f0;
 }
 
+/* Ensure checkboxes use a consistent accent color across OS themes */
+input[type="checkbox"] {
+  accent-color: #4299e1 !important;
+}
+
+/* Prefer light native form-control rendering to avoid OS theme overrides */
+:root { color-scheme: light; }
+
 /* Make sure links are visible */
 a {
   color: #3182ce !important;

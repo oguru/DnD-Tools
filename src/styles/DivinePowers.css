@@ -308,11 +308,83 @@
   background-color: #2c5282;
 }
 
+/* Sidekicks (A5/A4 printable sheets) */
+.sidekicks-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidekicks-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+
+.sidekick-sheet {
+  background: #fff;
+  color: #000;
+  border: 1px solid #000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  padding: 8mm;
+  box-sizing: border-box;
+  text-align: left;
+  margin: 0 auto;
+  font-size: 0.95rem;
+
+  /* h4 {
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+  } */
+}
+
+.a5-sheet { width: 148mm; max-width: 100%; }
+.a4-sheet { width: 210mm; max-width: 100%; }
+
+.sheet-title { margin: 0 0 8px 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
+.sheet-subtitle { text-align: left; font-style: italic; margin-bottom: 8px; }
+.sheet-stats-row { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 12px; font-size: 1rem; }
+
+.abilities-table { width: 100%; border-collapse: collapse; margin: 4px 0 6px 0; }
+.abilities-table thead { background-color: #fafafa; }
+.abilities-table th, .abilities-table td { border: 1px solid #000; padding: 3px; text-align: center; }
+.abilities-table .saves-row td { font-size: 0.85em; color: #111; }
+
+.skills-line { margin: 5px 0; }
+.defenses-inline { margin: 4px 0 6px 0; }
+
+.defenses { display: grid; grid-template-columns: 1fr; gap: 2px; margin: 6px 0; }
+.traits, .actions { margin: 4px 0 6px 0; padding: 0; }
+.traits.compact div, .actions.compact div { margin: 2px 0; }
+
+.spells { margin-top: 6px; }
+.spells .spell-section { margin-bottom: 4px; }
+.spell-line { 
+  margin: 1px 0; 
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.spell-text { flex: 1; margin-right: 8px; }
+
+.charge-boxes { margin-left: 6px; display: inline-flex; gap: 3px; vertical-align: top; margin-top: 0; align-self: center; }
+.charge-box { display: inline-block; width: 11px; height: 11px; border: 1px solid #000; box-sizing: border-box; }
+
+@media print {
+  .sidekicks-controls { display: none !important; }
+  .sidekick-sheet { box-shadow: none !important; margin: 0 !important; border: none !important; padding: 6mm !important; font-size: 0.92rem !important; }
+  /* Allow A5/A4 to print without scaling surprises */
+  .a5-sheet { width: 100% !important; max-width: 148mm !important; min-height: auto !important; }
+  .a4-sheet { width: 100% !important; max-width: 100% !important; min-height: auto !important; }
+}
+
 /* Print Media Styles */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 1.5cm 1cm 1.5cm 1cm; /* top, right, bottom, left */
+    margin: 0.5cm;
   }
   
   /* Hide non-printable elements */
