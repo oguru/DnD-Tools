@@ -1,17 +1,17 @@
-import { loadFromStorage, saveToStorage } from '../utils/storage';
+import { applyDamageWithTempHp, applyHealing, setTempHp } from '../utils/combat';
+import { createAoeResult, createDamageResult, createHealingResult } from '../utils/results';
 import { generateId, generateIdWithOffset, generateUniqueId } from '../utils/ids';
-import { scheduleTurnOrderUpdate } from '../utils/turnOrder';
-import { applyDamageWithTempHp, setTempHp, applyHealing } from '../utils/combat';
-import { createDamageResult, createHealingResult, createAoeResult } from '../utils/results';
+import { loadFromStorage, saveToStorage } from '../utils/storage';
 import { normalizeDefenses, normalizeSavingThrows } from '../utils/normalize';
-import { clampHp } from '../utils/numbers';
 import { rollD20, rollDice } from '@utils/dice';
-import { STORAGE_KEYS } from '@constants/storage';
-import type { EnemyGroup } from '@models/entities/EnemyGroup';
-import type { Creature } from '@models/entities/Creature';
+
 import type { AttackResult } from '@models/combat/AttackResult';
-import type { SaveType } from '@models/common/SavingThrows';
+import type { Creature } from '@models/entities/Creature';
 import type { DamageComponent } from '@models/combat/DamageComponent';
+import type { EnemyGroup } from '@models/entities/EnemyGroup';
+import { STORAGE_KEYS } from '@constants/storage';
+import type { SaveType } from '@models/common/SavingThrows';
+import { scheduleTurnOrderUpdate } from '../utils/turnOrder';
 
 interface AoeParams {
   damage: number;
@@ -49,6 +49,7 @@ const defaultGroupTemplate: GroupTemplate = {
   currentHp: 10,
   ac: 12,
   count: 4,
+  originalCount: 4,
   initiative: 0,
   showDefenses: false,
   showSavingThrows: false,
@@ -177,7 +178,7 @@ export const createGroupsSlice = (
 
     const creatures: Creature[] = Array(groupTemplate.count)
       .fill(null)
-      .map((_, index) => ({
+      .map(() => ({
         id: generateUniqueId(),
         currentHp: groupTemplate.maxHp || 0,
         tempHp: 0,
@@ -191,6 +192,7 @@ export const createGroupsSlice = (
       currentHp: groupTemplate.maxHp || 10,
       ac: groupTemplate.ac || 12,
       count: groupTemplate.count || 4,
+      originalCount: groupTemplate.count || 4,
       initiative: groupTemplate.initiative || 0,
       inAoe: false,
       creatures,
@@ -235,6 +237,7 @@ export const createGroupsSlice = (
         currentHp: groupTemplate.maxHp || 10,
         ac: groupTemplate.ac || 12,
         count: groupTemplate.count || 4,
+        originalCount: groupTemplate.count || 4,
         initiative: groupTemplate.initiative || 0,
         inAoe: false,
         creatures,
@@ -399,7 +402,7 @@ export const createGroupsSlice = (
           const targetCreature = aliveCreatures[0];
           const creatureIndex = g.creatures.findIndex((c) => c.id === targetCreature.id);
 
-          const { currentHp: newHp, tempHp: newTempHp } = applyDamageWithTempHp(
+          const { newCurrentHp, newTempHp } = applyDamageWithTempHp(
             damage,
             targetCreature.currentHp,
             targetCreature.tempHp || 0
@@ -408,17 +411,21 @@ export const createGroupsSlice = (
           const updatedCreatures = [...g.creatures];
           updatedCreatures[creatureIndex] = {
             ...targetCreature,
-            currentHp: newHp,
+            currentHp: newCurrentHp,
             tempHp: newTempHp,
-            isRemoved: newHp <= 0,
+            isRemoved: newCurrentHp <= 0,
           };
 
-          const remainingCount = updatedCreatures.filter((c) => !c.isRemoved && c.currentHp > 0).length;
+          const aliveAfter = updatedCreatures.filter((c) => !c.isRemoved);
+          const remainingCount = aliveAfter.filter((c) => c.currentHp > 0).length;
+          const totalHp = aliveAfter.reduce((sum, c) => sum + Math.max(c.currentHp, 0), 0);
+          const averageHp = aliveAfter.length > 0 ? Math.round(totalHp / aliveAfter.length) : 0;
 
           return {
             ...g,
             creatures: updatedCreatures,
             count: remainingCount,
+            currentHp: averageHp,
           };
         }
 
@@ -459,13 +466,13 @@ export const createGroupsSlice = (
           const aliveCreatures = g.creatures.filter((c) => !c.isRemoved && c.currentHp > 0);
           const affectedCount = Math.ceil((aliveCreatures.length * percentAffected) / 100);
 
-          const updatedCreatures = g.creatures.map((creature, index) => {
+          const updatedCreatures = g.creatures.map((creature) => {
             if (creature.isRemoved || creature.currentHp <= 0) return creature;
 
             const aliveIndex = aliveCreatures.findIndex((c) => c.id === creature.id);
             if (aliveIndex >= affectedCount) return creature;
 
-            const { currentHp: newHp, tempHp: newTempHp } = applyDamageWithTempHp(
+            const { newCurrentHp, newTempHp } = applyDamageWithTempHp(
               damage,
               creature.currentHp,
               creature.tempHp || 0
@@ -473,18 +480,22 @@ export const createGroupsSlice = (
 
             return {
               ...creature,
-              currentHp: newHp,
+              currentHp: newCurrentHp,
               tempHp: newTempHp,
-              isRemoved: newHp <= 0,
+              isRemoved: newCurrentHp <= 0,
             };
           });
 
-          const remainingCount = updatedCreatures.filter((c) => !c.isRemoved && c.currentHp > 0).length;
+          const aliveAfter = updatedCreatures.filter((c) => !c.isRemoved);
+          const remainingCount = aliveAfter.filter((c) => c.currentHp > 0).length;
+          const totalHp = aliveAfter.reduce((sum, c) => sum + Math.max(c.currentHp, 0), 0);
+          const averageHp = aliveAfter.length > 0 ? Math.round(totalHp / aliveAfter.length) : 0;
 
           return {
             ...g,
             creatures: updatedCreatures,
             count: remainingCount,
+            currentHp: averageHp,
           };
         }
 
@@ -554,8 +565,9 @@ export const createGroupsSlice = (
         } else if (saveType && saveDC) {
           const saveBonus = group.savingThrows?.[saveType] || 0;
           saveRoll = rollD20();
-          totalRoll = saveRoll + saveBonus;
-          saved = totalRoll >= saveDC;
+          const computedTotal = saveRoll + saveBonus;
+          totalRoll = computedTotal;
+          saved = computedTotal >= saveDC;
 
           if (saved && halfOnSave) {
             damageToApply = Math.floor(damage / 2);
@@ -580,7 +592,7 @@ export const createGroupsSlice = (
           const updatedCreatures = group.creatures.map((creature) => {
             if (creature.isRemoved || creature.currentHp <= 0) return creature;
 
-            const { currentHp: newHp, tempHp: newTempHp } = applyDamageWithTempHp(
+            const { newCurrentHp, newTempHp } = applyDamageWithTempHp(
               damageToApply,
               creature.currentHp,
               creature.tempHp || 0
@@ -588,18 +600,22 @@ export const createGroupsSlice = (
 
             return {
               ...creature,
-              currentHp: newHp,
+              currentHp: newCurrentHp,
               tempHp: newTempHp,
-              isRemoved: newHp <= 0,
+              isRemoved: newCurrentHp <= 0,
             };
           });
 
-          const remainingCount = updatedCreatures.filter((c) => !c.isRemoved && c.currentHp > 0).length;
+          const aliveAfter = updatedCreatures.filter((c) => !c.isRemoved);
+          const remainingCount = aliveAfter.filter((c) => c.currentHp > 0).length;
+          const totalHp = aliveAfter.reduce((sum, c) => sum + Math.max(c.currentHp, 0), 0);
+          const averageHp = aliveAfter.length > 0 ? Math.round(totalHp / aliveAfter.length) : 0;
 
           return {
             ...group,
             creatures: updatedCreatures,
             count: remainingCount,
+            currentHp: averageHp,
             inAoe: false,
           };
         }
@@ -618,10 +634,11 @@ export const createGroupsSlice = (
         .map((result) => {
           let saveText = '';
           if (result.saveRoll !== null) {
-            saveText =
-              result.totalRoll !== result.saveRoll
-                ? ` (${result.totalRoll}: ${result.saveRoll}+${result.totalRoll - result.saveRoll})`
-                : ` (${result.saveRoll})`;
+            if (result.totalRoll !== null && result.totalRoll !== result.saveRoll) {
+              saveText = ` (${result.totalRoll}: ${result.saveRoll}+${result.totalRoll - result.saveRoll})`;
+            } else {
+              saveText = ` (${result.saveRoll})`;
+            }
           }
 
           return `${result.name}: ${result.saved ? (halfOnSave ? 'Save' + saveText + ' (½ dmg)' : 'Save' + saveText + ' (no dmg)') : 'Failed' + saveText}, ${result.damageToApply > 0 ? `${result.damageToApply} damage` : 'no damage'}`;
@@ -690,8 +707,9 @@ export const createGroupsSlice = (
         } else if (saveType && saveDC) {
           const saveBonus = group.savingThrows?.[saveType] || 0;
           saveRoll = rollD20();
-          totalRoll = saveRoll + saveBonus;
-          saved = totalRoll >= saveDC;
+          const computedTotal = saveRoll + saveBonus;
+          totalRoll = computedTotal;
+          saved = computedTotal >= saveDC;
 
           if (saved && halfOnSave) {
             damageToApply = Math.floor(damage / 2);
@@ -716,7 +734,7 @@ export const createGroupsSlice = (
           const updatedCreatures = group.creatures.map((creature) => {
             if (creature.isRemoved || creature.currentHp <= 0) return creature;
 
-            const { currentHp: newHp, tempHp: newTempHp } = applyDamageWithTempHp(
+            const { newCurrentHp, newTempHp } = applyDamageWithTempHp(
               damageToApply,
               creature.currentHp,
               creature.tempHp || 0
@@ -724,18 +742,22 @@ export const createGroupsSlice = (
 
             return {
               ...creature,
-              currentHp: newHp,
+              currentHp: newCurrentHp,
               tempHp: newTempHp,
-              isRemoved: newHp <= 0,
+              isRemoved: newCurrentHp <= 0,
             };
           });
 
-          const remainingCount = updatedCreatures.filter((c) => !c.isRemoved && c.currentHp > 0).length;
+          const aliveAfter = updatedCreatures.filter((c) => !c.isRemoved);
+          const remainingCount = aliveAfter.filter((c) => c.currentHp > 0).length;
+          const totalHp = aliveAfter.reduce((sum, c) => sum + Math.max(c.currentHp, 0), 0);
+          const averageHp = aliveAfter.length > 0 ? Math.round(totalHp / aliveAfter.length) : 0;
 
           return {
             ...group,
             creatures: updatedCreatures,
             count: remainingCount,
+            currentHp: averageHp,
             inAoe: false,
           };
         }
@@ -754,10 +776,11 @@ export const createGroupsSlice = (
         .map((result) => {
           let saveText = '';
           if (result.saveRoll !== null) {
-            saveText =
-              result.totalRoll !== result.saveRoll
-                ? ` (${result.totalRoll}: ${result.saveRoll}+${result.totalRoll - result.saveRoll})`
-                : ` (${result.saveRoll})`;
+            if (result.totalRoll !== null && result.totalRoll !== result.saveRoll) {
+              saveText = ` (${result.totalRoll}: ${result.saveRoll}+${result.totalRoll - result.saveRoll})`;
+            } else {
+              saveText = ` (${result.saveRoll})`;
+            }
           }
 
           return `${result.name}: ${result.saved ? (halfOnSave ? 'Save' + saveText + ' (½ dmg)' : 'Save' + saveText + ' (no dmg)') : 'Failed' + saveText}, ${result.damageToApply > 0 ? `${result.damageToApply} damage` : 'no damage'}`;

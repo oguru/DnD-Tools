@@ -4,6 +4,7 @@ import '../styles/BossTracker.css';
 import { useEffect, useRef, useState } from 'react';
 
 import ImportExportModal from './ImportExportModal';
+import { toggleExclusiveDefense } from '../store/utils/defense';
 import useDnDStore from '../store/dndStore';
 
 // Damage types and compact icon mapping for defenses
@@ -176,30 +177,33 @@ const GroupsSection = () => {
   const bossRefs = useRef({});
   const groupRefs = useRef({});
   
-  // Register the section ref
+  // Register the section ref (only once on mount)
   useEffect(() => {
     if (sectionRef.current) {
       setGroupsSectionRef(sectionRef);
     }
-  }, [setGroupsSectionRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
-  // Register refs for individual bosses
+  // Register refs for individual bosses (only when bosses array changes)
   useEffect(() => {
     bosses.forEach(boss => {
       if (boss.id && bossRefs.current[boss.id]) {
         registerEntityRef('boss', boss.id, bossRefs.current[boss.id]);
       }
     });
-  }, [bosses, registerEntityRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bosses]);
   
-  // Register refs for individual groups
+  // Register refs for individual groups (only when groups array changes)
   useEffect(() => {
     enemyGroups.forEach(group => {
       if (group.id && groupRefs.current[group.id]) {
         registerEntityRef('group', group.id, groupRefs.current[group.id]);
       }
     });
-  }, [enemyGroups, registerEntityRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enemyGroups]);
 
   // Handle changes to the boss template
   const handleBossTemplateChange = (e) => {
@@ -223,48 +227,10 @@ const GroupsSection = () => {
 
   // Toggle a damage type inside defenses for the boss template
   const toggleBossTemplateDefense = (category, typeKey) => {
-    setBossTemplate(prev => {
-      const currentList = prev.defenses?.[category] || [];
-      const alreadySelected = currentList.includes(typeKey);
-
-      // Start from existing lists
-      let resistances = [...(prev.defenses?.resistances || [])];
-      let vulnerabilities = [...(prev.defenses?.vulnerabilities || [])];
-      let immunities = [...(prev.defenses?.immunities || [])];
-
-      // If selecting in one category, ensure exclusivity by removing from the others
-      if (!alreadySelected) {
-        if (category !== 'resistances') {
-          resistances = resistances.filter(t => t !== typeKey);
-        }
-        if (category !== 'vulnerabilities') {
-          vulnerabilities = vulnerabilities.filter(t => t !== typeKey);
-        }
-        if (category !== 'immunities') {
-          immunities = immunities.filter(t => t !== typeKey);
-        }
-      }
-
-      // Toggle in the chosen category
-      if (category === 'resistances') {
-        resistances = alreadySelected
-          ? resistances.filter(t => t !== typeKey)
-          : [...resistances, typeKey];
-      } else if (category === 'vulnerabilities') {
-        vulnerabilities = alreadySelected
-          ? vulnerabilities.filter(t => t !== typeKey)
-          : [...vulnerabilities, typeKey];
-      } else if (category === 'immunities') {
-        immunities = alreadySelected
-          ? immunities.filter(t => t !== typeKey)
-          : [...immunities, typeKey];
-      }
-
-      return {
-        ...prev,
-        defenses: { resistances, vulnerabilities, immunities }
-      };
-    });
+    setBossTemplate(prev => ({
+      ...prev,
+      defenses: toggleExclusiveDefense(prev.defenses, category, typeKey),
+    }));
   };
 
   // Create a wrapper for the renderSavingThrows function to handle the different parameter pattern
@@ -976,41 +942,8 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
 
   // Toggle a damage type inside defenses for the group template
   const toggleGroupTemplateDefense = (category, typeKey) => {
-    const currentList = groupTemplate.defenses?.[category] || [];
-    const alreadySelected = currentList.includes(typeKey);
-
-    let resistances = [...(groupTemplate.defenses?.resistances || [])];
-    let vulnerabilities = [...(groupTemplate.defenses?.vulnerabilities || [])];
-    let immunities = [...(groupTemplate.defenses?.immunities || [])];
-
-    // Ensure exclusivity across categories when selecting
-    if (!alreadySelected) {
-      if (category !== 'resistances') {
-        resistances = resistances.filter(t => t !== typeKey);
-      }
-      if (category !== 'vulnerabilities') {
-        vulnerabilities = vulnerabilities.filter(t => t !== typeKey);
-      }
-      if (category !== 'immunities') {
-        immunities = immunities.filter(t => t !== typeKey);
-      }
-    }
-
-    if (category === 'resistances') {
-      resistances = alreadySelected
-        ? resistances.filter(t => t !== typeKey)
-        : [...resistances, typeKey];
-    } else if (category === 'vulnerabilities') {
-      vulnerabilities = alreadySelected
-        ? vulnerabilities.filter(t => t !== typeKey)
-        : [...vulnerabilities, typeKey];
-    } else if (category === 'immunities') {
-      immunities = alreadySelected
-        ? immunities.filter(t => t !== typeKey)
-        : [...immunities, typeKey];
-    }
-
-    updateGroupTemplate('defenses', { resistances, vulnerabilities, immunities });
+    const updated = toggleExclusiveDefense(groupTemplate.defenses, category, typeKey);
+    updateGroupTemplate('defenses', updated);
   };
 
   // Handle changes to saving throws in template
@@ -3237,11 +3170,17 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                         <div className="creature-hp-grid" onClick={(e) => e.stopPropagation()}>
                           {group.creatures && Array.isArray(group.creatures) ? (
                             group.creatures.map((creature, index) => {
-                              const creatureHealthPercentage = calculateHealthPercentage(creature.hp, group.maxHp);
+                              const creatureHp =
+                                typeof creature.currentHp === 'number'
+                                  ? creature.currentHp
+                                  : typeof creature.hp === 'number'
+                                    ? creature.hp
+                                    : 0;
+                              const creatureHealthPercentage = calculateHealthPercentage(creatureHp, group.maxHp);
                               const creatureHealthColor = getHealthColour(creatureHealthPercentage);
-                              
+
                               return (
-                                <div key={index} className="creature-hp" title={`Creature ${index + 1}: ${creature.hp}/${group.maxHp} HP`}>
+                                <div key={index} className="creature-hp" title={`Creature ${index + 1}: ${creatureHp}/${group.maxHp} HP`}>
                                   <div className="creature-hp-bar-container">
                                     <div 
                                       className="creature-hp-bar"
@@ -3251,7 +3190,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                       }}
                                     ></div>
                                   </div>
-                                  <span className="creature-hp-text">{creature.hp}</span>
+                                  <span className="creature-hp-text">{creatureHp}</span>
                                 </div>
                               );
                             })

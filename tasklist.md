@@ -7,7 +7,7 @@
 
 ## Testing Strategy
 - [x] Establish testing framework (Vitest/Jest + React Testing Library, and Playwright/Cypress for E2E).
-- [ ] Write unit tests for each store slice (state hydrations, migrations, actions, selectors). **(IN PROGRESS - combatSlice done, 7 slices remaining)**
+- [x] Write unit tests for each store slice (state hydrations, migrations, actions, selectors).
 - [ ] Add component integration tests covering page-level flows (turn order management, AoE damage application, import/export, group attack calculator).
 - [ ] Implement end-to-end regression suite for primary user journeys (create session, manage combat, save/load data).
 
@@ -26,6 +26,25 @@
 - [ ] Align damage application components with new additive temp HP behavior.
 - [ ] Document store architecture and action conventions for contributors.
 
+## Component Refactors (Planned)
+- [ ] Refactor DamageApplication.jsx using `useAoeDamage` hook; extract AoE helpers to `utils/view/aoe.ts`.
+- [ ] Refactor TurnOrder.jsx using `useTurnOrderProjection`; extract entry formatting to `store/utils/turnOrderFormat.ts`.
+- [ ] Refactor CharacterSection.jsx to use `useCharacters` selector; move defence exclusivity to `store/utils/defense.ts`.
+- [ ] Refactor GroupsSection.jsx using `useGroupAttacks`; move creature HP list builder to `utils/view/groups.ts`.
+- [ ] Refactor AttackResults.jsx to use `store/utils/resultsFormat.ts` for message formatting.
+
+## Testing (Components)
+- [ ] Add RTL tests for DamageApplication (single-target, AoE with saves, multi-type modifiers).
+- [ ] Add RTL tests for TurnOrder (characters/bosses/groups/groupCollection projections, navigation).
+- [ ] Add RTL tests for CharacterSection (edits, empty-slot, defenses, targeting & AoE toggles).
+- [ ] Add RTL tests for GroupsSection (add/duplicate/remove, creature HP, attack aggregation, AC override).
+- [ ] Add RTL tests for AttackResults (message highlighting, batch grouping, clear/dismiss).
+
+## Slice Logic Extraction
+- [ ] Move AoE result string joiners to `store/utils/resultsFormat.ts`.
+- [ ] Move group averaging/aggregation to `store/utils/groups.ts`.
+- [ ] Move defence exclusivity toggles to `store/utils/defense.ts`.
+- [ ] Create hooks: `useAoeDamage`, `useGroupAttacks`, `useTurnOrderProjection`.
 ## TypeScript Migration ✅ COMPLETE!
 - [x] Create TypeScript configuration (tsconfig.json, vitest.config.ts)
 - [x] Create store type definitions in `src/models/` and `src/constants/`

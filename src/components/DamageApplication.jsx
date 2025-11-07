@@ -761,14 +761,21 @@ const DamageApplication = () => {
   };
   
   // Get detailed group information including individual creature HP
+  const getCreatureHp = (creature) => {
+    if (!creature) return 0;
+    if (typeof creature.currentHp === 'number') return creature.currentHp;
+    if (typeof creature.hp === 'number') return creature.hp;
+    return 0;
+  };
+
   const getGroupDetails = (group) => {
     if (!group || !group.creatures) return null;
     
     const creatureDetails = group.creatures.map((creature, index) => ({
       id: index,
-      hp: creature.hp,
+      hp: getCreatureHp(creature),
       maxHp: group.maxHp,
-      percent: Math.floor((creature.hp / group.maxHp) * 100)
+      percent: Math.floor((getCreatureHp(creature) / group.maxHp) * 100)
     }));
     
     // Calculate total current HP and total max HP
@@ -789,7 +796,7 @@ const DamageApplication = () => {
       characters: characters,
       // Filter out groups where all creatures have 0 HP
       groups: enemyGroups.filter(group => 
-        group.creatures && group.creatures.some(creature => creature.hp > 0)
+        group.creatures && group.creatures.some(creature => getCreatureHp(creature) > 0)
       ),
       bosses: bosses
     };

@@ -1,17 +1,18 @@
-import { loadFromStorage, saveToStorage, removeFromStorage } from '../utils/storage';
-import { generateId } from '../utils/ids';
-import { scheduleTurnOrderUpdate } from '../utils/turnOrder';
-import { clampHp, ensurePositive, clampCharges } from '../utils/numbers';
-import { setTempHp, applyHealing } from '../utils/combat';
-import { createDamageResult, createHealingResult, createAoeResult } from '../utils/results';
-import { normalizeDefenses, normalizeSavingThrows, normalizeBossAttack } from '../utils/normalize';
-import { rollD20 } from '@utils/dice';
-import { STORAGE_KEYS } from '@constants/storage';
-import { COMBAT_DEFAULTS } from '@constants/combat';
+import { applyDamageWithTempHp, applyHealing, setTempHp } from '../utils/combat';
+import { clampCharges, clampHp, ensurePositive } from '../utils/numbers';
+import { createAoeResult, createDamageResult, createHealingResult } from '../utils/results';
+import { loadFromStorage, removeFromStorage, saveToStorage } from '../utils/storage';
+import { normalizeBossAttack, normalizeDefenses, normalizeSavingThrows } from '../utils/normalize';
+
+import type { AttackResult } from '@models/combat/AttackResult';
 import type { Boss } from '@models/entities/Boss';
 import type { BossAttack } from '@models/combat/BossAttack';
-import type { AttackResult } from '@models/combat/AttackResult';
+import { COMBAT_DEFAULTS } from '@constants/combat';
+import { STORAGE_KEYS } from '@constants/storage';
 import type { SaveType } from '@models/common/SavingThrows';
+import { generateId } from '../utils/ids';
+import { rollD20 } from '@utils/dice';
+import { scheduleTurnOrderUpdate } from '../utils/turnOrder';
 
 interface AoeParams {
   damage: number;
@@ -391,8 +392,13 @@ export const createBossesSlice = (
           return boss;
         }
 
-        const newHp = Math.max(0, boss.currentHp - damage);
-        return { ...boss, currentHp: newHp };
+        const { newCurrentHp, newTempHp } = applyDamageWithTempHp(
+          damage,
+          boss.currentHp,
+          boss.tempHp || 0
+        );
+
+        return { ...boss, currentHp: newCurrentHp, tempHp: newTempHp };
       });
 
       saveToStorage(STORAGE_KEYS.BOSSES, updatedBosses);
@@ -481,10 +487,16 @@ export const createBossesSlice = (
           return { ...boss, inAoe: false };
         }
 
-        const newHp = Math.max(0, boss.currentHp - damageToApply);
+        const { newCurrentHp, newTempHp } = applyDamageWithTempHp(
+          damageToApply,
+          boss.currentHp,
+          boss.tempHp || 0
+        );
+
         return {
           ...boss,
-          currentHp: newHp,
+          currentHp: newCurrentHp,
+          tempHp: newTempHp,
           inAoe: false,
         };
       });
@@ -585,10 +597,16 @@ export const createBossesSlice = (
           return { ...boss, inAoe: false };
         }
 
-        const newHp = Math.max(0, boss.currentHp - damageToApply);
+        const { newCurrentHp, newTempHp } = applyDamageWithTempHp(
+          damageToApply,
+          boss.currentHp,
+          boss.tempHp || 0
+        );
+
         return {
           ...boss,
-          currentHp: newHp,
+          currentHp: newCurrentHp,
+          tempHp: newTempHp,
           inAoe: false,
         };
       });

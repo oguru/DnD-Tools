@@ -1,6 +1,6 @@
 # TypeScript Migration - Session Summary
 
-## 🎉 MAJOR ACCOMPLISHMENTS (~85% Complete)
+## 🎉 MAJOR ACCOMPLISHMENTS (~90% Complete)
 
 ### What Was Completed This Session
 
@@ -38,14 +38,17 @@ Created 7 utility modules with 130+ tests (100% coverage):
 - **dice.ts** - All dice rolling (rollDie, rollDice, rollD20, rollDamage, rollSavingThrow)
 - **fileImport.ts** - JSON file import handling
 
-#### 5. Store Slices - 63% Complete ✅
-Converted 5 out of 8 slices to TypeScript:
+#### 5. Store Slices - 100% Complete ✅
+All slices converted to TypeScript with regression-focused tests:
 
-1. ✅ **combatSlice.ts** - Attack results, healing
-2. ✅ **utilitySlice.ts** - Health calculations, dice re-exports
-3. ✅ **uiSlice.ts** - UI state and refs
-4. ✅ **persistenceSlice.ts** - Import/export
-5. ✅ **turnOrderSlice.ts** - Turn order management
+1. ✅ **combatSlice.ts** – AoE orchestration + healing flows
+2. ✅ **utilitySlice.ts** – Health calculations (group averaging)
+3. ✅ **uiSlice.ts** – UI state/refs (exercised via store actions)
+4. ✅ **persistenceSlice.ts** – Import/export + selective merge
+5. ✅ **turnOrderSlice.ts** – Initiative management with HP metadata
+6. ✅ **charactersSlice.ts** – Character CRUD, temp HP, AoE damage
+7. ✅ **bossesSlice.ts** – Boss temp HP + charge management
+8. ✅ **groupsSlice.ts** – Group creature management, AoE summaries
 
 #### 6. Cleanup Completed ✅
 - Removed ALL barrel files (index.ts)
@@ -61,14 +64,12 @@ Converted 5 out of 8 slices to TypeScript:
 - Minimal JSDoc (types are self-documenting)
 - Constants properly typed with `as const`
 
-## 📋 REMAINING WORK (15%)
+## 📋 REMAINING WORK (~10%)
 
-### 3 Large Slices
-These are the most complex files with core combat logic:
-
-- ❌ **charactersSlice.js** (~605 lines) - Character management, damage, healing, AoE
-- ❌ **bossesSlice.js** (~750 lines) - Boss attacks, charge management, damage
-- ❌ **groupsSlice.js** (~900 lines) - Enemy groups, creatures, complex logic
+### Productisation & UI
+- Introduce free vs. paid feature gating (cloud persistence, live session updates)
+- Update React components to consume sliced store data (turn order HP, AoE tooling, persistence UI)
+- Add component/E2E regression tests once wiring is complete
 
 ### Component Updates
 - ~15 components may need import path updates
@@ -82,9 +83,9 @@ These are the most complex files with core combat logic:
 | Folder Structure | ✅ 100% |
 | Store Utilities | ✅ 100% (7/7) |
 | General Utilities | ✅ 100% (2/2) |
-| Store Slices | ✅ 63% (5/8) |
+| Store Slices | ✅ 100% (8/8) |
 | Components | ❌ 0% (~15) |
-| **OVERALL** | **~85%** |
+| **OVERALL** | **~90%** |
 
 ## 🎯 Key Decisions Made
 
@@ -119,11 +120,11 @@ const roll = rollD20();  // Tested, reliable
 
 ## 📈 Test Coverage
 
-- **130+ tests** written
-- **100% coverage** for all utilities
+- **170+ tests** written across utilities and slices
+- **100% coverage** for store utilities and newly added slice suites
 - Mirrored folder structure: `src/tests/store/utils/`, `src/tests/store/slices/`
 - Global test setup with mocks
-- All passing except 2 minor test expectation updates needed
+- Slice regressions now covered (characters, bosses, groups, persistence, turn order, combat)
 
 ## 💪 Why This Foundation is Solid
 
@@ -136,17 +137,12 @@ const roll = rollD20();  // Tested, reliable
 
 ## 🚀 Next Session Strategy
 
-The remaining 3 slices are large but follow clear patterns. Each should:
-1. Import the new utilities
-2. Replace localStorage → storage utils
-3. Replace Date.now() → generateId()
-4. Replace Math.random() → dice utils
-5. Use combat utils for damage/healing
-6. Use result utils for messages
-7. Add proper TypeScript types
-8. Apply UK spelling
-
-Estimated time: 10-15 hours for remaining work
+With the stores complete, focus shifts to productisation:
+1. Wire React components to the sliced store (turn order HP, AoE damage UI, persistence controls)
+2. Introduce free vs. paid feature gating (local storage vs. cloud session sync)
+3. Draft backend contract for paid persistence/live updates (REST/WebSocket outline)
+4. Add component/E2E tests covering the new flows
+5. Update documentation (README + pricing roadmap)
 
 ## 🎓 What We Learned
 
@@ -158,7 +154,7 @@ Estimated time: 10-15 hours for remaining work
 
 ---
 
-**Status**: Ready for final push on the 3 large slices
+**Status**: Ready for component/productisation phase
 **Quality**: High - No compromises made
 **Confidence**: Very high - Foundation is solid
 

@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { createUtilitySlice } from '@/store/slices/utilitySlice';
+import { describe, expect, it } from 'vitest';
+
 import type { EnemyGroup } from '@models/entities/EnemyGroup';
+import { createUtilitySlice } from '@/store/slices/utilitySlice';
 
 describe('utilitySlice', () => {
   const utilities = createUtilitySlice();
@@ -51,6 +52,7 @@ describe('utilitySlice', () => {
         id: 'group-1',
         name: 'Goblins',
         count: 5,
+        originalCount: 5,
         maxHp: 20,
         currentHp: 15,
         tempHp: 0,
@@ -73,6 +75,7 @@ describe('utilitySlice', () => {
         id: 'group-1',
         name: 'Goblins',
         count: 5,
+        originalCount: 5,
         maxHp: 20,
         currentHp: 15,
         tempHp: 0,

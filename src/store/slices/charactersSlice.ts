@@ -1,15 +1,16 @@
-import { loadFromStorage, saveToStorage } from '../utils/storage';
-import { generateId, generateUniqueId } from '../utils/ids';
-import { scheduleTurnOrderUpdate } from '../utils/turnOrder';
-import { applyDamageWithTempHp, setTempHp, rollSave, checkSave, calculateSaveDamage } from '../utils/combat';
-import { createDamageResult, createHealingResult } from '../utils/results';
-import { normalizeDefenses } from '../utils/normalize';
+import { applyDamageWithTempHp, calculateSaveDamage, checkSave, rollSave, setTempHp } from '../utils/combat';
 import { clampHp, ensurePositive } from '../utils/numbers';
-import { rollD20 } from '@utils/dice';
-import { STORAGE_KEYS } from '@constants/storage';
-import type { Character } from '@models/entities/Character';
+import { createDamageResult, createHealingResult } from '../utils/results';
+import { generateId, generateUniqueId } from '../utils/ids';
+import { loadFromStorage, saveToStorage } from '../utils/storage';
+
 import type { AttackResult } from '@models/combat/AttackResult';
+import type { Character } from '@models/entities/Character';
+import { STORAGE_KEYS } from '@constants/storage';
 import type { SaveType } from '@models/common/SavingThrows';
+import { normalizeDefenses } from '../utils/normalize';
+import { rollD20 } from '@utils/dice';
+import { scheduleTurnOrderUpdate } from '../utils/turnOrder';
 
 interface AoeParams {
   damage: number;
@@ -207,7 +208,7 @@ export const createCharactersSlice = (
           return char;
         }
 
-        const { currentHp: newHp, tempHp: newTempHp } = applyDamageWithTempHp(
+        const { newCurrentHp, newTempHp } = applyDamageWithTempHp(
           damage,
           char.currentHp,
           char.tempHp || 0
@@ -215,7 +216,7 @@ export const createCharactersSlice = (
 
         return {
           ...char,
-          currentHp: newHp,
+          currentHp: newCurrentHp,
           tempHp: newTempHp,
         };
       });
@@ -276,7 +277,7 @@ export const createCharactersSlice = (
           return char;
         }
 
-        const { currentHp: newHp, tempHp: newTempHp } = applyDamageWithTempHp(
+        const { newCurrentHp, newTempHp } = applyDamageWithTempHp(
           damageToApply,
           char.currentHp,
           char.tempHp || 0
@@ -284,7 +285,7 @@ export const createCharactersSlice = (
 
         return {
           ...char,
-          currentHp: newHp,
+          currentHp: newCurrentHp,
           tempHp: newTempHp,
         };
       });
@@ -366,8 +367,8 @@ export const createCharactersSlice = (
           if (finalDamage <= 0) return;
 
           const result = applyDamageWithTempHp(finalDamage, currentHp, currentTempHp);
-          currentHp = result.currentHp;
-          currentTempHp = result.tempHp;
+          currentHp = result.newCurrentHp;
+          currentTempHp = result.newTempHp;
           totalDamage += finalDamage;
         });
 

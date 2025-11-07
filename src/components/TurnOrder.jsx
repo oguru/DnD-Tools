@@ -1,29 +1,46 @@
 import '../styles/TurnOrder.css';
 
+import { useEffect, useMemo } from 'react';
+
+import { formatTurnOrderEntry } from '../store/utils/turnOrderFormat';
+import { shallow } from 'zustand/shallow';
 import useDnDStore from '../store/dndStore';
-import { useEffect } from 'react';
 
 const TurnOrder = () => {
-  const {
-    turnOrder,
-    currentTurnIndex,
-    expandedSections,
-    toggleSection,
-    nextTurn,
-    previousTurn,
-    moveTurnOrderUp,
-    moveTurnOrderDown,
-    updateTurnOrder,
-    rollInitiative,
-    calculateHealthPercentage,
-    getHealthColour,
-    scrollToEntity
-  } = useDnDStore();
+  // Select primitive values and arrays separately
+  const turnOrder = useDnDStore((state) => state.turnOrder);
+  const currentTurnIndex = useDnDStore((state) => state.currentTurnIndex);
+  const expandedSections = useDnDStore((state) => state.expandedSections);
+  
+  // Select functions separately (they should be stable)
+  const toggleSection = useDnDStore((state) => state.toggleSection);
+  const nextTurn = useDnDStore((state) => state.nextTurn);
+  const previousTurn = useDnDStore((state) => state.previousTurn);
+  const moveTurnOrderUp = useDnDStore((state) => state.moveTurnOrderUp);
+  const moveTurnOrderDown = useDnDStore((state) => state.moveTurnOrderDown);
+  const updateTurnOrder = useDnDStore((state) => state.updateTurnOrder);
+  const rollInitiative = useDnDStore((state) => state.rollInitiative);
+  const scrollToEntity = useDnDStore((state) => state.scrollToEntity);
+  const calculateHealthPercentage = useDnDStore((state) => state.calculateHealthPercentage);
+  const getHealthColour = useDnDStore((state) => state.getHealthColour);
 
-  // Update turn order when component mounts
+  const projectedTurnOrder = useMemo(
+    () =>
+      turnOrder.map((entry) => ({
+        ...entry,
+        display: formatTurnOrderEntry(entry, {
+          calculateHealthPercentage,
+          getHealthColour,
+        }),
+      })),
+    [turnOrder, calculateHealthPercentage, getHealthColour]
+  );
+
+  // Update turn order when component mounts (only once)
   useEffect(() => {
     updateTurnOrder();
-  }, [updateTurnOrder]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handler for clicking on an entity in the initiative order
   const handleEntityClick = (entity, e) => {
@@ -35,97 +52,42 @@ const TurnOrder = () => {
     scrollToEntity(entity);
   };
 
-  // Helper function to render HP information
-  const renderHpInfo = (entity) => {
-    if (entity.type === 'character' || entity.type === 'boss') {
-      // For individual characters and bosses
-      if (entity.maxHp) {
-        const healthPercentage = calculateHealthPercentage(entity.currentHp, entity.maxHp);
-        const healthColor = getHealthColour(healthPercentage);
-        
-        return (
-          <div className="entity-hp-info">
-            <span className="hp-text">{entity.currentHp}/{entity.maxHp} HP</span>
-            <div className="mini-health-bar-container">
-              <div 
-                className="mini-health-bar"
-                style={{
-                  width: `${healthPercentage}%`,
-                  backgroundColor: healthColor
-                }}
-              ></div>
-            </div>
+  const renderHpDisplay = (entity) => {
+    if (!entity?.display?.hpText) return null;
+
+    const { hpText, healthPercentage, healthColour, groupBadges } = entity.display;
+
+    return (
+      <div className="entity-hp-info">
+        <span className="hp-text">{hpText}</span>
+        <div className="mini-health-bar-container">
+          <div
+            className="mini-health-bar"
+            style={{
+              width: `${healthPercentage}%`,
+              backgroundColor: healthColour,
+            }}
+          ></div>
+        </div>
+        {groupBadges && (
+          <div className="group-members">
+            {groupBadges.map((group) => (
+              <div
+                key={group.id}
+                className="group-member-hp"
+                title={`${group.count}/${group.originalCount} creatures - HP: ${group.currentHp}/${group.maxHp}`}
+              >
+                <span>{group.count}</span>
+              </div>
+            ))}
           </div>
-        );
-      }
-    } else if (entity.type === 'group') {
-      // For individual groups
-      if (entity.maxHp) {
-        // Calculate total HP for the group
-        const totalCurrentHp = entity.count * entity.currentHp;
-        const totalMaxHp = entity.originalCount * entity.maxHp;
-        const healthPercentage = calculateHealthPercentage(totalCurrentHp, totalMaxHp);
-        const healthColor = getHealthColour(healthPercentage);
-        
-        return (
-          <div className="entity-hp-info">
-            <span className="hp-text">{entity.count}/{entity.originalCount} ({totalCurrentHp}/{totalMaxHp} HP)</span>
-            <div className="mini-health-bar-container">
-              <div 
-                className="mini-health-bar"
-                style={{
-                  width: `${healthPercentage}%`,
-                  backgroundColor: healthColor
-                }}
-              ></div>
-            </div>
-          </div>
-        );
-      }
-    } else if (entity.type === 'groupCollection') {
-      // For group collections
-      if (entity.groups && entity.groups.length > 0) {
-        // Calculate total HP for all groups in the collection
-        let totalCurrentHp = 0;
-        let totalMaxHp = 0;
-        
-        entity.groups.forEach(group => {
-          totalCurrentHp += (group.count * group.currentHp);
-          totalMaxHp += (group.originalCount * group.maxHp);
-        });
-        
-        const healthPercentage = calculateHealthPercentage(totalCurrentHp, totalMaxHp);
-        const healthColor = getHealthColour(healthPercentage);
-        
-        return (
-          <div className="entity-hp-info">
-            <span className="hp-text">{entity.totalCount}/{entity.totalOriginalCount} ({totalCurrentHp}/{totalMaxHp} HP)</span>
-            <div className="mini-health-bar-container">
-              <div 
-                className="mini-health-bar"
-                style={{
-                  width: `${healthPercentage}%`,
-                  backgroundColor: healthColor
-                }}
-              ></div>
-            </div>
-            <div className="group-members">
-              {entity.groups.map((group) => (
-                <div key={group.id} className="group-member-hp" title={`${group.count}/${group.originalCount} creatures - HP: ${group.currentHp}/${group.maxHp}`}>
-                  <span>{group.count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      }
-    }
-    
-    return null;
+        )}
+      </div>
+    );
   };
 
   // No entities with initiative
-  if (turnOrder.length === 0) {
+  if (projectedTurnOrder.length === 0) {
     return (
       <div className="turn-order-section">
         <div className="section-header">
@@ -155,7 +117,7 @@ const TurnOrder = () => {
     );
   }
 
-  const currentEntity = turnOrder[currentTurnIndex];
+  const currentEntity = projectedTurnOrder[currentTurnIndex];
 
   return (
     <div className="turn-order-section">
@@ -181,7 +143,7 @@ const TurnOrder = () => {
                   : `(${currentEntity.type})`}
               </span>
               <span className="initiative-value">Initiative: {currentEntity.initiative}</span>
-              {renderHpInfo(currentEntity)}
+              {renderHpDisplay(currentEntity)}
             </span>
           </div>
           
@@ -210,7 +172,7 @@ const TurnOrder = () => {
           </div>
           
           <div className="turn-order-list">
-            {turnOrder.map((entity, index) => (
+            {projectedTurnOrder.map((entity, index) => (
               <div 
                 key={entity.type === 'groupCollection' ? `collection-${entity.baseNamePattern}` : `${entity.type}-${entity.id}`}
                 className={`turn-order-item ${index === currentTurnIndex ? 'current' : ''} ${entity.type}`}
@@ -228,15 +190,6 @@ const TurnOrder = () => {
                     </span>
                   </div>
                   
-                  {entity.type === 'groupCollection' && entity.groups && (
-                    <div className="group-members">
-                      {entity.groups.map((group) => (
-                        <div key={group.id} className="group-member-hp" title={`${group.count}/${group.originalCount} creatures - HP: ${group.currentHp}/${group.maxHp}`}>
-                          <span>{group.count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
                 
                 <span className="initiative-value">{entity.initiative}</span>
@@ -266,49 +219,7 @@ const TurnOrder = () => {
                   </button>
                 </div>
                 
-                <div className="hp-text">
-                  {entity.type === 'character' || entity.type === 'boss' 
-                    ? `${entity.currentHp}/${entity.maxHp} HP`
-                    : entity.type === 'group' 
-                      ? `${entity.count}/${entity.originalCount} (${entity.count * entity.currentHp}/${entity.originalCount * entity.maxHp} HP)`
-                      : entity.type === 'groupCollection' && entity.groups
-                        ? `${entity.totalCount}/${entity.totalOriginalCount} (${
-                            entity.groups.reduce((sum, g) => sum + g.count * g.currentHp, 0)
-                          }/${
-                            entity.groups.reduce((sum, g) => sum + g.originalCount * g.maxHp, 0)
-                          } HP)`
-                        : ''}
-                </div>
-                
-                {(entity.type === 'character' || entity.type === 'boss' || entity.type === 'group' || entity.type === 'groupCollection') && (
-                  <div className="mini-health-bar-container">
-                    <div 
-                      className="mini-health-bar"
-                      style={{
-                        width: entity.type === 'character' || entity.type === 'boss' 
-                          ? `${calculateHealthPercentage(entity.currentHp, entity.maxHp)}%`
-                          : entity.type === 'group'
-                            ? `${calculateHealthPercentage(entity.count * entity.currentHp, entity.originalCount * entity.maxHp)}%`
-                            : entity.type === 'groupCollection' && entity.groups
-                              ? `${calculateHealthPercentage(
-                                  entity.groups.reduce((sum, g) => sum + g.count * g.currentHp, 0),
-                                  entity.groups.reduce((sum, g) => sum + g.originalCount * g.maxHp, 0)
-                                )}%`
-                              : '0%',
-                        backgroundColor: entity.type === 'character' || entity.type === 'boss'
-                          ? getHealthColour(calculateHealthPercentage(entity.currentHp, entity.maxHp))
-                          : entity.type === 'group'
-                            ? getHealthColour(calculateHealthPercentage(entity.count * entity.currentHp, entity.originalCount * entity.maxHp))
-                            : entity.type === 'groupCollection' && entity.groups
-                              ? getHealthColour(calculateHealthPercentage(
-                                  entity.groups.reduce((sum, g) => sum + g.count * g.currentHp, 0),
-                                  entity.groups.reduce((sum, g) => sum + g.originalCount * g.maxHp, 0)
-                                ))
-                              : '#e53e3e'
-                      }}
-                    ></div>
-                  </div>
-                )}
+                {renderHpDisplay(entity)}
               </div>
             ))}
           </div>

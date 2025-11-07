@@ -13,12 +13,20 @@ Scope: `src/store/slices/*` first pass, plus any cross-component patterns that t
 - ✅ All 7 store utilities created and tested (130+ tests, 100% coverage)
 - ✅ General utilities converted to TypeScript (dice, fileImport)
 - ✅ **ALL 8/8 slices refactored**: combatSlice, utilitySlice, uiSlice, persistenceSlice, turnOrderSlice, charactersSlice, bossesSlice, **groupsSlice** ✨
+- ✅ Slice-level regression tests added for characters, bosses, groups, turn order, persistence & combat flows
 - ✅ All old JS files deleted, superseded types/constants files removed
 - ✅ UK spelling applied (colour, normalise, etc.)
 - 🔄 Remaining: Components to update for TypeScript imports
 - 🔄 Final testing and verification
 
 See `MIGRATION_SUMMARY.md` and `docs/typescript-migration-final-status.md` for complete details.
+
+## Next Refactors (High Priority)
+- Components: align data/logic boundaries with sliced store; push derived state into hooks.
+- Extract any non-mutating functions living in slices into `src/store/utils/*` or custom hooks in `src/store/hooks/*`.
+- Normalise AoE flows across components; avoid duplicate logic.
+- Remove ad hoc dice/roll logic from components; use shared `@utils/dice`.
+- Harden persistence error handling paths (already instrumented with `console.warn`) and ensure UI affordances reflect failures where needed.
 
 ### Test Setup and Conventions (Global)
 - Runner: Vitest. UI needs JSDOM.
@@ -476,6 +484,58 @@ Most refactor is store-focused. Component tests are only warranted where UI wire
 - If `clamp` does not handle `min > max` by swapping, add that behavior to avoid subtle bugs and enable tests.
 - If results/message formatting diverges across slices, refactor to `results` utils to enable consistent unit tests.
 - Do not add new features beyond what’s needed for correctness and testability.
+
+## Component Refactoring & Testing Plan (Overview)
+- DamageApplication.jsx
+  - Refactor: separate orchestration vs UI; move AoE state building, save computation, and multi-type damage maths to `useAoeDamage()` (new hook).
+  - Store interactions remain via selectors to minimise re-renders.
+  - Tests (RTL): single-target flow (hit/miss/crit, temp HP); AoE manual saves (component modifiers, adjustments); apply-to-all/percent-affected; clearing AoE params, flag reset after apply.
+- TurnOrder.jsx
+  - Refactor: derive entity HP bars/text via a pure `formatTurnOrderEntry()` helper; keep scroll handlers separate.
+  - Tests: character/boss HP renders; group and groupCollection totals and bar percentages; current turn pointer; move up/down logic (mock store).
+- CharacterSection.jsx
+  - Refactor: local input formatting helpers; use `useCharacters()` selector for memoised rows; isolate defence toggles (exclusive) into a pure helper.
+  - Tests: field edits (hp/temp/max/ac/init); empty-slot behaviour; defence toggles exclusivity; targeting and AoE toggles dispatch.
+- GroupsSection.jsx
+  - Refactor: create `useGroupAttacks()` hook to encapsulate multi-target roll and apply flows; move formatting utilities to `utils/view`.
+  - Tests: group add/duplicate/remove; creature HP grid; attack roll aggregation; AC override recompute; apply-all damage.
+- AttackResults.jsx
+  - Refactor: extract `formatMessage()` into `src/store/utils/resultsFormat.ts` and reuse across components.
+  - Tests: message highlighting (damage/healing/AoE blocks), grouping by transaction, dismissal and clear all.
+
+See details in `docs/ui-refactor-and-testing-plan.md`.
+
+## Slice Function Extraction (Guide)
+Move any functions that:
+- do not directly mutate slice state, or
+- only compute/format derived values
+into:
+- `src/store/utils/*.ts` for pure utilities, or
+- `src/store/hooks/*.ts` for stateful selectors/derivations interacting with the store.
+
+Candidates:
+- charactersSlice: temp HP set logic (already in combat), batch result message constructors.
+- bossesSlice: charge clamping helpers (numbers), AoE message joiners (results).
+- groupsSlice: AoE result mappers and average-HP computations (utils), global-attack ratio recompute (utils).
+- turnOrderSlice: entity projection helpers for group collections (utils).
+
+See `docs/slice-logic-extraction-guide.md` for patterns and module structure.
+
+## Testing Roadmap (Remaining)
+- Component integration tests (RTL) for:
+  - DamageApplication, TurnOrder, CharacterSection, GroupsSection, AttackResults.
+- E2E (later): smoke critical flows (add entities, roll initiative, apply damage/healing, export/import).
+
+## Action Items (Shortlist)
+- Create hooks:
+  - `useAoeDamage` (DamageApplication)
+  - `useGroupAttacks` (GroupsSection)
+  - `useTurnOrderProjection` (TurnOrder)
+- Extract helpers:
+  - results formatting → `store/utils/resultsFormat.ts`
+  - HP/defence display helpers → `utils/view/*`
+  - group averaging/aggregation → `store/utils/groups.ts`
+- Write tests per plans above.
 
 ### Running tests
 Add scripts (if not present) in `package.json`:

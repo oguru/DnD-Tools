@@ -1,10 +1,11 @@
 import { loadFromStorage, saveToStorage } from '../utils/storage';
-import { STORAGE_KEYS } from '@constants/storage';
-import { rollD20 } from '@utils/dice';
-import type { Character } from '@models/entities/Character';
+
 import type { Boss } from '@models/entities/Boss';
+import type { Character } from '@models/entities/Character';
 import type { EnemyGroup } from '@models/entities/EnemyGroup';
+import { STORAGE_KEYS } from '@constants/storage';
 import type { TurnOrderEntity } from '@models/ui/TurnOrderEntity';
+import { rollD20 } from '@utils/dice';
 
 interface GroupCollectionEntity {
   ids: string[];
@@ -55,6 +56,8 @@ export const createTurnOrderSlice = (
         name: char.name,
         type: 'character' as const,
         initiative: char.initiative || 0,
+        currentHp: char.currentHp,
+        maxHp: char.maxHp,
       }));
 
       const bosses: TurnOrderEntity[] = state.bosses.map((boss: Boss) => ({
@@ -62,18 +65,32 @@ export const createTurnOrderSlice = (
         name: boss.name,
         type: 'boss' as const,
         initiative: boss.initiative || 0,
+        currentHp: boss.currentHp,
+        maxHp: boss.maxHp,
       }));
 
-      const enemyGroups = state.enemyGroups.map((group: EnemyGroup) => ({
-        id: group.id,
-        name: group.name,
-        type: 'group' as const,
-        initiative: group.initiative || 0,
-        currentHp: group.currentHp,
-        maxHp: group.maxHp,
-        count: group.count,
-        originalCount: (group as any).originalCount || group.count,
-      }));
+      const enemyGroups = state.enemyGroups.map((group: EnemyGroup) => {
+        const aliveCreatures = Array.isArray(group.creatures)
+          ? group.creatures.filter((creature) => !creature.isRemoved)
+          : [];
+        const remainingCount = aliveCreatures.length > 0 ? aliveCreatures.filter((c) => c.currentHp > 0).length : group.count;
+        const totalCurrentHp = aliveCreatures.length > 0
+          ? aliveCreatures.reduce((sum, creature) => sum + Math.max(creature.currentHp, 0), 0)
+          : group.count * group.currentHp;
+        const originalCount = group.originalCount;
+        const averageHp = remainingCount > 0 ? Math.round(totalCurrentHp / remainingCount) : 0;
+
+        return {
+          id: group.id,
+          name: group.name,
+          type: 'group' as const,
+          initiative: group.initiative || 0,
+          currentHp: averageHp,
+          maxHp: group.maxHp,
+          count: remainingCount,
+          originalCount,
+        };
+      });
 
       const groupedEnemies: Record<string, GroupCollectionEntity> = {};
       enemyGroups.forEach((group: any) => {
@@ -90,12 +107,12 @@ export const createTurnOrderSlice = (
             initiative,
             baseNamePattern: baseName,
             totalCount: group.count,
-            totalOriginalCount: group.originalCount || group.count,
+        totalOriginalCount: group.originalCount,
             groups: [
               {
                 id: group.id,
                 count: group.count,
-                originalCount: group.originalCount || group.count,
+                originalCount: group.originalCount,
                 currentHp: group.currentHp,
                 maxHp: group.maxHp,
               },
@@ -104,11 +121,11 @@ export const createTurnOrderSlice = (
         } else {
           groupedEnemies[key].ids.push(group.id);
           groupedEnemies[key].totalCount += group.count;
-          groupedEnemies[key].totalOriginalCount += group.originalCount || group.count;
+          groupedEnemies[key].totalOriginalCount += group.originalCount;
           groupedEnemies[key].groups.push({
             id: group.id,
             count: group.count,
-            originalCount: group.originalCount || group.count,
+            originalCount: group.originalCount,
             currentHp: group.currentHp,
             maxHp: group.maxHp,
           });

@@ -1,9 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createCombatSlice } from '@/store/slices/combatSlice';
 import * as storage from '@/store/utils/storage';
 import * as turnOrder from '@/store/utils/turnOrder';
-import type { Character } from '@models/entities/Character';
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { AttackResult } from '@models/combat/AttackResult';
+import type { Character } from '@models/entities/Character';
+import { createCombatSlice } from '@/store/slices/combatSlice';
 
 vi.mock('@/store/utils/storage');
 vi.mock('@/store/utils/turnOrder');
@@ -138,9 +140,8 @@ describe('combatSlice', () => {
       slice.applyHealingToAllCharacters(30);
 
       expect(set).toHaveBeenCalled();
-      const result = set.mock.calls[0][0](state);
-      expect(result.attackResults).toHaveLength(1);
-      expect(result.attackResults[0]).toMatchObject({
+      expect(state.attackResults).toHaveLength(1);
+      expect(state.attackResults[0]).toMatchObject({
         characterId: 'char-1',
         healing: 30,
         isHealing: true,
@@ -168,6 +169,96 @@ describe('combatSlice', () => {
 
       const result = set.mock.calls[0][0](state);
       expect(result.attackResults[0].id).toContain('txn-123');
+    });
+  });
+
+  describe('applyAoeDamageToAll', () => {
+    beforeEach(() => {
+      state.applyDamageToAllCharactersInAoeInternal = vi.fn(() => 'Characters took damage');
+      state.applyDamageToAllGroupsInAoeInternal = vi.fn(() => 'Groups took damage');
+      state.applyDamageToAllBossesInAoeInternal = vi.fn(() => 'Bosses took damage');
+
+      state.characters = [
+        {
+          id: 'char-1',
+          name: 'Hero',
+          currentHp: 40,
+          maxHp: 50,
+          tempHp: 0,
+          ac: 15,
+          initiative: 12,
+          inAoe: true,
+          defenses: { resistances: [], vulnerabilities: [], immunities: [] },
+        },
+      ];
+
+      state.bosses = [
+        {
+          id: 'boss-1',
+          name: 'Dragon',
+          currentHp: 200,
+          maxHp: 220,
+          tempHp: 0,
+          ac: 18,
+          initiative: 14,
+          inAoe: true,
+          defenses: { resistances: [], vulnerabilities: [], immunities: [] },
+          attacks: [],
+        },
+      ];
+
+      state.enemyGroups = [
+        {
+          id: 'group-1',
+          name: 'Goblins',
+          count: 3,
+          originalCount: 3,
+          maxHp: 12,
+          currentHp: 10,
+          tempHp: 0,
+          ac: 13,
+          initiative: 8,
+          inAoe: true,
+          creatures: [
+            { id: 'g1', currentHp: 10, tempHp: 0, isRemoved: false },
+            { id: 'g2', currentHp: 9, tempHp: 0, isRemoved: false },
+            { id: 'g3', currentHp: 0, tempHp: 0, isRemoved: true },
+          ],
+          defenses: { resistances: [], vulnerabilities: [], immunities: [] },
+          savingThrows: undefined,
+        },
+      ];
+
+      state.attackResults = [];
+
+      (storage.saveToStorage as any).mockClear();
+      (turnOrder.scheduleTurnOrderUpdate as any).mockClear();
+    });
+
+    it('applies AoE damage across slices and records a result', () => {
+      slice.applyAoeDamageToAll({ damage: 12, saveType: 'dex', saveDC: 15, halfOnSave: true });
+
+      expect(state.applyDamageToAllCharactersInAoeInternal).toHaveBeenCalled();
+      expect(state.applyDamageToAllGroupsInAoeInternal).toHaveBeenCalled();
+      expect(state.applyDamageToAllBossesInAoeInternal).toHaveBeenCalled();
+
+      expect(state.attackResults).toHaveLength(1);
+      expect(state.attackResults[0]).toMatchObject({ isAoE: true, damage: 12 });
+
+      expect(state.characters[0].inAoe).toBe(false);
+      expect(state.bosses[0].inAoe).toBe(false);
+      expect(state.enemyGroups[0].inAoe).toBe(false);
+
+      expect(storage.saveToStorage).toHaveBeenCalledTimes(3);
+      expect(turnOrder.scheduleTurnOrderUpdate).toHaveBeenCalled();
+    });
+
+    it('does nothing when damage is invalid', () => {
+      slice.applyAoeDamageToAll({ damage: 0 });
+
+      expect(state.attackResults).toHaveLength(0);
+      expect(state.applyDamageToAllCharactersInAoeInternal).not.toHaveBeenCalled();
+      expect(storage.saveToStorage).not.toHaveBeenCalled();
     });
   });
 });

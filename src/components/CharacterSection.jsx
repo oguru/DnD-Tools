@@ -3,7 +3,8 @@ import '../styles/CharacterSection.css';
 import React, { useEffect, useRef, useState } from 'react';
 
 import ImportExportModal from './ImportExportModal';
-import useDnDStore from '../store/dndStore';
+import { toggleExclusiveDefense } from '../store/utils/defense';
+import { useCharactersSectionState } from '../store/hooks/useCharacters';
 
 // Damage types and icons for defenses (same as boss system)
 const DAMAGE_TYPES = [
@@ -45,7 +46,7 @@ const CharacterSection = () => {
     toggleCharacterAoeTarget,
     setCharactersSectionRef,
     registerEntityRef
-  } = useDnDStore();
+  } = useCharactersSectionState();
 
   // Local state to track if we want to show empty slot
   const [showEmptySlot, setShowEmptySlot] = useState(true);
@@ -59,21 +60,23 @@ const CharacterSection = () => {
   // Refs for individual characters
   const characterRefs = useRef({});
 
-  // Register section ref with store
+  // Register section ref with store (only once on mount)
   useEffect(() => {
     if (sectionRef.current) {
       setCharactersSectionRef(sectionRef);
     }
-  }, [setCharactersSectionRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
-  // Register refs for individual characters
+  // Register refs for individual characters (only when characters array changes)
   useEffect(() => {
     characters.forEach(character => {
       if (character.id && characterRefs.current[character.id] && !character.id.startsWith("empty-")) {
         registerEntityRef('character', character.id, characterRefs.current[character.id]);
       }
     });
-  }, [characters, registerEntityRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [characters]);
 
   // On mount or when characters change, check if we should show empty slot
   useEffect(() => {
@@ -188,45 +191,9 @@ const CharacterSection = () => {
   const handleToggleDefense = (charId, category, damageType) => {
     const character = characters.find(c => c.id === charId);
     if (!character) return;
-    
-    const defenses = character.defenses || { resistances: [], vulnerabilities: [], immunities: [] };
-    const currentList = defenses[category] || [];
-    const alreadySelected = currentList.includes(damageType);
 
-    // Start from existing lists
-    let resistances = [...(defenses.resistances || [])];
-    let vulnerabilities = [...(defenses.vulnerabilities || [])];
-    let immunities = [...(defenses.immunities || [])];
-
-    // If selecting in one category, ensure exclusivity by removing from the others
-    if (!alreadySelected) {
-      if (category !== 'resistances') {
-        resistances = resistances.filter(t => t !== damageType);
-      }
-      if (category !== 'vulnerabilities') {
-        vulnerabilities = vulnerabilities.filter(t => t !== damageType);
-      }
-      if (category !== 'immunities') {
-        immunities = immunities.filter(t => t !== damageType);
-      }
-    }
-
-    // Toggle in the chosen category
-    if (category === 'resistances') {
-      resistances = alreadySelected
-        ? resistances.filter(t => t !== damageType)
-        : [...resistances, damageType];
-    } else if (category === 'vulnerabilities') {
-      vulnerabilities = alreadySelected
-        ? vulnerabilities.filter(t => t !== damageType)
-        : [...vulnerabilities, damageType];
-    } else if (category === 'immunities') {
-      immunities = alreadySelected
-        ? immunities.filter(t => t !== damageType)
-        : [...immunities, damageType];
-    }
-
-    updateCharacter(charId, 'defenses', { resistances, vulnerabilities, immunities });
+    const updatedDefenses = toggleExclusiveDefense(character.defenses, category, damageType);
+    updateCharacter(charId, 'defenses', updatedDefenses);
   };
   
   // Handle removing a character
