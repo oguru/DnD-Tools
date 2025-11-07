@@ -38,7 +38,7 @@ const CharacterSection = () => {
     resetCharacters,
     clearTemporaryHitPoints,
     calculateHealthPercentage,
-    getHealthColor,
+    getHealthColour,
     setTargetEntity,
     targetEntity,
     scrollToDamageSection,
@@ -362,7 +362,7 @@ const CharacterSection = () => {
             {visibleCharacters().map((character) => {
               const isEmpty = character.id.startsWith("empty-"); // Only consider placeholder slots as empty
               const healthPercentage = calculateHealthPercentage(character.currentHp, character.maxHp);
-              const healthColor = getHealthColor(healthPercentage);
+              const healthColor = getHealthColour(healthPercentage);
               const isTargeted = targetEntity && 
                                  targetEntity.type === 'character' && 
                                  targetEntity.id === character.id;

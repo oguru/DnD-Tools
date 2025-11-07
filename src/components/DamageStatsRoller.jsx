@@ -1,6 +1,7 @@
 import '../styles/DamageStatsRoller.css';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { getFromStorage, setInStorage } from '../utils/localStorage';
 
 // Functional React component to calculate min / average / max from multiple NdS + B entries
 const DamageStatsRoller = () => {
@@ -13,30 +14,23 @@ const DamageStatsRoller = () => {
 
   // Load saved calculations from localStorage on mount
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('damage-stats-saved-calcs');
-      if (raw) setSavedCalculations(JSON.parse(raw));
-    } catch (e) {
-      // ignore storage errors
-    }
-    try {
-      const currentRaw = localStorage.getItem('damage-stats-current');
-      if (currentRaw) {
-        const { rows: savedRows, calculationName: savedName } = JSON.parse(currentRaw);
-        if (Array.isArray(savedRows) && savedRows.length > 0) {
-          // Validate/normalize rows
-          const normalized = savedRows.map(r => ({
-            id: r.id || Date.now() + Math.random(),
-            numberOfDiceInput: Number.isFinite(r.numberOfDiceInput) ? r.numberOfDiceInput : 1,
-            dieSidesInput: Number.isFinite(r.dieSidesInput) ? r.dieSidesInput : 6,
-            flatBonusInput: Number.isFinite(r.flatBonusInput) ? r.flatBonusInput : 0
-          }));
-          setRows(normalized);
-        }
-        if (typeof savedName === 'string') setCalculationName(savedName);
+    const savedCalcs = getFromStorage('damage-stats-saved-calcs', null);
+    if (savedCalcs) setSavedCalculations(savedCalcs);
+
+    const currentRaw = getFromStorage('damage-stats-current', null);
+    if (currentRaw) {
+      const { rows: savedRows, calculationName: savedName } = currentRaw;
+      if (Array.isArray(savedRows) && savedRows.length > 0) {
+        // Validate/normalize rows
+        const normalized = savedRows.map(r => ({
+          id: r.id || Date.now() + Math.random(),
+          numberOfDiceInput: Number.isFinite(r.numberOfDiceInput) ? r.numberOfDiceInput : 1,
+          dieSidesInput: Number.isFinite(r.dieSidesInput) ? r.dieSidesInput : 6,
+          flatBonusInput: Number.isFinite(r.flatBonusInput) ? r.flatBonusInput : 0
+        }));
+        setRows(normalized);
       }
-    } catch (e) {
-      // ignore storage errors
+      if (typeof savedName === 'string') setCalculationName(savedName);
     }
   }, []);
 
@@ -46,21 +40,13 @@ const DamageStatsRoller = () => {
       isInitialMount.current = false;
       return;
     }
-    try {
-      localStorage.setItem('damage-stats-saved-calcs', JSON.stringify(savedCalculations));
-    } catch (e) {
-      // ignore storage errors
-    }
+    setInStorage('damage-stats-saved-calcs', savedCalculations);
   }, [savedCalculations]);
 
   // Persist current working calculation (rows + name)
   useEffect(() => {
-    try {
-      const payload = JSON.stringify({ rows, calculationName });
-      localStorage.setItem('damage-stats-current', payload);
-    } catch (e) {
-      // ignore storage errors
-    }
+    const payload = { rows, calculationName };
+    setInStorage('damage-stats-current', payload);
   }, [rows, calculationName]);
 
   const updateRow = (id, field, value) => {

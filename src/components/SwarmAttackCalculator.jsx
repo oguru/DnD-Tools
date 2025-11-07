@@ -1,6 +1,8 @@
 import '../styles/SwarmAttackCalculator.css';
 
 import { useEffect, useState } from 'react';
+import { rollD20, rollDamage } from '../utils/dice';
+import { getFromStorage, setInStorage, removeFromStorage } from '../utils/localStorage';
 
 const CHARACTERS_STORAGE_KEY = 'swarmAttackCharacters';
 
@@ -48,22 +50,16 @@ const SwarmAttackCalculator = () => {
   // Player characters state - initialize with 5 empty character slots
   const [characters, setCharacters] = useState(() => {
     // Load characters from localStorage on initial render
-    try {
-      const savedCharacters = localStorage.getItem(CHARACTERS_STORAGE_KEY);
-      if (savedCharacters) {
-        const parsedCharacters = JSON.parse(savedCharacters);
-        
-        // Create an array with the saved names and ACs
-        return Array(5).fill().map((_, index) => ({
-          name: parsedCharacters[index]?.name || '',
-          ac: parsedCharacters[index]?.ac || '',
-          attacks: ''
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading saved characters:', error);
+    const savedCharacters = getFromStorage(CHARACTERS_STORAGE_KEY, null);
+    if (savedCharacters) {
+      // Create an array with the saved names and ACs
+      return Array(5).fill().map((_, index) => ({
+        name: savedCharacters[index]?.name || '',
+        ac: savedCharacters[index]?.ac || '',
+        attacks: ''
+      }));
     }
-    
+
     // Default empty characters if no saved data or error
     return Array(5).fill().map(() => ({ name: '', ac: '', attacks: '' }));
   });
@@ -111,7 +107,7 @@ const SwarmAttackCalculator = () => {
       setCharacters(updatedCharacters);
       saveToLocalStorage(updatedCharacters);
     }
-  }, [swarm.remainingEntities]);
+  }, [swarm.remainingEntities, characters]);
 
   // Handle attack stats changes
   const handleAttackStatsChange = (e) => {
@@ -178,8 +174,8 @@ const SwarmAttackCalculator = () => {
       name: char.name || '',
       ac: char.ac || ''
     }));
-    
-    localStorage.setItem(CHARACTERS_STORAGE_KEY, JSON.stringify(charactersToSave));
+
+    setInStorage(CHARACTERS_STORAGE_KEY, charactersToSave);
   };
 
   // Handle character stats changes
@@ -221,26 +217,11 @@ const SwarmAttackCalculator = () => {
     }
   };
 
-  // Roll a d20
-  const rollD20 = () => Math.floor(Math.random() * 20) + 1;
-
-  // Roll damage based on attack stats
-  const rollDamage = () => {
-    const numDice = attackStats.numDice || 1;
-    const diceType = attackStats.diceType || 6;
-    const modifier = attackStats.modifier === '' ? 0 : parseInt(attackStats.modifier);
-    
-    let damage = 0;
-    for (let i = 0; i < numDice; i++) {
-      damage += Math.floor(Math.random() * diceType) + 1;
-    }
-    return damage + modifier;
-  };
 
   // Roll a saving throw for the swarm
   const rollSavingThrow = (saveType) => {
-    const baseRoll = rollD20();
     const modifier = swarmSaves[saveType];
+    const baseRoll = rollD20();
     return {
       roll: baseRoll,
       modifier,
@@ -453,7 +434,7 @@ const SwarmAttackCalculator = () => {
         const roll = rollD20();
         const hitBonus = attackStats.hitBonus === '' ? 0 : parseInt(attackStats.hitBonus);
         const totalRoll = roll + hitBonus;
-        const damage = rollDamage();
+        const damage = rollDamage(attackStats.numDice || 1, attackStats.diceType || 6, attackStats.modifier === '' ? 0 : parseInt(attackStats.modifier));
         const hit = totalRoll >= ac;
         
         if (hit) {
@@ -524,7 +505,7 @@ const SwarmAttackCalculator = () => {
         const roll = rollD20();
         const hitBonus = attackStatsUsed.hitBonus === '' ? 0 : parseInt(attackStatsUsed.hitBonus);
         const totalRoll = roll + hitBonus;
-        const damage = rollDamage();
+        const damage = rollDamage(attackStats.numDice || 1, attackStats.diceType || 6, attackStats.modifier === '' ? 0 : parseInt(attackStats.modifier));
         const hit = totalRoll >= ac;
         
         if (hit) {
@@ -559,7 +540,7 @@ const SwarmAttackCalculator = () => {
     setCharacters(emptyCharacters);
     setResults([]);
     setAttackRolls([]);
-    localStorage.removeItem(CHARACTERS_STORAGE_KEY);
+    removeFromStorage(CHARACTERS_STORAGE_KEY);
   };
 
   // Reset swarm to initial state

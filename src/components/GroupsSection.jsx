@@ -42,7 +42,7 @@ const GroupsSection = () => {
     toggleGroupSavingThrows,
     toggleGroupTemplateSavingThrows,
     updateGroupSavingThrow,
-    getHealthColor,
+    getHealthColour,
     calculateHealthPercentage,
     calculateGroupTotalCurrentHP,
     scrollToDamageSection,
@@ -2570,7 +2570,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                 <div className="bosses-list">
                   {bosses.map(boss => {
                     const healthPercentage = calculateHealthPercentage(boss.currentHp, boss.maxHp);
-                    const healthColor = getHealthColor(healthPercentage);
+                    const healthColor = getHealthColour(healthPercentage);
                     const isTargeted = targetEntity && 
                                       targetEntity.type === 'boss' && 
                                       targetEntity.id === boss.id;
@@ -3155,7 +3155,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                     const totalOriginalMaxHP = originalCount * group.maxHp;
                     // Calculate health percentage as current total HP vs original total max HP
                     const healthPercentage = calculateHealthPercentage(totalCurrentHP, totalOriginalMaxHP);
-                    const healthColor = getHealthColor(healthPercentage);
+                    const healthColor = getHealthColour(healthPercentage);
                     const isTargeted = targetEntity && 
                                       targetEntity.type === 'group' && 
                                       targetEntity.id === group.id;
@@ -3238,7 +3238,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                           {group.creatures && Array.isArray(group.creatures) ? (
                             group.creatures.map((creature, index) => {
                               const creatureHealthPercentage = calculateHealthPercentage(creature.hp, group.maxHp);
-                              const creatureHealthColor = getHealthColor(creatureHealthPercentage);
+                              const creatureHealthColor = getHealthColour(creatureHealthPercentage);
                               
                               return (
                                 <div key={index} className="creature-hp" title={`Creature ${index + 1}: ${creature.hp}/${group.maxHp} HP`}>
@@ -3264,7 +3264,7 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                                     className="creature-hp-bar"
                                     style={{
                                       width: `${calculateHealthPercentage(group.currentHp, group.maxHp)}%`,
-                                      backgroundColor: getHealthColor(calculateHealthPercentage(group.currentHp, group.maxHp))
+                                      backgroundColor: getHealthColour(calculateHealthPercentage(group.currentHp, group.maxHp))
                                     }}
                                   ></div>
                                 </div>

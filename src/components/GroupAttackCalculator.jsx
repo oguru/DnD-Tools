@@ -6,6 +6,7 @@ import DamageApplication from './DamageApplication';
 import GroupsSection from './GroupsSection';
 import TurnOrder from './TurnOrder';
 import useDnDStore from '../store/dndStore';
+import { createFileImportHandler } from '../utils/fileImport';
 
 const GroupAttackCalculator = () => {
   const {
@@ -13,22 +14,17 @@ const GroupAttackCalculator = () => {
     importState
   } = useDnDStore();
 
-  const handleImportState = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const success = importState(e.target.result);
+  const handleImportState = createFileImportHandler(
+    (validatedState) => {
+      const success = importState(JSON.stringify(validatedState));
       if (!success) {
         alert('Failed to import state. Invalid file format.');
       }
-    };
-    reader.readAsText(file);
-    
-    // Reset the input
-    event.target.value = '';
-  };
+    },
+    (errorMessage) => {
+      alert(errorMessage);
+    }
+  );
 
   return (
     <div className="group-attack-calculator">

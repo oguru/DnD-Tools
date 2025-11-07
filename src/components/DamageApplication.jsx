@@ -46,7 +46,7 @@ const DamageApplication = () => {
     setTemporaryHitPointsBoss,
     setTemporaryHitPointsGroup,
     calculateHealthPercentage,
-    getHealthColor
+    getHealthColour
   } = useDnDStore();
 
   // Local state for single target damage
@@ -1899,7 +1899,7 @@ const DamageApplication = () => {
                       <div className="entity-select-grid">
                         {(healingState.mode === 'healing' ? healableEntities.characters : characters).map(character => {
                           const healthPercentage = calculateHealthPercentage(character.currentHp, character.maxHp);
-                          const healthColor = getHealthColor(healthPercentage);
+                          const healthColor = getHealthColour(healthPercentage);
                           const currentTempHp = character.tempHp || 0;
                           return (
                             <div 
@@ -2005,7 +2005,7 @@ const DamageApplication = () => {
                       <div className="entity-select-grid">
                         {(healingState.mode === 'healing' ? healableEntities.bosses : bosses).map(boss => {
                           const healthPercentage = calculateHealthPercentage(boss.currentHp, boss.maxHp);
-                          const healthColor = getHealthColor(healthPercentage);
+                          const healthColor = getHealthColour(healthPercentage);
                           const currentTempHp = boss.tempHp || 0;
                           return (
                             <div 

@@ -16,7 +16,7 @@ const TurnOrder = () => {
     updateTurnOrder,
     rollInitiative,
     calculateHealthPercentage,
-    getHealthColor,
+    getHealthColour,
     scrollToEntity
   } = useDnDStore();
 
@@ -41,7 +41,7 @@ const TurnOrder = () => {
       // For individual characters and bosses
       if (entity.maxHp) {
         const healthPercentage = calculateHealthPercentage(entity.currentHp, entity.maxHp);
-        const healthColor = getHealthColor(healthPercentage);
+        const healthColor = getHealthColour(healthPercentage);
         
         return (
           <div className="entity-hp-info">
@@ -65,7 +65,7 @@ const TurnOrder = () => {
         const totalCurrentHp = entity.count * entity.currentHp;
         const totalMaxHp = entity.originalCount * entity.maxHp;
         const healthPercentage = calculateHealthPercentage(totalCurrentHp, totalMaxHp);
-        const healthColor = getHealthColor(healthPercentage);
+        const healthColor = getHealthColour(healthPercentage);
         
         return (
           <div className="entity-hp-info">
@@ -95,7 +95,7 @@ const TurnOrder = () => {
         });
         
         const healthPercentage = calculateHealthPercentage(totalCurrentHp, totalMaxHp);
-        const healthColor = getHealthColor(healthPercentage);
+        const healthColor = getHealthColour(healthPercentage);
         
         return (
           <div className="entity-hp-info">
@@ -296,11 +296,11 @@ const TurnOrder = () => {
                                 )}%`
                               : '0%',
                         backgroundColor: entity.type === 'character' || entity.type === 'boss'
-                          ? getHealthColor(calculateHealthPercentage(entity.currentHp, entity.maxHp))
+                          ? getHealthColour(calculateHealthPercentage(entity.currentHp, entity.maxHp))
                           : entity.type === 'group'
-                            ? getHealthColor(calculateHealthPercentage(entity.count * entity.currentHp, entity.originalCount * entity.maxHp))
+                            ? getHealthColour(calculateHealthPercentage(entity.count * entity.currentHp, entity.originalCount * entity.maxHp))
                             : entity.type === 'groupCollection' && entity.groups
-                              ? getHealthColor(calculateHealthPercentage(
+                              ? getHealthColour(calculateHealthPercentage(
                                   entity.groups.reduce((sum, g) => sum + g.count * g.currentHp, 0),
                                   entity.groups.reduce((sum, g) => sum + g.originalCount * g.maxHp, 0)
                                 ))
