@@ -1,74 +1,60 @@
 import '../styles/TurnOrder.css';
 
-import { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
+import HealthBar from './shared/HealthBar';
+import { useTurnOrderProjection } from '../store/hooks/useTurnOrderProjection';
 
-import { formatTurnOrderEntry } from '../store/utils/turnOrderFormat';
-import { shallow } from 'zustand/shallow';
-import useDnDStore from '../store/dndStore';
-
-const TurnOrder = () => {
-  // Select primitive values and arrays separately
-  const turnOrder = useDnDStore((state) => state.turnOrder);
-  const currentTurnIndex = useDnDStore((state) => state.currentTurnIndex);
-  const expandedSections = useDnDStore((state) => state.expandedSections);
-  
-  // Select functions separately (they should be stable)
-  const toggleSection = useDnDStore((state) => state.toggleSection);
-  const nextTurn = useDnDStore((state) => state.nextTurn);
-  const previousTurn = useDnDStore((state) => state.previousTurn);
-  const moveTurnOrderUp = useDnDStore((state) => state.moveTurnOrderUp);
-  const moveTurnOrderDown = useDnDStore((state) => state.moveTurnOrderDown);
-  const updateTurnOrder = useDnDStore((state) => state.updateTurnOrder);
-  const rollInitiative = useDnDStore((state) => state.rollInitiative);
-  const scrollToEntity = useDnDStore((state) => state.scrollToEntity);
-  const calculateHealthPercentage = useDnDStore((state) => state.calculateHealthPercentage);
-  const getHealthColour = useDnDStore((state) => state.getHealthColour);
-
-  const projectedTurnOrder = useMemo(
-    () =>
-      turnOrder.map((entry) => ({
-        ...entry,
-        display: formatTurnOrderEntry(entry, {
-          calculateHealthPercentage,
-          getHealthColour,
-        }),
-      })),
-    [turnOrder, calculateHealthPercentage, getHealthColour]
-  );
+const TurnOrder: React.FC = () => {
+  const {
+    projectedTurnOrder,
+    currentEntity,
+    currentTurnIndex,
+    expandedSections,
+    toggleSection,
+    nextTurn,
+    previousTurn,
+    moveTurnOrderUp,
+    moveTurnOrderDown,
+    updateTurnOrder,
+    rollInitiative,
+    scrollToEntity,
+  } = useTurnOrderProjection();
 
   // Update turn order when component mounts (only once)
   useEffect(() => {
     updateTurnOrder();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [updateTurnOrder]);
 
   // Handler for clicking on an entity in the initiative order
-  const handleEntityClick = (entity, e) => {
+  const handleEntityClick = (entity: typeof currentEntity, e: React.MouseEvent<HTMLDivElement>) => {
     // Prevent click if the event came from a button inside the row
-    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+    if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).closest('button')) {
       return;
     }
     
     scrollToEntity(entity);
   };
 
-  const renderHpDisplay = (entity) => {
+  const renderHpDisplay = (entity: typeof currentEntity) => {
     if (!entity?.display?.hpText) return null;
 
-    const { hpText, healthPercentage, healthColour, groupBadges } = entity.display;
+    const { healthPercentage, healthColour, groupBadges } = entity.display;
+    
+    // Extract HP values from hpText (format: "XX/YY HP")
+    const hpMatch = entity.display.hpText.match(/(\d+)\/(\d+)/);
+    const currentHp = hpMatch ? parseInt(hpMatch[1]) : 0;
+    const maxHp = hpMatch ? parseInt(hpMatch[2]) : 1;
 
     return (
       <div className="entity-hp-info">
-        <span className="hp-text">{hpText}</span>
-        <div className="mini-health-bar-container">
-          <div
-            className="mini-health-bar"
-            style={{
-              width: `${healthPercentage}%`,
-              backgroundColor: healthColour,
-            }}
-          ></div>
-        </div>
+        <HealthBar 
+          currentHp={currentHp}
+          maxHp={maxHp}
+          healthPercentage={healthPercentage}
+          healthColor={healthColour}
+          variant="mini"
+          showText={true}
+        />
         {groupBadges && (
           <div className="group-members">
             {groupBadges.map((group) => (
@@ -116,8 +102,6 @@ const TurnOrder = () => {
       </div>
     );
   }
-
-  const currentEntity = projectedTurnOrder[currentTurnIndex];
 
   return (
     <div className="turn-order-section">
@@ -189,7 +173,7 @@ const TurnOrder = () => {
                         : entity.type}
                     </span>
                   </div>
-                  
+                  {renderHpDisplay(entity)}
                 </div>
                 
                 <span className="initiative-value">{entity.initiative}</span>
@@ -212,14 +196,12 @@ const TurnOrder = () => {
                       e.stopPropagation();
                       moveTurnOrderDown(index);
                     }}
-                    disabled={index === turnOrder.length - 1}
+                    disabled={index === projectedTurnOrder.length - 1}
                     title="Move down in initiative order"
                   >
                     ↓
                   </button>
                 </div>
-                
-                {renderHpDisplay(entity)}
               </div>
             ))}
           </div>
@@ -229,4 +211,5 @@ const TurnOrder = () => {
   );
 };
 
-export default TurnOrder; 
+export default TurnOrder;
+

@@ -1,30 +1,22 @@
 import '../styles/GroupsSection.css';
 import '../styles/BossTracker.css';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
+import DefenseIcons, { DAMAGE_TYPES as DAMAGE_TYPES_MAP, type DamageType } from './shared/DefenseIcons';
+import HealthBar from './shared/HealthBar';
 import ImportExportModal from './ImportExportModal';
 import { toggleExclusiveDefense } from '../store/utils/defense';
 import useDnDStore from '../store/dndStore';
+import type { Defenses } from '../models/common/Defenses';
 
-// Damage types and compact icon mapping for defenses
-const DAMAGE_TYPES = [
-  { key: 'slashing', label: 'Slashing', icon: '🪓' },
-  { key: 'piercing', label: 'Piercing', icon: '🗡️' },
-  { key: 'bludgeoning', label: 'Bludgeoning', icon: '🔨' },
-  { key: 'fire', label: 'Fire', icon: '🔥' },
-  { key: 'cold', label: 'Cold', icon: '❄️' },
-  { key: 'lightning', label: 'Lightning', icon: '⚡' },
-  { key: 'thunder', label: 'Thunder', icon: '🌩️' },
-  { key: 'acid', label: 'Acid', icon: '🧪' },
-  { key: 'poison', label: 'Poison', icon: '☠️' },
-  { key: 'psychic', label: 'Psychic', icon: '🧠' },
-  { key: 'necrotic', label: 'Necrotic', icon: '💀' },
-  { key: 'radiant', label: 'Radiant', icon: '✨' },
-  { key: 'force', label: 'Force', icon: '💥' }
-];
+// Damage types and compact icon mapping for defenses - for backward compatibility
+const DAMAGE_TYPES = Object.entries(DAMAGE_TYPES_MAP).map(([key, value]) => ({
+  key,
+  ...value
+}));
 
-const GroupsSection = () => {
+const GroupsSection: React.FC = () => {
   const {
     enemyGroups,
     bosses,
@@ -2644,13 +2636,15 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                         </div>
                         
                         <div className="boss-health-bar-container">
-                          <div 
-                            className="boss-health-bar"
-                            style={{
-                              width: `${healthPercentage}%`,
-                              backgroundColor: healthColor
-                            }}
-                          ></div>
+                          <HealthBar 
+                            currentHp={boss.currentHp}
+                            maxHp={boss.maxHp}
+                            tempHp={boss.tempHp}
+                            healthPercentage={healthPercentage}
+                            healthColor={healthColor}
+                            variant="boss"
+                            showText={false}
+                          />
                         </div>
                         
                         {/* Saving Throws Toggle */}
@@ -3313,13 +3307,15 @@ ${attack.halfOnSave ? 'Half damage on successful save' : 'No damage on successfu
                         )}
                         
                         <div className="entity-health-bar-container">
-                          <div 
-                            className="entity-health-bar"
-                            style={{
-                              width: `${healthPercentage}%`,
-                              backgroundColor: healthColor
-                            }}
-                          ></div>
+                          <HealthBar 
+                            currentHp={totalCurrentHP}
+                            maxHp={totalOriginalMaxHP}
+                            tempHp={group.tempHp}
+                            healthPercentage={healthPercentage}
+                            healthColor={healthColor}
+                            variant="entity"
+                            showText={false}
+                          />
                         </div>
                         
                         <div className="entity-actions">

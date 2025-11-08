@@ -369,26 +369,28 @@
   font-weight: 600;
 }
 
-/* Configure grid layout for HP information and health bar */
-.turn-order-item .hp-text {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  text-align: center;
-  margin: 0;
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: #4a5568;
+/* HP info inside entity-info */
+.entity-info .entity-hp-info {
+  width: 100%;
+  margin-top: 0.25rem;
 }
 
-.turn-order-item .mini-health-bar-container {
-  grid-column: 1 / -1;
-  grid-row: 3;
-  margin: 0;
+.entity-info .hp-text {
+  font-size: 0.75rem;
+  color: #4a5568;
+  margin-bottom: 0.15rem;
+}
+
+.entity-info .mini-health-bar-container {
   width: 100%;
   height: 6px;
   background-color: #e2e8f0;
   border-radius: 3px;
   overflow: hidden;
+}
+
+.entity-info .group-members {
+  margin-top: 0.25rem;
 }
 
 /* Responsive layout adjustments */

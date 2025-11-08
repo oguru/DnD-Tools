@@ -1,0 +1,86 @@
+/* Base Health Bar Styles */
+.health-bar-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hp-text {
+  font-size: 0.875rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.temp-hp-badge {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.health-bar {
+  height: 8px;
+  border-radius: 4px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+  background-color: #22c55e;
+}
+
+/* Mini variant (for Turn Order) */
+.mini-health-bar-container {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.mini-health-bar-container .hp-text {
+  font-size: 0.75rem;
+  margin-bottom: 0.15rem;
+}
+
+.mini-health-bar {
+  height: 6px;
+  border-radius: 3px;
+}
+
+/* Character variant */
+.character-health-bar-container {
+  margin-top: 0.5rem;
+  padding: 0.25rem;
+}
+
+.character-health-bar {
+  height: 10px;
+  border-radius: 5px;
+}
+
+/* Boss variant */
+.boss-health-bar-container {
+  margin-top: 0.5rem;
+}
+
+.boss-health-bar {
+  height: 10px;
+  border-radius: 5px;
+}
+
+/* Entity variant (for Groups) */
+.entity-health-bar-container {
+  margin-top: 0.5rem;
+}
+
+.entity-health-bar {
+  height: 10px;
+  border-radius: 5px;
+}
+
+/* Default variant - fallback for unspecified */
+.default-health-bar-container .health-bar {
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.default-health-bar {
+  height: 100%;
+  border-radius: 4px;
+}
+

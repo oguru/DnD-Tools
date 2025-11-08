@@ -1,12 +1,12 @@
 import useDnDStore from '../dndStore';
 
 export const useCharactersSectionState = () => {
-  // Select primitive values and arrays with shallow comparison
+  // Select state values separately
   const characters = useDnDStore((state) => state.characters);
   const expandedSections = useDnDStore((state) => state.expandedSections);
   const targetEntity = useDnDStore((state) => state.targetEntity);
   
-  // Select functions directly (they should be stable in the store)
+  // Select action functions separately (they should be stable)
   const updateCharacter = useDnDStore((state) => state.updateCharacter);
   const removeCharacter = useDnDStore((state) => state.removeCharacter);
   const toggleSection = useDnDStore((state) => state.toggleSection);
@@ -23,9 +23,10 @@ export const useCharactersSectionState = () => {
 
   return {
     characters,
+    expandedSections,
+    targetEntity,
     updateCharacter,
     removeCharacter,
-    expandedSections,
     toggleSection,
     addCharacter,
     resetCharacters,
@@ -33,7 +34,6 @@ export const useCharactersSectionState = () => {
     calculateHealthPercentage,
     getHealthColour,
     setTargetEntity,
-    targetEntity,
     scrollToDamageSection,
     toggleCharacterAoeTarget,
     setCharactersSectionRef,

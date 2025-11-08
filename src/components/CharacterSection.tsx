@@ -1,34 +1,20 @@
 import '../styles/CharacterSection.css';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
+import DefenseIcons, { DAMAGE_TYPES as DAMAGE_TYPES_MAP, type DamageType } from './shared/DefenseIcons';
+import HealthBar from './shared/HealthBar';
 import ImportExportModal from './ImportExportModal';
 import { toggleExclusiveDefense } from '../store/utils/defense';
 import { useCharactersSectionState } from '../store/hooks/useCharacters';
+import type { Defenses } from '../models/common/Defenses';
 
-// Damage types and icons for defenses (same as boss system)
-const DAMAGE_TYPES = [
-  'slashing', 'piercing', 'bludgeoning', 'fire', 'cold', 'lightning', 'thunder', 
-  'acid', 'poison', 'psychic', 'necrotic', 'radiant', 'force'
-];
+// For backward compatibility - convert to array format
+const DAMAGE_TYPES = Object.keys(DAMAGE_TYPES_MAP) as DamageType[];
 
-const DAMAGE_TYPE_ICONS = {
-  slashing: '🗡️',
-  piercing: '🏹', 
-  bludgeoning: '🔨',
-  fire: '🔥',
-  cold: '❄️',
-  lightning: '⚡',
-  thunder: '💥',
-  acid: '🧪',
-  poison: '☠️',
-  psychic: '🧠',
-  necrotic: '💀',
-  radiant: '✨',
-  force: '🌟'
-};
+const DAMAGE_TYPE_ICONS = DAMAGE_TYPES_MAP;
 
-const CharacterSection = () => {
+const CharacterSection: React.FC = () => {
   const {
     characters,
     updateCharacter,
@@ -60,6 +46,12 @@ const CharacterSection = () => {
   // Refs for individual characters
   const characterRefs = useRef({});
 
+  // Memoize character IDs to prevent unnecessary re-registrations
+  const characterIds = useMemo(
+    () => characters.map(c => c.id).join(','),
+    [characters]
+  );
+
   // Register section ref with store (only once on mount)
   useEffect(() => {
     if (sectionRef.current) {
@@ -68,7 +60,7 @@ const CharacterSection = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  // Register refs for individual characters (only when characters array changes)
+  // Register refs for individual characters (only when character IDs change, not the whole array)
   useEffect(() => {
     characters.forEach(character => {
       if (character.id && characterRefs.current[character.id] && !character.id.startsWith("empty-")) {
@@ -76,7 +68,7 @@ const CharacterSection = () => {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [characters]);
+  }, [characterIds]);
 
   // On mount or when characters change, check if we should show empty slot
   useEffect(() => {
@@ -188,7 +180,7 @@ const CharacterSection = () => {
   }, [characterDefenseMenus]);
 
   // Toggle character defense with exclusive logic (same as boss system)
-  const handleToggleDefense = (charId, category, damageType) => {
+  const handleToggleDefense = (charId: string, category: keyof Defenses, damageType: DamageType) => {
     const character = characters.find(c => c.id === charId);
     if (!character) return;
 
@@ -197,12 +189,12 @@ const CharacterSection = () => {
   };
   
   // Handle removing a character
-  const handleRemoveCharacter = (charId) => {
+  const handleRemoveCharacter = (charId: string) => {
     removeCharacter(charId);
   };
 
   // Handle toggling a character for AoE
-  const handleToggleCharacterAoe = (e, charId) => {
+  const handleToggleCharacterAoe = (e: React.MouseEvent, charId: string) => {
     e.stopPropagation(); // Prevent targeting
     toggleCharacterAoeTarget(charId);
   };
@@ -235,7 +227,7 @@ const CharacterSection = () => {
   };
 
   // Set a character as the target
-  const handleSetCharacterAsTarget = (character) => {
+  const handleSetCharacterAsTarget = (character: typeof characters[0]) => {
     const isTargeted = targetEntity && 
                       targetEntity.type === 'character' && 
                       targetEntity.id === character.id;
@@ -406,13 +398,15 @@ const CharacterSection = () => {
                   </div>
                   <div className="character-health-bar-container">
                     {!isEmpty && character.maxHp > 0 && (
-                      <div 
-                        className="character-health-bar"
-                        style={{
-                          width: `${healthPercentage}%`,
-                          backgroundColor: healthColor
-                        }}
-                      ></div>
+                      <HealthBar 
+                        currentHp={character.currentHp}
+                        maxHp={character.maxHp}
+                        tempHp={character.tempHp}
+                        healthPercentage={healthPercentage}
+                        healthColor={healthColor}
+                        variant="character"
+                        showText={false}
+                      />
                     )}
                   </div>
                   <div className="character-actions">

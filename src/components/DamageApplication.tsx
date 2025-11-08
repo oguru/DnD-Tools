@@ -1,31 +1,29 @@
 import '../styles/DamageApplication.css';
 
-import { useEffect, useRef, useState } from 'react';
-
+import React, { useEffect, useRef, useState } from 'react';
+import DefenseIcons, { DAMAGE_TYPES as DAMAGE_TYPES_MAP, type DamageType } from './shared/DefenseIcons';
+import HealthBar from './shared/HealthBar';
+import SingleTargetDamage from './damage/SingleTargetDamage';
+import { rollD20 } from '../utils/dice';
+import { useAoeDamage } from '../store/hooks/useAoeDamage';
 import useDnDStore from '../store/dndStore';
 
-// Damage types and compact icon mapping (reused style from Groups/Characters sections)
-const DAMAGE_TYPES = [
-  { key: 'slashing', label: 'Slashing', icon: '🪓' },
-  { key: 'piercing', label: 'Piercing', icon: '🗡️' },
-  { key: 'bludgeoning', label: 'Bludgeoning', icon: '🔨' },
-  { key: 'fire', label: 'Fire', icon: '🔥' },
-  { key: 'cold', label: 'Cold', icon: '❄️' },
-  { key: 'lightning', label: 'Lightning', icon: '⚡' },
-  { key: 'thunder', label: 'Thunder', icon: '🌩️' },
-  { key: 'acid', label: 'Acid', icon: '🧪' },
-  { key: 'poison', label: 'Poison', icon: '☠️' },
-  { key: 'psychic', label: 'Psychic', icon: '🧠' },
-  { key: 'necrotic', label: 'Necrotic', icon: '💀' },
-  { key: 'radiant', label: 'Radiant', icon: '✨' },
-  { key: 'force', label: 'Force', icon: '💥' }
-];
+// Convert DAMAGE_TYPES_MAP to old format for backward compatibility
+const DAMAGE_TYPES = Object.entries(DAMAGE_TYPES_MAP).map(([key, value]) => ({
+  key,
+  ...value
+}));
 
-const DAMAGE_TYPE_LOOKUP = DAMAGE_TYPES.reduce((acc, dt) => {
-  acc[dt.key] = dt; return acc;
-}, {});
+const DAMAGE_TYPE_LOOKUP = DAMAGE_TYPES_MAP;
 
-const DamageApplication = () => {
+interface HealingState {
+  amount: string;
+  selectedEntities: string[];
+  mode: 'healing' | 'tempHp';
+  replaceExisting: boolean;
+}
+
+const DamageApplication: React.FC = () => {
   const {
     characters,
     bosses,
@@ -49,47 +47,38 @@ const DamageApplication = () => {
     getHealthColour
   } = useDnDStore();
 
-  // Local state for single target damage
-  const [singleTargetState, setSingleTargetState] = useState({
-    attackRoll: '',
-    damageAmount: '',
-    criticalHit: false,
-    advantage: false,
-    disadvantage: false
-  });
-
   // Healing and Temp HP state (combined)
-  const [healingState, setHealingState] = useState({
+  const [healingState, setHealingState] = useState<HealingState>({
     amount: '',
     selectedEntities: [],
     mode: 'healing', // 'healing' or 'tempHp'
     replaceExisting: true // Only used for tempHp mode
   });
 
-  // AOE damage state
-  const [aoeState, setAoeState] = useState({
-    damageAmount: '',
-    damageComponents: null, // Will hold array of damage components if multi-type
-    saveType: 'dex',
-    saveDC: 15,
-    halfOnSave: true,
-    applyToAll: false,
-    percentAffected: 100
-  });
+  // Use the AOE damage hook
+  const {
+    aoeState,
+    aoeSaveState,
+    updateAoeState,
+    updateAoeSaveState,
+    initializeCharacterSaves,
+    applyAoeDamage: applyAoeDamageHook,
+    applyAoeDamageWithManualSaves,
+    cancelManualSaves
+  } = useAoeDamage();
 
-  // State for AoE manual saves
-  const [showAoeSaves, setShowAoeSaves] = useState(false);
-  const [characterSaves, setCharacterSaves] = useState({});
-  const [damageModifiers, setDamageModifiers] = useState({});
-  const [manualDamageAdjustments, setManualDamageAdjustments] = useState({});
-  
-  // State for per-component modifiers in AOE (for multi-damage-type attacks)
-  // Format: { entityId: { componentIndex: 'full'|'half'|'quarter'|'none' } }
-  const [aoeComponentModifiers, setAoeComponentModifiers] = useState({});
-  const [aoeComponentAdjustments, setAoeComponentAdjustments] = useState({});
+  // Destructure AOE save state for backward compatibility
+  const {
+    showAoeSaves,
+    characterSaves,
+    damageModifiers,
+    manualDamageAdjustments,
+    aoeComponentModifiers,
+    aoeComponentAdjustments
+  } = aoeSaveState;
 
   // Refs
-  const sectionRef = useRef(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
   
   // Register the ref with the store for scrolling
   useEffect(() => {
@@ -130,7 +119,7 @@ const DamageApplication = () => {
         const saveBonus = boss.savingThrows?.[aoeState.saveType] || 0;
         
         // Auto-roll save
-        const roll = Math.floor(Math.random() * 20) + 1;
+        const roll = rollD20();
         const totalRoll = roll + saveBonus;
         const succeeded = totalRoll >= aoeState.saveDC;
         
@@ -157,7 +146,7 @@ const DamageApplication = () => {
         const saveBonus = group.savingThrows?.[aoeState.saveType] || 0;
         
         // Auto-roll save
-        const roll = Math.floor(Math.random() * 20) + 1;
+        const roll = rollD20();
         const totalRoll = roll + saveBonus;
         const succeeded = totalRoll >= aoeState.saveDC;
         
@@ -174,9 +163,11 @@ const DamageApplication = () => {
         initialModifiers[`group-${group.id}`] = succeeded && aoeState.halfOnSave ? 'half' : 'default';
       });
       
-      setCharacterSaves(initialSaves);
-      setDamageModifiers(initialModifiers);
-      setManualDamageAdjustments({});
+      updateAoeSaveState({
+        characterSaves: initialSaves,
+        damageModifiers: initialModifiers,
+        manualDamageAdjustments: {}
+      });
     }
   }, [showAoeSaves, characters, bosses, enemyGroups, aoeState.applyToAll, aoeState.saveDC, aoeState.damageAmount, aoeState.saveType, aoeState.halfOnSave]);
 
@@ -236,7 +227,7 @@ const DamageApplication = () => {
         const saveBonus = boss.savingThrows?.[aoeState.saveType] || 0;
         
         // Auto-roll save
-        const roll = Math.floor(Math.random() * 20) + 1;
+        const roll = rollD20();
         const totalRoll = roll + saveBonus;
         const succeeded = totalRoll >= aoeState.saveDC;
         
@@ -258,7 +249,7 @@ const DamageApplication = () => {
         const saveBonus = group.savingThrows?.[aoeState.saveType] || 0;
         
         // Auto-roll save
-        const roll = Math.floor(Math.random() * 20) + 1;
+        const roll = rollD20();
         const totalRoll = roll + saveBonus;
         const succeeded = totalRoll >= aoeState.saveDC;
         
@@ -275,9 +266,11 @@ const DamageApplication = () => {
         initialModifiers[`group-${group.id}`] = succeeded && aoeState.halfOnSave ? 'half' : 'default';
       });
       
-      setCharacterSaves(initialSaves);
-      setDamageModifiers(initialModifiers);
-      setManualDamageAdjustments({});
+      updateAoeSaveState({
+        characterSaves: initialSaves,
+        damageModifiers: initialModifiers,
+        manualDamageAdjustments: {}
+      });
     }
   }, [characters, bosses, enemyGroups, showAoeSaves, aoeState.applyToAll, characterSaves, aoeState.saveType, aoeState.saveDC, aoeState.halfOnSave]);
 
@@ -310,8 +303,7 @@ const DamageApplication = () => {
   useEffect(() => {
     if (aoeDamageParams) {
       // Set the AOE state from the parameters
-      setAoeState(prev => ({
-        ...prev,
+      updateAoeState({
         damageAmount: aoeDamageParams.damage || '',
         damageComponents: aoeDamageParams.damageComponents || null, // Add damage components support
         saveType: aoeDamageParams.saveType || 'dex',
@@ -319,7 +311,7 @@ const DamageApplication = () => {
         halfOnSave: aoeDamageParams.halfOnSave !== undefined ? aoeDamageParams.halfOnSave : true,
         // Set applyToAll to false by default when using a boss AOE attack
         applyToAll: false
-      }));
+      });
       
       // Auto-scroll to the AOE section
       if (sectionRef.current) {
@@ -344,126 +336,22 @@ const DamageApplication = () => {
     if (!showAoeSaves || !aoeState.damageComponents || aoeState.damageComponents.length <= 1) return;
     
     // Update modifiers based on save results
-    setAoeComponentModifiers(prev => {
-      const updated = { ...prev };
-      Object.entries(characterSaves).forEach(([entityId, saveInfo]) => {
-        if (updated[entityId]) {
-          const defaultModifier = (saveInfo.succeeded && aoeState.halfOnSave) ? 'half' : 'full';
-          // Only update if all components are still at their default state
-          const allDefault = Object.values(updated[entityId]).every(mod => mod === 'full' || mod === 'half');
-          if (allDefault) {
-            Object.keys(updated[entityId]).forEach(idx => {
-              updated[entityId][idx] = defaultModifier;
-            });
-          }
+    const updated = { ...aoeComponentModifiers };
+    Object.entries(characterSaves).forEach(([entityId, saveInfo]) => {
+      if (updated[entityId]) {
+        const defaultModifier = (saveInfo.succeeded && aoeState.halfOnSave) ? 'half' : 'full';
+        // Only update if all components are still at their default state
+        const allDefault = Object.values(updated[entityId]).every(mod => mod === 'full' || mod === 'half');
+        if (allDefault) {
+          Object.keys(updated[entityId]).forEach(idx => {
+            updated[entityId][idx] = defaultModifier;
+          });
         }
-      });
-      return updated;
+      }
     });
-  }, [characterSaves, showAoeSaves, aoeState.damageComponents, aoeState.halfOnSave]);
+    updateAoeSaveState({ aoeComponentModifiers: updated });
+  }, [characterSaves, showAoeSaves, aoeState.damageComponents, aoeState.halfOnSave, aoeComponentModifiers, updateAoeSaveState]);
 
-  // Get the currently targeted entity details
-  const getTargetDetails = () => {
-    if (!targetEntity) return null;
-    
-    if (targetEntity.type === 'group') {
-      const group = enemyGroups.find(g => g.id === targetEntity.id);
-      if (group) {
-        return {
-          name: `${group.name} (x${group.count})`,
-          type: 'group',
-          ac: group.ac,
-          defenses: group.defenses
-        };
-      }
-    } else if (targetEntity.type === 'boss') {
-      const boss = bosses.find(b => b.id === targetEntity.id);
-      if (boss) {
-        return {
-          name: boss.name,
-          type: 'boss',
-          ac: boss.ac,
-          defenses: boss.defenses
-        };
-      }
-    } else if (targetEntity.type === 'character') {
-      const character = characters.find(c => c.id === targetEntity.id);
-      if (character) {
-        return {
-          name: character.name,
-          type: 'character',
-          ac: character.ac,
-          defenses: character.defenses
-        };
-      }
-    }
-    
-    return null;
-  };
-  
-  // Get the target's AC for attack roll comparison
-  const targetDetails = getTargetDetails();
-  
-  // Handle single target damage application
-  const handleApplySingleTargetDamage = () => {
-    if (!targetEntity) {
-      alert('Please select a target first');
-      return;
-    }
-    
-    // Parse damage amount
-    const damage = parseInt(singleTargetState.damageAmount);
-    if (isNaN(damage) || damage <= 0) {
-      alert('Please enter a valid damage amount');
-      return;
-    }
-    
-    // Get hit status based on attack roll and AC
-    let hitStatus = 'hit'; // Default to hit if no attack roll
-    if (singleTargetState.attackRoll) {
-      const attackRoll = parseInt(singleTargetState.attackRoll);
-      
-      if (singleTargetState.criticalHit || attackRoll === 20) {
-        hitStatus = 'critical';
-      } else if (attackRoll === 1) {
-        hitStatus = 'miss';
-      } else if (targetDetails && attackRoll < targetDetails.ac) {
-        hitStatus = 'miss';
-      }
-    }
-    
-    // Calculate final damage
-    let finalDamage = damage;
-    if (hitStatus === 'critical') {
-      // On a critical hit, we should only double the dice portion, not the modifier
-      // Since we don't have the dice and modifier separately here, we can't properly implement this
-      // For simplicity, we'll keep doubling the damage, but add a comment explaining this isn't ideal
-      // In a real implementation, we'd need to track dice and modifier separately
-      finalDamage = damage * 2;
-      // TODO: Critical hits should only double dice damage, not modifiers
-    } else if (hitStatus === 'miss') {
-      finalDamage = 0;
-    }
-    
-    // Apply damage based on target type
-    if (targetEntity.type === 'group') {
-      applyDamageToGroup(targetEntity.id, finalDamage, hitStatus);
-    } else if (targetEntity.type === 'boss') {
-      applyDamageToBoss(targetEntity.id, finalDamage, hitStatus);
-    } else if (targetEntity.type === 'character') {
-      applyDamageToCharacter(targetEntity.id, finalDamage, hitStatus, '');
-    }
-    
-    // Reset attack roll field
-    setSingleTargetState(prev => ({
-      ...prev,
-      attackRoll: '',
-      criticalHit: false,
-      advantage: false,
-      disadvantage: false
-    }));
-  };
-  
   // Auto-roll saves for an entity
   const autoRollSave = (entityId) => {
     // Parse entity type and ID from the composite key
@@ -490,29 +378,29 @@ const DamageApplication = () => {
     // Characters don't have saving throw bonuses in this system
     
     // Simple d20 roll
-    const roll = Math.floor(Math.random() * 20) + 1;
+    const roll = rollD20();
     const totalRoll = roll + saveBonus;
     
     // Check if save succeeds against the current DC
     const succeeded = totalRoll >= currentSaveDC;
     
-    setCharacterSaves(prev => ({
-      ...prev,
-      [entityId]: {
-        ...prev[entityId],
-        roll: roll,
-        totalRoll: totalRoll,
-        saveBonus: saveBonus,
-        autoRoll: true,
-        succeeded
+    updateAoeSaveState({
+      characterSaves: {
+        ...characterSaves,
+        [entityId]: {
+          ...characterSaves[entityId],
+          roll: roll,
+          totalRoll: totalRoll,
+          saveBonus: saveBonus,
+          autoRoll: true,
+          succeeded
+        }
+      },
+      damageModifiers: {
+        ...damageModifiers,
+        [entityId]: succeeded && aoeState.halfOnSave ? 'half' : 'default'
       }
-    }));
-    
-    // Set default damage modifier based on save result
-    setDamageModifiers(prev => ({
-      ...prev,
-      [entityId]: succeeded && aoeState.halfOnSave ? 'half' : 'default'
-    }));
+    });
   };
   
   // Auto-roll saves for all entities
@@ -535,7 +423,7 @@ const DamageApplication = () => {
   };
   
   // Handle manual save roll input
-  const handleSaveRollChange = (entityId, value) => {
+  const handleSaveRollChange = (entityId: string, value: string) => {
     // Parse entity type and ID from the composite key
     const [entityType, id] = entityId.split('-');
     
@@ -577,17 +465,19 @@ const DamageApplication = () => {
     // Check if save succeeds
     const succeeded = totalRoll !== '' ? totalRoll >= currentSaveDC : false;
     
-    setCharacterSaves(prev => ({
-      ...prev,
-      [entityId]: {
-        ...prev[entityId],
-        roll: roll,
-        totalRoll: totalRoll,
-        saveBonus: saveBonus,
-        autoRoll: false,
-        succeeded
+    const updates = {
+      characterSaves: {
+        ...characterSaves,
+        [entityId]: {
+          ...characterSaves[entityId],
+          roll: roll,
+          totalRoll: totalRoll,
+          saveBonus: saveBonus,
+          autoRoll: false,
+          succeeded
+        }
       }
-    }));
+    };
     
     // Set default damage modifier based on save result
     if (roll !== '') {
@@ -600,48 +490,53 @@ const DamageApplication = () => {
         aoeState.damageComponents.forEach((comp, idx) => {
           componentMods[idx] = succeeded && aoeState.halfOnSave ? 'half' : 'full';
         });
-        setAoeComponentModifiers(prev => ({
-          ...prev,
+        updates.aoeComponentModifiers = {
+          ...aoeComponentModifiers,
           [entityId]: componentMods
-        }));
+        };
       } else {
         // Single damage type - use old system
-        setDamageModifiers(prev => ({
-          ...prev,
+        updates.damageModifiers = {
+          ...damageModifiers,
           [entityId]: succeeded && aoeState.halfOnSave ? 'half' : 'default'
-        }));
+        };
       }
     }
+    
+    updateAoeSaveState(updates);
   };
   
   // Handle damage modifier change
-  const handleDamageModifierChange = (entityId, value) => {
-    setDamageModifiers(prev => ({
-      ...prev,
-      [entityId]: value
-    }));
+  const handleDamageModifierChange = (entityId: string, value: string) => {
+    updateAoeSaveState({
+      damageModifiers: {
+        ...damageModifiers,
+        [entityId]: value
+      }
+    });
   };
   
   // Handle manual damage adjustment
-  const handleDamageAdjustment = (entityId, amount) => {
-    setManualDamageAdjustments(prev => ({
-      ...prev,
-      [entityId]: (prev[entityId] || 0) + amount
-    }));
+  const handleDamageAdjustment = (entityId: string, amount: number) => {
+    updateAoeSaveState({
+      manualDamageAdjustments: {
+        ...manualDamageAdjustments,
+        [entityId]: (manualDamageAdjustments[entityId] || 0) + amount
+      }
+    });
   };
   
   // Prepare AOE damage inputs from the boss attack or user input
   const prepareAoeDamage = () => {
     // If AOE damage is from a boss attack, populate the form
     if (aoeDamageParams) {
-      setAoeState(prev => ({
-        ...prev,
+      updateAoeState({
         damageAmount: aoeDamageParams.damage || '',
         damageComponents: aoeDamageParams.damageComponents || null,
         saveType: aoeDamageParams.saveType || 'dex',
         saveDC: aoeDamageParams.saveDC || 15,
         halfOnSave: aoeDamageParams.halfOnSave !== undefined ? aoeDamageParams.halfOnSave : true
-      }));
+      });
       
       // Clear aoeDamageParams from the store after using it
       setTimeout(() => {
@@ -650,7 +545,7 @@ const DamageApplication = () => {
     }
     
     // Show the AOE saves UI
-    setShowAoeSaves(true);
+    updateAoeSaveState({ showAoeSaves: true });
     
     // Delay auto-roll to ensure it uses updated state values
     setTimeout(() => {
@@ -685,35 +580,21 @@ const DamageApplication = () => {
             });
           });
           
-          setAoeComponentModifiers(initialComponentModifiers);
-          setAoeComponentAdjustments(initialComponentAdjustments);
+          updateAoeSaveState({
+            aoeComponentModifiers: initialComponentModifiers,
+            aoeComponentAdjustments: initialComponentAdjustments
+          });
         }
       }, 150);
     }, 100);
   };
   
-  // Handle changes to single target state
-  const handleSingleTargetChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setSingleTargetState(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-      // If setting critical hit, reset advantage/disadvantage
-      ...(name === 'criticalHit' && checked ? { advantage: false, disadvantage: false } : {}),
-      // If setting advantage, reset critical and disadvantage
-      ...(name === 'advantage' && checked ? { criticalHit: false, disadvantage: false } : {}),
-      // If setting disadvantage, reset critical and advantage
-      ...(name === 'disadvantage' && checked ? { criticalHit: false, advantage: false } : {})
-    }));
-  };
-  
   // Handle changes to AoE state
-  const handleAoeChange = (e) => {
+  const handleAoeChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target;
-    setAoeState(prev => ({
-      ...prev,
+    updateAoeState({
       [name]: type === 'checkbox' ? checked : value
-    }));
+    });
     
     // Clear any stale aoeDamageParams when user manually changes values
     useDnDStore.getState().prepareAoeDamage(null);
@@ -805,37 +686,6 @@ const DamageApplication = () => {
   // Get healable entities
   const healableEntities = getHealableEntities();
 
-  // Render compact defense icons for an entity (immunities/resistances/vulnerabilities)
-  const renderDefenseIcons = (defenses) => {
-    if (!defenses) return null;
-    const { immunities = [], resistances = [], vulnerabilities = [] } = defenses;
-    if (immunities.length === 0 && resistances.length === 0 && vulnerabilities.length === 0) return null;
-    return (
-      <div className="defense-icons" style={{ marginTop: '4px', gap: '4px', flexWrap: 'wrap' }}>
-        {immunities.map((key) => {
-          const dt = DAMAGE_TYPE_LOOKUP[key];
-          if (!dt) return null;
-          return (
-            <span key={`imm-${key}`} className="defense-icon immunity" title={`Immune: ${dt.label}`}>{dt.icon}</span>
-          );
-        })}
-        {resistances.map((key) => {
-          const dt = DAMAGE_TYPE_LOOKUP[key];
-          if (!dt) return null;
-          return (
-            <span key={`res-${key}`} className="defense-icon resistance" title={`Resistant: ${dt.label}`}>{dt.icon}</span>
-          );
-        })}
-        {vulnerabilities.map((key) => {
-          const dt = DAMAGE_TYPE_LOOKUP[key];
-          if (!dt) return null;
-          return (
-            <span key={`vuln-${key}`} className="defense-icon vulnerability" title={`Vulnerable: ${dt.label}`}>{dt.icon}</span>
-          );
-        })}
-      </div>
-    );
-  };
 
   // Apply healing or temp HP to multiple entities
   const handleApplyMultiHealing = () => {
@@ -1002,49 +852,22 @@ const DamageApplication = () => {
     applyAoeDamageToAll(aoeParams);
     
     // Reset state
-    setShowAoeSaves(false);
-    setAoeState(prev => ({
-      ...prev,
+    updateAoeState({
       damageAmount: '',
       damageComponents: null
-    }));
-    
-    // Clear component modifiers
-    setAoeComponentModifiers({});
-    setAoeComponentAdjustments({});
+    });
+    updateAoeSaveState({
+      showAoeSaves: false,
+      aoeComponentModifiers: {},
+      aoeComponentAdjustments: {}
+    });
     
     // Ensure aoeDamageParams is cleared
     useDnDStore.getState().prepareAoeDamage(null);
   };
 
   // Apply AOE damage without showing manual saves UI
-  const handleApplyAoeDamage = () => {
-    // Parse damage amount
-    const damage = parseInt(aoeState.damageAmount);
-    if (isNaN(damage) || damage <= 0) {
-      alert('Please enter a valid damage amount');
-      return;
-    }
-    
-    // Apply AoE damage with standard parameters
-    const aoeParams = {
-      damage,
-      saveType: aoeState.saveType,
-      saveDC: aoeState.saveDC,
-      halfOnSave: aoeState.halfOnSave,
-      percentAffected: aoeState.percentAffected,
-      applyToAll: aoeState.applyToAll
-    };
-    
-    // Apply AOE damage to all entities
-    applyAoeDamageToAll(aoeParams);
-    
-    // Reset damage amount field
-    setAoeState(prev => ({
-      ...prev,
-      damageAmount: ''
-    }));
-  };
+  const handleApplyAoeDamage = applyAoeDamageHook;
 
   return (
     <div className="damage-application" ref={sectionRef}>
@@ -1062,125 +885,15 @@ const DamageApplication = () => {
         <>
           <div className="damage-sections">
             {/* Single Target Damage */}
-            <div className="damage-section single-target-section">
-              <h4>Single Target Damage</h4>
-              
-              {targetDetails ? (
-                <div className="current-target">
-                  <div className="target-info">
-                    <span>Target:</span> 
-                    <span className="target-name">{targetDetails.name}</span>
-                    <span className="target-type">{targetDetails.type}</span>
-                    {targetDetails.ac && (
-                      <span className="target-ac">AC: {targetDetails.ac}</span>
-                    )}
-                  </div>
-                  {(targetDetails.defenses && (
-                    (targetDetails.defenses.immunities && targetDetails.defenses.immunities.length) ||
-                    (targetDetails.defenses.resistances && targetDetails.defenses.resistances.length) ||
-                    (targetDetails.defenses.vulnerabilities && targetDetails.defenses.vulnerabilities.length)
-                  )) ? (
-                    <div className="target-defenses">
-                      <span className="defense-label-inline">Defenses:</span>
-                      {renderDefenseIcons(targetDetails.defenses)}
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="no-target-message">
-                  <p>No target selected. Select a target from the Groups, Bosses, or Characters section.</p>
-                </div>
-              )}
-              
-              <div className="damage-controls">
-                <div className="control-row">
-                  <div className="control-field">
-                    <label>Attack Roll:</label>
-                    <input
-                      type="number"
-                      name="attackRoll"
-                      value={singleTargetState.attackRoll}
-                      onChange={handleSingleTargetChange}
-                      placeholder="Attack roll (optional)"
-                      min="1"
-                    />
-                  </div>
-                  
-                  <div className="control-field">
-                    <label>Damage:</label>
-                    <input
-                      type="number"
-                      name="damageAmount"
-                      value={singleTargetState.damageAmount}
-                      onChange={handleSingleTargetChange}
-                      placeholder="Damage amount"
-                      min="0"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="control-row checkbox-row">
-                  <div className="control-checkbox">
-                    <input
-                      type="checkbox"
-                      id="criticalHit"
-                      name="criticalHit"
-                      checked={singleTargetState.criticalHit}
-                      onChange={handleSingleTargetChange}
-                    />
-                    <label htmlFor="criticalHit">Critical Hit</label>
-                  </div>
-                  
-                  <div className="control-checkbox">
-                    <input
-                      type="checkbox"
-                      id="advantage"
-                      name="advantage"
-                      checked={singleTargetState.advantage}
-                      onChange={handleSingleTargetChange}
-                    />
-                    <label htmlFor="advantage">Advantage</label>
-                  </div>
-                  
-                  <div className="control-checkbox">
-                    <input
-                      type="checkbox"
-                      id="disadvantage"
-                      name="disadvantage"
-                      checked={singleTargetState.disadvantage}
-                      onChange={handleSingleTargetChange}
-                    />
-                    <label htmlFor="disadvantage">Disadvantage</label>
-                  </div>
-                </div>
-                
-                <button
-                  className="apply-damage-button"
-                  onClick={handleApplySingleTargetDamage}
-                  disabled={!targetEntity || !singleTargetState.damageAmount}
-                >
-                  Apply Damage
-                </button>
-              </div>
-              
-              {targetDetails && singleTargetState.attackRoll && (
-                <div className="hit-status">
-                  {(() => {
-                    const attackRoll = parseInt(singleTargetState.attackRoll);
-                    if (singleTargetState.criticalHit || attackRoll === 20) {
-                      return <span className="critical-hit">Critical Hit!</span>;
-                    } else if (attackRoll === 1) {
-                      return <span className="critical-miss">Critical Miss!</span>;
-                    } else if (targetDetails.ac && attackRoll < targetDetails.ac) {
-                      return <span className="miss">Miss! (AC {targetDetails.ac})</span>;
-                    } else {
-                      return <span className="hit">Hit! (AC {targetDetails.ac})</span>;
-                    }
-                  })()}
-                </div>
-              )}
-            </div>
+            <SingleTargetDamage
+              targetEntity={targetEntity}
+              characters={characters}
+              bosses={bosses}
+              enemyGroups={enemyGroups}
+              applyDamageToGroup={applyDamageToGroup}
+              applyDamageToCharacter={applyDamageToCharacter}
+              applyDamageToBoss={applyDamageToBoss}
+            />
             
             {/* AoE Damage */}
             <div className={`damage-section aoe-section ${isAoeFromBossAttack ? 'aoe-from-boss' : ''}`}>
@@ -1367,7 +1080,7 @@ const DamageApplication = () => {
                                     <div key={entityId} className="character-saves-row">
                                       <div>
                                         {entity.name}
-                                        {renderDefenseIcons(entity.defenses)}
+                                        <DefenseIcons defenses={entity.defenses} />
                                       </div>
                                       <div className="save-roll-cell">
                                         <input
@@ -1418,22 +1131,26 @@ const DamageApplication = () => {
                                         {aoeState.damageComponents.map((comp, idx) => (
                                           <div key={idx} style={{display: 'flex', gap: '2px', marginBottom: '4px', alignItems: 'center', height: '18px'}}>
                                             <button onClick={() => {
-                                              setAoeComponentAdjustments(prev => ({
-                                                ...prev,
-                                                [entityId]: {
-                                                  ...prev[entityId],
-                                                  [idx]: (prev[entityId]?.[idx] || 0) - 1
+                                              updateAoeSaveState({
+                                                aoeComponentAdjustments: {
+                                                  ...aoeComponentAdjustments,
+                                                  [entityId]: {
+                                                    ...aoeComponentAdjustments[entityId],
+                                                    [idx]: (aoeComponentAdjustments[entityId]?.[idx] || 0) - 1
+                                                  }
                                                 }
-                                              }));
+                                              });
                                             }} style={{padding: '2px 6px', fontSize: '10px'}}>-1</button>
                                             <button onClick={() => {
-                                              setAoeComponentAdjustments(prev => ({
-                                                ...prev,
-                                                [entityId]: {
-                                                  ...prev[entityId],
-                                                  [idx]: (prev[entityId]?.[idx] || 0) + 1
+                                              updateAoeSaveState({
+                                                aoeComponentAdjustments: {
+                                                  ...aoeComponentAdjustments,
+                                                  [entityId]: {
+                                                    ...aoeComponentAdjustments[entityId],
+                                                    [idx]: (aoeComponentAdjustments[entityId]?.[idx] || 0) + 1
+                                                  }
                                                 }
-                                              }));
+                                              });
                                             }} style={{padding: '2px 6px', fontSize: '10px'}}>+1</button>
                                           </div>
                                         ))}
@@ -1446,13 +1163,15 @@ const DamageApplication = () => {
                                               key={idx}
                                               value={compModifier}
                                               onChange={(e) => {
-                                                setAoeComponentModifiers(prev => ({
-                                                  ...prev,
-                                                  [entityId]: {
-                                                    ...prev[entityId],
-                                                    [idx]: e.target.value
+                                                updateAoeSaveState({
+                                                  aoeComponentModifiers: {
+                                                    ...aoeComponentModifiers,
+                                                    [entityId]: {
+                                                      ...aoeComponentModifiers[entityId],
+                                                      [idx]: e.target.value
+                                                    }
                                                   }
-                                                }));
+                                                });
                                               }}
                                               style={{padding: '2px', fontSize: '11px', marginBottom: '4px', display: 'block', width: '100%', height: '18px'}}
                                             >
@@ -1473,7 +1192,7 @@ const DamageApplication = () => {
                                   <div key={entityId} className="character-saves-row">
                                     <div>
                                       {entity.name}
-                                      {renderDefenseIcons(entity.defenses)}
+                                      <DefenseIcons defenses={entity.defenses} />
                                     </div>
                                     <div className="save-roll-cell">
                                       <input
@@ -1606,7 +1325,7 @@ const DamageApplication = () => {
                                     <div key={entityId} className="character-saves-row">
                                       <div>
                                         {entity.name}
-                                        {renderDefenseIcons(entity.defenses)}
+                                        <DefenseIcons defenses={entity.defenses} />
                                       </div>
                                       <div className="save-roll-cell">
                                         <input
@@ -1663,22 +1382,26 @@ const DamageApplication = () => {
                                         {aoeState.damageComponents.map((comp, idx) => (
                                           <div key={idx} style={{display: 'flex', gap: '2px', marginBottom: '4px', alignItems: 'center', height: '18px'}}>
                                             <button onClick={() => {
-                                              setAoeComponentAdjustments(prev => ({
-                                                ...prev,
-                                                [entityId]: {
-                                                  ...prev[entityId],
-                                                  [idx]: (prev[entityId]?.[idx] || 0) - 1
+                                              updateAoeSaveState({
+                                                aoeComponentAdjustments: {
+                                                  ...aoeComponentAdjustments,
+                                                  [entityId]: {
+                                                    ...aoeComponentAdjustments[entityId],
+                                                    [idx]: (aoeComponentAdjustments[entityId]?.[idx] || 0) - 1
+                                                  }
                                                 }
-                                              }));
+                                              });
                                             }} style={{padding: '2px 6px', fontSize: '10px'}}>-1</button>
                                             <button onClick={() => {
-                                              setAoeComponentAdjustments(prev => ({
-                                                ...prev,
-                                                [entityId]: {
-                                                  ...prev[entityId],
-                                                  [idx]: (prev[entityId]?.[idx] || 0) + 1
+                                              updateAoeSaveState({
+                                                aoeComponentAdjustments: {
+                                                  ...aoeComponentAdjustments,
+                                                  [entityId]: {
+                                                    ...aoeComponentAdjustments[entityId],
+                                                    [idx]: (aoeComponentAdjustments[entityId]?.[idx] || 0) + 1
+                                                  }
                                                 }
-                                              }));
+                                              });
                                             }} style={{padding: '2px 6px', fontSize: '10px'}}>+1</button>
                                           </div>
                                         ))}
@@ -1691,13 +1414,15 @@ const DamageApplication = () => {
                                               key={idx}
                                               value={compModifier}
                                               onChange={(e) => {
-                                                setAoeComponentModifiers(prev => ({
-                                                  ...prev,
-                                                  [entityId]: {
-                                                    ...prev[entityId],
-                                                    [idx]: e.target.value
+                                                updateAoeSaveState({
+                                                  aoeComponentModifiers: {
+                                                    ...aoeComponentModifiers,
+                                                    [entityId]: {
+                                                      ...aoeComponentModifiers[entityId],
+                                                      [idx]: e.target.value
+                                                    }
                                                   }
-                                                }));
+                                                });
                                               }}
                                               style={{padding: '2px', fontSize: '11px', marginBottom: '4px', display: 'block', width: '100%', height: '18px'}}
                                             >
@@ -1718,7 +1443,7 @@ const DamageApplication = () => {
                                   <div key={entityId} className="character-saves-row">
                                     <div>
                                       {entity.name}
-                                      {renderDefenseIcons(entity.defenses)}
+                                      <DefenseIcons defenses={entity.defenses} />
                                     </div>
                                     <div className="save-roll-cell">
                                       <input
@@ -1822,7 +1547,7 @@ const DamageApplication = () => {
                   <div className="aoe-saves-footer">
                     <button
                       className="cancel-button"
-                      onClick={() => setShowAoeSaves(false)}
+                      onClick={cancelManualSaves}
                     >
                       Cancel
                     </button>
@@ -1907,7 +1632,6 @@ const DamageApplication = () => {
                         {(healingState.mode === 'healing' ? healableEntities.characters : characters).map(character => {
                           const healthPercentage = calculateHealthPercentage(character.currentHp, character.maxHp);
                           const healthColor = getHealthColour(healthPercentage);
-                          const currentTempHp = character.tempHp || 0;
                           return (
                             <div 
                               key={`character-${character.id}`}
@@ -1917,19 +1641,15 @@ const DamageApplication = () => {
                               <div className="entity-header">
                                 <span className="entity-name">{character.name}</span>
                               </div>
-                              <span className="entity-hp">
-                                {character.currentHp}/{character.maxHp} HP
-                                {currentTempHp > 0 && <span className="temp-hp-badge"> (+{currentTempHp} temp)</span>}
-                              </span>
-                              <div className="health-bar-container">
-                                <div 
-                                  className="health-bar" 
-                                  style={{
-                                    width: `${healthPercentage}%`,
-                                    backgroundColor: healthColor
-                                  }}
-                                ></div>
-                              </div>
+                              <HealthBar 
+                                currentHp={character.currentHp}
+                                maxHp={character.maxHp}
+                                tempHp={character.tempHp}
+                                healthPercentage={healthPercentage}
+                                healthColor={healthColor}
+                                variant="default"
+                                showText={true}
+                              />
                               {/* Add detailed health status text */}
                               <div className="health-status">
                                 {character.currentHp === character.maxHp ? (
@@ -2013,7 +1733,6 @@ const DamageApplication = () => {
                         {(healingState.mode === 'healing' ? healableEntities.bosses : bosses).map(boss => {
                           const healthPercentage = calculateHealthPercentage(boss.currentHp, boss.maxHp);
                           const healthColor = getHealthColour(healthPercentage);
-                          const currentTempHp = boss.tempHp || 0;
                           return (
                             <div 
                               key={`boss-${boss.id}`}
@@ -2023,19 +1742,15 @@ const DamageApplication = () => {
                               <div className="entity-header">
                                 <span className="entity-name">{boss.name}</span>
                               </div>
-                              <span className="entity-hp">
-                                {boss.currentHp}/{boss.maxHp} HP
-                                {currentTempHp > 0 && <span className="temp-hp-badge"> (+{currentTempHp} temp)</span>}
-                              </span>
-                              <div className="health-bar-container">
-                                <div 
-                                  className="health-bar" 
-                                  style={{
-                                    width: `${healthPercentage}%`,
-                                    backgroundColor: healthColor
-                                  }}
-                                ></div>
-                              </div>
+                              <HealthBar 
+                                currentHp={boss.currentHp}
+                                maxHp={boss.maxHp}
+                                tempHp={boss.tempHp}
+                                healthPercentage={healthPercentage}
+                                healthColor={healthColor}
+                                variant="default"
+                                showText={true}
+                              />
                               {/* Add detailed health status text */}
                               <div className="health-status">
                                 {boss.currentHp === boss.maxHp ? (
